@@ -1,7 +1,7 @@
 #
 #	Makefile.PL for Term::ReadLine::Gnu
 #
-#	$Id: Makefile.PL,v 1.17 1999-06-23 12:50:28 hayashi Exp $
+#	$Id: Makefile.PL,v 1.18 1999-07-19 13:26:12 hayashi Exp $
 #
 #	Copyright (c) 1999 Hiroo Hayashi.  All rights reserved.
 #		<hiroo.hayashi@computer.org>
@@ -11,15 +11,13 @@
 #
 #	OS/2 support is contributed by Ilya Zakharevich.
 #		<ilya@math.ohio-state.edu>
-
-########################################################################
-# Modify these variables if you need.
-$libreadlinedir = '/usr/local/gnu/lib';		# for -L option
-$increadlinedir = '/usr/local/gnu/include';	# for -I option
+#
+# Usage: perl Makefile.PL [--prefix=...] [--includedir=...] [--libdir=...]
 
 ########################################################################
 use ExtUtils::MakeMaker;
 use Config;
+use Getopt::Long;
 
 if ($Config{usesfio} eq 'true') {
     warn("** Your Perl is configured as \'usesfio\' equals true. **\n");
@@ -27,6 +25,15 @@ if ($Config{usesfio} eq 'true') {
 }
 
 $defs = ($Config{strings} =~ m|/string.h$|) ? '-DHAVE_STRING_H' : '';
+
+# Parse command line to specify paths for the GNU Readline Library
+GetOptions("prefix=s" => \$prefix,
+	   "libdir=s" => \$libdir,
+	   "includedir=s" => \$includedir);
+$libdir     = "$prefix/lib"     if (defined $prefix and ! defined $libdir);
+$includedir = "$prefix/include" if (defined $prefix and ! defined $includedir);
+$RLLIB = defined $libdir     ? "-L$libdir"     : '';
+$RLINC = defined $includedir ? "-I$includedir" : '';
 
 # Search libtermcap, libncurses, or libcurses in this order.
 # I emulate the behavior of configure script for bash, and don't know
@@ -37,7 +44,7 @@ $TERMCAP_LIB = (! $PREFER_CURSES && &search_lib('-ltermcap'))
     || &search_lib('-lncurses')
     || &search_lib('-lcurses');
 
-die "Cannot find neither libtermcap.a, libncureses.a, or libcurses.\n"
+die "Could not find neither libtermcap.a, libncureses.a, or libcurses.\n"
     unless $TERMCAP_LIB;
 
 # Ignore outside of OS/2. Set to 1 if linking with readline.dll under
@@ -69,15 +76,26 @@ EOF
 close(F);
 
 # compile it
-system("$Config{cc} -I$increadlinedir $Config{ccflags} $defs $frlver -o rlver -L$libreadlinedir $libs $Config{ldflags}");
+$comp_cmd = "$Config{cc} $RLINC $Config{ccflags} $defs $frlver -o rlver $RLLIB $libs $Config{ldflags}";
+print $comp_cmd, "\n";
+system($comp_cmd);
 if ($?) {
     die <<EOM;
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-Cannot compile $frlver.
+Could not compile $frlver.
 
-Check variables, \$increadlinedir and \$libreadlinedir, in Makefile.PL.
+If you have installed the GNU Readline Library (libreadline.{a,so} and
+readline/readline.h, etc.) on directories for which your perl is not
+configured to search (refer the value of ccflags and libpath in the
+output of `perl -V'), specify the paths as follows;
 
-Note that GNU Readline Library version 2.0 and earlier cause error here,
+	perl Makefile.PL --includedir=/mydir/include --libdir=/mydir/lib
+or
+	perl Makefile.PL --prefix=/mydir
+
+Note that the GNU Readline Library version 2.0 and earlier cause error
+here.  Update it to version 2.1 and/or later.
+
 Read INSTALL for more details.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 EOM
@@ -94,14 +112,14 @@ WriteMakefile(
     'NAME'	=> 'Term::ReadLine::Gnu',
     'VERSION_FROM' => 'Gnu.pm',
     'LIBS'	=> [ $libs ],
-    'LDFLAGS'	=> "-L$libreadlinedir $Config{ldflags}",
-    'LDDLFLAGS'	=> "-L$libreadlinedir $Config{lddlflags}",
+    'LDFLAGS'	=> "$RLLIB $Config{ldflags}",
+    'LDDLFLAGS'	=> "$RLLIB $Config{lddlflags}",
     'DEFINE'	=> $defs,
     ($os2_usedll ? 
 	(
 	IMPORTS	=> { xfree => 'emxlibcm.401' },	# Yuck!
 	) : () ),
-    'INC'	=> "-I$increadlinedir",
+    'INC'	=> $RLINC,
     'dist'	=> { COMPRESS => 'gzip -9f', SUFFIX => 'gz' },
     'clean'	=> { FILES => "rlver.c rlver$Config{_exe}" },
 );
