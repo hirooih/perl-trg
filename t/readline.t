@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.18 1997-03-22 14:26:05 hayashi Exp $
+#	$Id: readline.t,v 1.19 1997-04-13 15:38:06 hayashi Exp $
 #
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl t/readline.t'
@@ -77,30 +77,68 @@ print $attribs->{library_version} > 2.0 ? "ok 6\n" : "not ok 6\n";
 ########################################################################
 # test key binding functions
 
-my %TYPE = (0 => 'Function', 1 => 'Keymap', 2 => 'Macro');
-
-# sample custom function (reverse whole line)
+# sample custom function (reverse a whole line)
 sub reverse_line {
     my($count, $key) = @_;	# ignored in this sample function
     $attribs->{line_buffer} = reverse $attribs->{line_buffer};
 }
 
-# using method
-$term->add_defun('reverse-line', \&reverse_line, ord "\ct");
-$term->bind_key(ord "\ct", 'reverse-line', 'emacs-ctlx');
-$term->parse_and_bind('"\C-xt": reverse-line');
-
 sub display_readline_version {
     my($count, $key) = @_;	# ignored in this sample function
     print $OUT "GNU Readline Library version: $attribs->{library_version}\n";
 # rl_message() does not work.
-#    $term->message("GNU Readline Library version: $$term->library_version\n");
+#    $term->message("GNU Readline Library version: $attribs->{library_version}\n");
     $term->on_new_line();
 }
-# using function
+
+# From the GNU Readline Library Manual
+# Invert the case of the COUNT following characters.
+sub invert_case_line {
+    my($count, $key) = @_;
+
+    my $start = $attribs->{point};
+    return 0 if ($start >= $attribs->{end});
+
+    # Find the end of the range to modify.
+    my $end = $start + $count;
+
+    # Force it to be within range.
+    if ($end > $attribs->{end}) {
+	$end = $attribs->{end};
+    } elsif ($end < 0) {
+	$end = 0;
+    }
+
+    return 0 if $start == $end;
+
+    if ($start > $end) {
+	my $temp = $start;
+	$start = $end;
+	$end = $temp;
+    }
+
+    # Tell readline that we are modifying the line, so it will save
+    # undo information.
+    $term->modifying($start, $end);
+
+    # I'm happy with Perl :-)
+    substr($attribs->{line_buffer}, $start, $end-$start) =~ tr/a-zA-Z/A-Za-z/;
+
+    # Move point to on top of the last character changed.
+    $attribs->{point} = $count < 0 ? $start : $end - 1;
+    return 0;
+}
+
+$term->add_defun('reverse-line', \&reverse_line, ord "\ct");
+$term->bind_key(ord "\ct", 'reverse-line', 'emacs-ctlx');
+$term->parse_and_bind('"\C-xt": reverse-line');
+
 $term->add_defun('display-readline-version', \&display_readline_version);
 $term->bind_key(ord "\cv", 'display-readline-version', 'emacs-ctlx');
 $term->parse_and_bind('"\C-xv": display-readline-version');
+
+$term->add_defun('invert-case-line', \&invert_case_line);
+$term->bind_key(ord "c", 'invert-case-line', 'emacs-meta');
 
 # make original map
 my $helpmap = $term->make_bare_keymap();
@@ -118,9 +156,11 @@ sub toprint {
     join('',map{ord($_)<32 ? '\C-'.lc(chr(ord($_)+64)) : $_}(split('',$_[0])));
 }
 
+my %TYPE = (0 => 'Function', 1 => 'Keymap', 2 => 'Macro');
+
 print $OUT "\n";
 foreach ("\co", "\ct", "\cx",
-	 "\cx\ct", "\cxt", "\cx\cv", "\cxv",
+	 "\cx\ct", "\cxt", "\cx\cv", "\cxv", "\ec",
 	 "\e?f", "\e?v", "\e?i") {
     my ($p, $type) = $term->function_of_keyseq($_);
     print $OUT (toprint($_));
