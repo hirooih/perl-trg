@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.15 1996-12-29 13:49:31 hayashi Exp $
+#	$Id: Gnu.pm,v 1.16 1996-12-29 15:29:14 hayashi Exp $
 #
 #	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
 #
@@ -350,15 +350,10 @@ my %_rl_vars
        rl_inhibit_completion			=> ['I', 11],
        history_base				=> ['I', 12],
        history_length				=> ['I', 13],
-       history_offset				=> ['I', 14],
-       history_expansion_char			=> ['C', 15],
-       history_subst_char			=> ['C', 16],
-       history_comment_char			=> ['C', 17],
-       history_quotes_inhibit_expansion		=> ['I', 18],
-#         history_expansion_char			=> ['C', 14],
-#         history_subst_char			=> ['C', 15],
-#         history_comment_char			=> ['C', 16],
-#         history_quotes_inhibit_expansion		=> ['I', 17],
+       history_expansion_char			=> ['C', 14],
+       history_subst_char			=> ['C', 15],
+       history_comment_char			=> ['C', 16],
+       history_quotes_inhibit_expansion		=> ['I', 17],
 
        rl_completion_entry_function		=> ['F', 'filename'],
        rl_attempted_completion_function		=> ['F', undef],
