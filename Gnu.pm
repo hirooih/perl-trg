@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.50 1998-03-26 15:40:48 hayashi Exp $
+#	$Id: Gnu.pm,v 1.51 1998-04-11 16:27:54 hayashi Exp $
 #
 #	Copyright (c) 1996,1997,1998 Hiroo Hayashi.  All rights reserved.
 #
@@ -145,6 +145,12 @@ sub new {
 	       };
     bless $self, $class;
 
+    # ornaments on to be compatible with perl5.004_05(?)
+    unless ($ENV{PERL_RL} and $ENV{PERL_RL} =~ /\bo\w*=0/) {
+	local $^W = 0;		# Term::ReadLine is not waring flag free
+	$self->ornaments(1);
+    }
+
     # initialize the GNU Readline Library first for sanity
     $self->initialize();
 
@@ -258,6 +264,7 @@ the actual C<readline> is present.
 
 =cut
 
+use vars '*addhistory';
 *addhistory = \&AddHistory;	# for backward compatibility
 
 sub AddHistory {
@@ -343,6 +350,7 @@ sub newTTY {
 # Documentation is after '__END__' for efficiency.
 
 # for backward compatibility
+use vars qw(*AddDefun *BindKey *UnbindKey *ParseAndBind *StifleHistory);
 *AddDefun = \&add_defun;
 *BindKey = \&bind_key;
 *UnbindKey = \&unbind_key;
@@ -532,6 +540,7 @@ sub history_arg_extract ( ;$$$ ) {
     &_history_arg_extract($line, $first, $last);
 }
 
+use vars qw(*read_history);
 *read_history = \&read_history_range;
 
 sub get_history_event ( $$;$ ) {
