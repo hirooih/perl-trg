@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.91 2002-07-28 04:25:46 hiroo Exp $
+#	$Id: Gnu.pm,v 1.92 2003-03-17 01:29:39 hiroo Exp $
 #
 #	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
 #
@@ -63,7 +63,7 @@ use Carp;
     use DynaLoader;
     use vars qw($VERSION @ISA @EXPORT_OK);
 
-    $VERSION = '1.13';
+    $VERSION = '1.14';
 
     # Term::ReadLine::Gnu::AU makes a function in
     # `Term::ReadLine::Gnu::XS' as a method.
@@ -95,6 +95,13 @@ require Term::ReadLine::Gnu::XS;
 
 use vars qw(%Attribs %Features);
 
+# Each variable in the GNU Readline Library is tied to an entry of
+# this hash (%Attribs).  By accessing the hash entry, you can read
+# and/or write the variable in the GNU Readline Library.  See the
+# package definition of Term::ReadLine::Gnu::Var and following code
+# for more details.
+
+# Normal (non-tied) entries
 %Attribs  = (
 	     MinLength => 1,
 	     do_expand => 0,
@@ -222,6 +229,10 @@ sub new {
 	my ($IN,$OUT) = $self->findConsole();
 	open(IN,"<$IN")   || croak "Cannot open $IN for read";
 	open(OUT,">$OUT") || croak "Cannot open $OUT for write";
+	# borrowed from Term/ReadLine.pm
+	my $sel = select(OUT);
+	$| = 1;				# for DB::OUT
+	select($sel);
 	$Attribs{instream} = \*IN;
 	$Attribs{outstream} = \*OUT;
     } else {
@@ -631,7 +642,7 @@ foreach (keys %Term::ReadLine::Gnu::Var::_rl_vars) {
 #	add reference to some functions
 {
     my ($name, $fname);
-    no strict 'refs';		# allow symbolic refernce
+    no strict 'refs';		# allow symbolic reference
     map {
 	($name = $_) =~ s/^rl_//; # strip leading `rl_'
 	$fname = 'Term::ReadLine::Gnu::XS::' . $_;
