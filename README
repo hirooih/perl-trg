@@ -1,4 +1,4 @@
-$Id: README,v 1.15 1999-05-04 17:56:58 hayashi Exp $
+$Id: README,v 1.16 1999-06-25 16:34:52 hayashi Exp $
 
 Term::ReadLine::Gnu --- GNU Readline Library Wrapper Module
 
@@ -56,6 +56,13 @@ Author:
 
 
 Revision History:
+
+1.07  1999-06-26
+	- add support for HPUX and Cygwin b20.1 (HPUX support may be
+	  imcompleted.)
+	- Makefile.PL now looks for shared libraries not only for
+	  static ones
+	- no change on Gnu.pm and Gnu.xs
 
 1.06  1999-05-05
 	- fix a bug which causes segmentation fault when
