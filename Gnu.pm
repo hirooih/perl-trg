@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.28 1997-01-19 16:29:16 hayashi Exp $
+#	$Id: Gnu.pm,v 1.29 1997-01-20 16:59:26 hayashi Exp $
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
 #
@@ -66,11 +66,13 @@ my @basefn = qw( rl_fetch_var		rl_store_var
 		 $rl_readline_name );
 
 my @bindfn = qw( rl_add_defun		rl_make_bare_keymap	rl_copy_keymap
-		 rl_make_keymap		rl_discard_keymap	rl_get_keymap
-		 rl_set_keymap		rl_get_keymap_by_name
+		 rl_make_keymap		rl_discard_keymap
+		 rl_get_keymap		rl_set_keymap
+		 rl_get_keymap_by_name	rl_get_keymap_name
 		 rl_bind_key		rl_unbind_key
 		 rl_generic_bind	rl_parse_and_bind
-		 rl_read_init_file	rl_do_named_function
+		 rl_read_init_file	rl_call_function
+		 rl_named_function	rl_get_function_name
 		 rl_function_of_keyseq	rl_invoking_keyseqs
 		 rl_function_dumper	rl_list_funmap_names
 
@@ -613,13 +615,6 @@ sub rl_store_var ( $$ ) {
     }
 }
 
-#	Readline function
-sub rl_message {
-    my $fmt = shift;
-    my $line = sprintf($fmt, @_);
-    _rl_message($line);
-}
-
 #
 #	Tie functions for Readline/History Library variables
 #
@@ -650,6 +645,56 @@ package Term::ReadLine::Gnu;
 #	Tie all Readline/History variables
 foreach (keys %_rl_vars) {
     eval "use vars '\$$_'; tie \$$_, 'Term::ReadLine::Gnu::Var', '$_';";
+}
+
+#
+#	Readline function wrappers
+#
+sub _str2map ( $ ) { return ref $_[0] ? $_[0] : rl_get_keymap_by_name($_[0]); }
+sub _str2fn ( $ )  { return ref $_[0] ? $_[0] : rl_named_function($_[0]); }
+
+sub rl_copy_keymap ( $ )    { return _rl_copy_keymap(_str2map($_[0])); }
+sub rl_discard_keymap ( $ ) { return _rl_discard_keymap(_str2map($_[0])); }
+sub rl_set_keymap ( $ )     { return _rl_set_keymap(_str2map($_[0])); }
+
+sub rl_bind_key ( $$;$ ) {
+    if (defined $_[2]) {
+	return _rl_bind_key($_[0], _str2fn($_[1]), _str2map($_[2]));
+    } else {
+	return _rl_bind_key($_[0], _str2fn($_[1]));
+    }
+}
+
+sub rl_unbind_key ( $;$ ) {
+    if (defined $_[1]) {
+	return _rl_bind_key($_[0], _str2map($_[1]));
+    } else {
+	return _rl_bind_key($_[0]);
+    }
+}
+
+sub rl_call_function ( $;$$ ) {
+    if (defined $_[2]) {
+	return _rl_call_function(_str2fn($_[0]), $_[1], $_[2]);
+    } elsif (defined $_[1]) {
+	return _rl_call_function(_str2fn($_[0]), $_[1]);
+    } else {
+	return _rl_call_function(_str2fn($_[0]));
+    }
+}
+
+sub rl_invoking_keyseqs ( $;$ ) {
+    if (defined $_[1]) {
+	return _rl_invoking_keyseqs(_str2fn($_[0]), _str2map($_[1]));
+    } else {
+	return _rl_invoking_keyseqs(_str2fn($_[0]));
+    }
+}
+
+sub rl_message {
+    my $fmt = shift;
+    my $line = sprintf($fmt, @_);
+    _rl_message($line);
 }
 
 #
@@ -704,13 +749,12 @@ sub operate_and_get_next {
 	history_set_pos($Next_Operate_Index - rl_fetch_var('history_base'));
 	undef $Next_Operate_Index;
     }
-    rl_do_named_function("accept-line", $count, $key);
+    rl_call_function("accept-line", $count, $key);
 
     $Operate_Index = rl_fetch_var('history_base') + where_history();
 }
 
-rl_add_defun('operate-and-get-next', \&operate_and_get_next);
-rl_bind_key(ord "\co", 'operate-and-get-next');
+rl_add_defun('operate-and-get-next', \&operate_and_get_next, ord "\co");
 
 1;
 __END__
@@ -820,20 +864,23 @@ Examples:
 
 =item bind_function
 
-	rl_add_defun(name, fn [,key])
-	rl_make_bare_keymap(name)
-	rl_copy_keymap(map, name)
-	rl_make_keymap(name)
-	rl_discard_keymap(name)
+	rl_add_defun(name, perl_fn [,key])
+	rl_make_bare_keymap()
+	rl_copy_keymap(map)
+	rl_make_keymap()
+	rl_discard_keymap(map)
 	rl_get_keymap()
 	rl_set_keymap(map)
-	rl_get_keymap_by_name(map)
+	rl_get_keymap_by_name(name)
+	rl_get_keymap_name(map)
 	rl_bind_key(key [,function [,map]])
 	rl_unbind_key(key [,map])
 	rl_generic_bind(type, keyseq, data [,map])
 	rl_parse_and_bind(line)
 	rl_read_init_file([filename])
-	rl_do_named_function(name [,count [,key]])
+	rl_call_function(function [,count [,key]])
+	rl_named_function(name)
+	rl_get_function_name(function)
 	rl_function_of_keyseq(keyseq [,map])
 	rl_invoking_keyseqs(function [,map])
 	rl_function_dumper([readable])
