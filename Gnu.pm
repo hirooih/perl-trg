@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- GNU Readline wrapper module
 #
-#	$Id: Gnu.pm,v 1.5 1996-11-20 15:22:11 hayashi Exp $
+#	$Id: Gnu.pm,v 1.6 1996-11-23 13:29:28 hayashi Exp $
 #
 #	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
 #
@@ -60,7 +60,7 @@ installed this package,  possible value is C<Term::ReadLine::Gnu>.
 
 =cut
 
-sub ReadLine () { 'Term::ReadLine::Gnu'; }
+sub ReadLine { 'Term::ReadLine::Gnu'; }
 
 =item C<new(NAME,[IN[,OUT]]>
 
@@ -72,7 +72,7 @@ should be globs.
 =cut
 
 # The origin of this function is Term::ReadLine::Perl.pm by Ilya Zakharevich.
-sub new ($;$$$) {
+sub new {
     my $this = shift;		# Package
     my $class = ref($this) || $this;
 
@@ -115,7 +115,7 @@ is in C<Features>.
 
 =cut
 
-sub readline ($;$$) {
+sub readline {
     my $self = shift;
 
     # call readline()
@@ -149,7 +149,7 @@ the actual C<readline> is present.
 
 =cut
 
-sub addhistory ($@) {		# Why not AddHistory ?
+sub addhistory {		# Why not AddHistory ?
     shift;
     _rl_add_history(@_);
 }
@@ -161,7 +161,7 @@ If MAX is undef,  remembers all entries.
 
 =cut
 
-sub StifleHistory ($;$) {
+sub StifleHistory {
     my $self = shift;
     _stifle_history($self->{MaxHist} = shift);
 }
@@ -173,7 +173,7 @@ C<readline> is present.
 
 =cut
 
-sub SetHistory ($@) {
+sub SetHistory {
     shift;
     _rl_SetHistory(@_);
 }
@@ -184,7 +184,7 @@ returns the history of input as a list, if actual C<readline> is present.
 
 =cut
 
-sub GetHistory () {
+sub GetHistory {
     _rl_GetHistory();
 }
 
@@ -199,7 +199,7 @@ successful, or false if not.
 
 =cut
 
-sub ReadHistory ($;$$$) {
+sub ReadHistory {
     shift;
     _rl_read_history(@_);
 }
@@ -212,7 +212,7 @@ F<~/.history>.  Returns true if successful, or false if not.
 
 =cut
 
-sub WriteHistory ($;$) {
+sub WriteHistory {
     shift;
     _rl_write_history($_[0]);
 }
@@ -225,7 +225,7 @@ anything into history.  Returns the old value.
 
 =cut
 
-sub MinLine ($$) {
+sub MinLine {
     my $self = shift;
     my $old_minlength = $self->{MinLength};
     $self->{MinLength} = shift;
@@ -240,7 +240,7 @@ detail see GNU Readline Library Texinfo manual.
 
 =cut
 
-sub ParseAndBind ($$) {
+sub ParseAndBind {
     my $self = shift;
     rl_parse_and_bind(shift);
 }
@@ -285,20 +285,20 @@ package Term::ReadLine::Gnu::CEF;
 use Carp;
 use strict;
 
-sub TIESCALAR ($) {
+sub TIESCALAR {
     my $class = shift;
     my $self = shift;
     Term::ReadLine::Gnu::_rl_store_completion_entry_function($self);
     return bless \$self, $class;
 }
 
-sub FETCH ($) {
+sub FETCH {
     my $self = shift;
     confess "wrong type" unless ref $self;
     return $$self;
 }
 
-sub STORE ($$) {
+sub STORE {
     my $self = shift;
     confess "wrong type" unless ref $self;
     $$self = shift;
@@ -333,20 +333,20 @@ package Term::ReadLine::Gnu::ACF;
 use Carp;
 use strict;
 
-sub TIESCALAR ($) {
+sub TIESCALAR {
     my $class = shift;
     my $self = shift;
     Term::ReadLine::Gnu::_rl_store_attempted_completion_function($self);
     return bless \$self, $class;
 }
 
-sub FETCH ($) {
+sub FETCH {
     my $self = shift;
     confess "wrong type" unless ref $self;
     return $$self;
 }
 
-sub STORE ($$) {
+sub STORE {
     my $self = shift;
     confess "wrong type" unless ref $self;
     $$self = shift;
@@ -395,20 +395,20 @@ package Term::ReadLine::Gnu::BWBC;
 use Carp;
 use strict;
 
-sub TIESCALAR ($) {
+sub TIESCALAR {
     my $class = shift;
     my $self = shift;
     Term::ReadLine::Gnu::_rl_store_basic_word_break_characters($self);
     return bless \$self, $class;
 }
 
-sub FETCH ($) {
+sub FETCH {
     my $self = shift;
     confess "wrong type" unless ref $self;
     return $$self;
 }
 
-sub STORE ($$) {
+sub STORE {
     my $self = shift;
     confess "wrong type" unless ref $self;
     $$self = shift;
@@ -464,8 +464,8 @@ input and output cannot be used for Perl.
 
 =cut
 
-sub IN  ($) { shift->{IN}; }
-sub OUT ($) { shift->{OUT}; }
+sub IN  { shift->{IN}; }
+sub OUT { shift->{OUT}; }
 
 =item C<findConsole>
 
@@ -494,7 +494,7 @@ my %Features = (appname => 1, minline => 1, autohistory => 1,
 		readHistory => 1, writeHistory => 1, parseAndBind => 1,
 		tkRunning => 0);
 
-sub Features () { \%Features; }
+sub Features { \%Features; }
 
 1;
 __END__
