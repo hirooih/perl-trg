@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.16 1996-12-29 15:29:14 hayashi Exp $
+#	$Id: Gnu.pm,v 1.17 1996-12-30 16:53:25 hayashi Exp $
 #
 #	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
 #
@@ -325,16 +325,18 @@ section VARIABLES.
 my %_rl_vars
     = (
        rl_line_buffer				=> ['S', 0],
-       rl_library_version			=> ['S', 1],
-       rl_readline_name				=> ['S', 2],
-       rl_basic_word_break_characters		=> ['S', 3],
-       rl_basic_quote_characters		=> ['S', 4],
-       rl_completer_word_break_characters	=> ['S', 5],
-       rl_completer_quote_characters		=> ['S', 6],
-       rl_filename_quote_characters		=> ['S', 7],
-       rl_special_prefixes			=> ['S', 8],
-       history_no_expand_chars			=> ['S', 9],
-       history_search_delimiter_chars		=> ['S', 10],
+       rl_prompt				=> ['S', 1],
+       rl_library_version			=> ['S', 2],
+       rl_terminal_name				=> ['S', 3],
+       rl_readline_name				=> ['S', 4],
+       rl_basic_word_break_characters		=> ['S', 5],
+       rl_basic_quote_characters		=> ['S', 6],
+       rl_completer_word_break_characters	=> ['S', 7],
+       rl_completer_quote_characters		=> ['S', 8],
+       rl_filename_quote_characters		=> ['S', 9],
+       rl_special_prefixes			=> ['S', 10],
+       history_no_expand_chars			=> ['S', 11],
+       history_search_delimiter_chars		=> ['S', 12],
        
        rl_line_buffer_len			=> ['I', 0],
        rl_point					=> ['I', 1],
@@ -556,7 +558,9 @@ FetchVar and StoreVar methods.  See 'GNU Readline Library Manual' and '
 GNU History Library Manual' for each variable.
 
     'rl_line_buffer'
+    'rl_prompt'
     'rl_library_version'
+    'rl_terminal_name'
     'rl_readline_name'
     'rl_basic_word_break_characters'
     'rl_basic_quote_characters'
