@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.101 2002-03-25 06:38:03 hiroo Exp $
+ *	$Id: Gnu.xs,v 1.102 2002-03-29 06:01:31 hiroo Exp $
  *
  *	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
  *
@@ -41,6 +41,8 @@ extern "C" {
 #    define PARAMS(protos) ()
 #  endif
 #endif /* !__STDC__ */
+
+typedef char * t_xstr;		/* string which must be xfreeed */
 
 /*
  * compatibility definitions
@@ -155,9 +157,9 @@ rl_filename_completion_function (s, i)
  * return values are now declared `const' where appropriate.
  */
 #define CONST
-#else  /* (RL_READLINE_VERSION < 0x0402) */
+#else  /* (RL_READLINE_VERSION >= 0x0402) */
 #define CONST const
-#endif /* (RL_READLINE_VERSION < 0x0402) */
+#endif /* (RL_READLINE_VERSION >= 0x0402) */
 
 /* features introduced by GNU Readline 4.2a */
 #if (RL_READLINE_VERSION < 0x0403)
@@ -183,7 +185,7 @@ extern char *tgetstr PARAMS((const char *, char **));
 /* from GNU Readline:xmalloc.c */
 extern char *xfree PARAMS((char *));
 
-#else /* !OS2_USEDLL */
+#else /* not OS2_USEDLL */
 static void
 xfree (string)
      char *string;
@@ -191,7 +193,7 @@ xfree (string)
   if (string)
     free (string);
 }
-#endif /* !OS2_USEDLL */
+#endif /* not OS2_USEDLL */
 
 static char *
 dupstr(s)			/* duplicate string */
@@ -307,9 +309,9 @@ static struct int_vars {
   { &history_length,				0, 0 },	/* 12 */
 #if (RL_READLINE_VERSION >= 0x0402)
   { &history_max_entries,			0, 1 },	/* 13 */
-#else
+#else /* (RL_READLINE_VERSION < 0x0402) */
   { &max_input_history,				0, 1 },	/* 13 */
-#endif /* (RL_READLINE_VERSION >= 0x0402) */
+#endif /* (RL_READLINE_VERSION < 0x0402) */
   { (int *)&history_expansion_char,		1, 0 },	/* 14 */
   { (int *)&history_subst_char,			1, 0 },	/* 15 */
   { (int *)&history_comment_char,		1, 0 },	/* 16 */
@@ -1136,38 +1138,32 @@ callback_handler_wrapper(line)
 
 MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu::XS
 
-########################################################################
-#
-#	Gnu Readline Library
-#
-########################################################################
-#
-#	2.1 Basic Behavior
-#
+ ########################################################################
+ #
+ #	Gnu Readline Library
+ #
+ ########################################################################
+ #
+ #	2.1 Basic Behavior
+ #
 
-# The function name "readline()" is reserved for a method name.
+ # The function name "readline()" is reserved for a method name.
 
-char *
+t_xstr
 rl_readline(prompt = NULL)
 	CONST char *	prompt
     PROTOTYPE: ;$
     CODE:
-	{
-	  RETVAL = readline(prompt);
+	RETVAL = readline(prompt);
+    OUTPUT:
+	RETVAL
 
-	  ST(0) = sv_newmortal(); /* default return value is 'undef' */
-	  if (RETVAL) {
-	    sv_setpv(ST(0), RETVAL);
-	    xfree(RETVAL);
-	  }
-	}
-
-#
-#	2.4 Readline Convenience Functions
-#
-#
-#	2.4.1 Naming a Function
-#
+ #
+ #	2.4 Readline Convenience Functions
+ #
+ #
+ #	2.4.1 Naming a Function
+ #
 rl_command_func_t *
 rl_add_defun(name, fn, key = -1)
 	const char *	name
@@ -1199,9 +1195,9 @@ rl_add_defun(name, fn, key = -1)
     OUTPUT:
 	RETVAL
 
-#
-#	2.4.2 Selection a Keymap
-#
+ #
+ #	2.4.2 Selection a Keymap
+ #
 Keymap
 rl_make_bare_keymap()
     PROTOTYPE:
@@ -1248,15 +1244,15 @@ rl_get_keymap_by_name(name)
 	CONST char *	name
     PROTOTYPE: $
 
-# Do not free the string returned.
+ # Do not free the string returned.
 char *
 rl_get_keymap_name(map)
 	Keymap map
     PROTOTYPE: $
 
-#
-#	2.4.3 Binding Keys
-#
+ #
+ #	2.4.3 Binding Keys
+ #
 int
 _rl_bind_key(key, function, map = rl_get_keymap())
 	int key
@@ -1280,8 +1276,8 @@ _rl_unbind_key(key, map = rl_get_keymap())
 
 #if (RL_READLINE_VERSION >= 0x0202)
 
-# rl_unbind_function_in_map() and rl_unbind_command_in_map() are introduced
-# by readline-2.2.
+ # rl_unbind_function_in_map() and rl_unbind_command_in_map() are introduced
+ # by readline-2.2.
 
 int
 _rl_unbind_function(function, map = rl_get_keymap())
@@ -1306,8 +1302,8 @@ _rl_unbind_command(command, map = rl_get_keymap())
 #endif /* (RL_READLINE_VERSION >= 0x0202) */
 
 #if (RL_READLINE_VERSION >= 0x0402)
-# rl_set_key() is introduced by readline-4.2 and equivalent with
-# rl_generic_bind(ISFUNC, keyseq, (char *)function, map).
+ # rl_set_key() is introduced by readline-4.2 and equivalent with
+ # rl_generic_bind(ISFUNC, keyseq, (char *)function, map).
 int
 _rl_set_key(keyseq, function, map = rl_get_keymap())
 	const char *	keyseq
@@ -1370,9 +1366,9 @@ rl_read_init_file(filename = NULL)
 	CONST char *	filename
     PROTOTYPE: ;$
 
-#
-#	2.4.4 Associating Function Names and Bindings
-#
+ #
+ #	2.4.4 Associating Function Names and Bindings
+ #
 int
 _rl_call_function(function, count = 1, key = -1)
 	rl_command_func_t *	function
@@ -1389,7 +1385,7 @@ rl_named_function(name)
 	CONST char *	name
     PROTOTYPE: $
 
-# Do not free the string returned.
+ # Do not free the string returned.
 const char *
 rl_get_function_name(function)
 	rl_command_func_t *	function
@@ -1469,7 +1465,7 @@ void
 rl_list_funmap_names()
     PROTOTYPE:
 
-# return list of all function name. (Term::Readline::Gnu specific function)
+ # return list of all function name. (Term::Readline::Gnu specific function)
 void
 rl_get_all_function_names()
     PROTOTYPE:
@@ -1513,7 +1509,7 @@ rl_funmap_names()
 	}
 
 #if (RL_READLINE_VERSION >= 0x0402)
-# rl_add_funmap_entry() is introduced by readline-4.2.
+ # rl_add_funmap_entry() is introduced by readline-4.2.
 int
 _rl_add_funmap_entry(name, function)
 	const char *		name
@@ -1526,9 +1522,9 @@ _rl_add_funmap_entry(name, function)
 
 #endif /* (RL_READLINE_VERSION >= 0x0402) */
 
-#
-#	2.4.5 Allowing Undoing
-#
+ #
+ #	2.4.5 Allowing Undoing
+ #
 int
 rl_begin_undo_group()
     PROTOTYPE:
@@ -1562,9 +1558,9 @@ rl_modifying(start = 0, end = rl_end)
 	int end
     PROTOTYPE: ;$$
 
-#
-#	2.4.6 Redisplay
-#
+ #
+ #	2.4.6 Redisplay
+ #
 void
 rl_redisplay()
     PROTOTYPE:
@@ -1631,9 +1627,9 @@ rl_set_prompt(prompt)
 
 #endif /* (RL_READLINE_VERSION >= 0x0402) */
 
-#
-#	2.4.7 Modifying Text
-#
+ #
+ #	2.4.7 Modifying Text
+ #
 int
 rl_insert_text(text)
 	CONST char *	text
@@ -1645,13 +1641,11 @@ rl_delete_text(start = 0, end = rl_end)
 	int end
     PROTOTYPE: ;$$
 
-char *
+t_xstr
 rl_copy_text(start = 0, end = rl_end)
 	int start
 	int end
     PROTOTYPE: ;$$
-    CLEANUP:
-	xfree(RETVAL);
 
 int
 rl_kill_text(start = 0, end = rl_end)
@@ -1659,8 +1653,8 @@ rl_kill_text(start = 0, end = rl_end)
 	int end
     PROTOTYPE: ;$$
 
-# rl_push_macro_input() is documented by readline-4.2 but it has been
-# implemented from 2.2.1.
+ # rl_push_macro_input() is documented by readline-4.2 but it has been
+ # implemented from 2.2.1.
 
 void
 rl_push_macro_input(macro)
@@ -1669,9 +1663,9 @@ rl_push_macro_input(macro)
     CODE:
 	rl_push_macro_input(dupstr(macro));
 
-#
-#	2.4.8 Character Input
-#
+ #
+ #	2.4.8 Character Input
+ #
 int
 rl_read_key()
     PROTOTYPE:
@@ -1707,9 +1701,9 @@ rl_set_keyboard_input_timeout(usec)
 
 #endif /* (RL_READLINE_VERSION >= 0x0402) */
 
-#
-#	2.4.9 Terminal Management
-#
+ #
+ #	2.4.9 Terminal Management
+ #
 
 #if (RL_VERSION_MAJOR >= 4)
 
@@ -1736,9 +1730,9 @@ rl_reset_terminal(terminal_name = NULL)
 	CONST char *	terminal_name
     PROTOTYPE: ;$
 
-#
-#	2.4.10 Utility Functions
-#
+ #
+ #	2.4.10 Utility Functions
+ #
 int
 rl_initialize()
     PROTOTYPE:
@@ -1803,14 +1797,14 @@ rl_display_match_list(pmatches, plen = -1, pmax = -1)
 
 #endif /* (RL_VERSION_MAJOR >= 4) */
 
-#
-#	2.4.11 Miscellaneous Functions
-#
+ #
+ #	2.4.11 Miscellaneous Functions
+ #
 
-# rl_macro_bind() is documented by readline-4.2 but it has been implemented 
-# from 2.2.1.
-# It is equivalent with 
-# rl_generic_bind(ISMACR, keyseq, (char *)macro_keys, map).
+ # rl_macro_bind() is documented by readline-4.2 but it has been implemented 
+ # from 2.2.1.
+ # It is equivalent with 
+ # rl_generic_bind(ISMACR, keyseq, (char *)macro_keys, map).
 int
 _rl_macro_bind(keyseq, macro, map = rl_get_keymap())
 	CONST char *	keyseq
@@ -1822,16 +1816,16 @@ _rl_macro_bind(keyseq, macro, map = rl_get_keymap())
     OUTPUT:
 	RETVAL
 
-# rl_macro_dumper is documented by Readline 4.2,
-# but have been implemented for 2.2.1.
+ # rl_macro_dumper is documented by Readline 4.2,
+ # but have been implemented for 2.2.1.
 
 void
 rl_macro_dumper(readable = 0)
 	int readable
     PROTOTYPE: ;$
 
-# rl_variable_bind() is documented by readline-4.2 but it has been implemented 
-# from 2.2.1.
+ # rl_variable_bind() is documented by readline-4.2 but it has been implemented
+ # from 2.2.1.
 
 int
 rl_variable_bind(name, value)
@@ -1839,8 +1833,8 @@ rl_variable_bind(name, value)
 	CONST char *	value
     PROTOTYPE: $$
 
-# rl_variable_dumper is documented by Readline 4.2,
-# but have been implemented for 2.2.1.
+ # rl_variable_dumper is documented by Readline 4.2,
+ # but have been implemented for 2.2.1.
 
 void
 rl_variable_dumper(readable = 0)
@@ -1856,18 +1850,18 @@ rl_set_paren_blink_timeout(usec)
 
 #endif /* (RL_READLINE_VERSION >= 0x0402) */
 
-# rl_get_termcap() is documented by readline-4.2 but it has been implemented 
-# from 2.2.1.
+ # rl_get_termcap() is documented by readline-4.2 but it has been implemented 
+ # from 2.2.1.
 
-# Do not free the string returned.
+ # Do not free the string returned.
 char *
 rl_get_termcap(cap)
 	CONST char *	cap
     PROTOTYPE: $
 
-#
-#	2.4.12 Alternate Interface
-#
+ #
+ #	2.4.12 Alternate Interface
+ #
 
 void
 rl_callback_handler_install(prompt, lhandler)
@@ -1907,9 +1901,9 @@ void
 rl_callback_handler_remove()
     PROTOTYPE:
 
-#
-#	2.5 Readline Signal Handling
-#
+ #
+ #	2.5 Readline Signal Handling
+ #
 
 void
 rl_cleanup_after_signal()
@@ -1957,9 +1951,9 @@ int
 rl_clear_signals()
     PROTOTYPE:
 
-#
-#	2.6 Custom Completers
-#
+ #
+ #	2.6 Custom Completers
+ #
 
 int
 rl_complete_internal(what_to_do = TAB)
@@ -2015,70 +2009,53 @@ rl_completion_matches(text, fn = NULL)
 	  }
 	}
 
-char *
+t_xstr
 rl_filename_completion_function(text, state)
 	const char *	text
 	int state
     PROTOTYPE: $$
-    CODE:
-	{
-	  RETVAL = rl_filename_completion_function(text, state);
-	  ST(0) = sv_newmortal();
-	  if (RETVAL) {
-	    sv_setpv(ST(0), RETVAL);
-	    xfree(RETVAL);
-	  }
-	}
 
-char *
+t_xstr
 rl_username_completion_function(text, state)
 	const char *	text
 	int state
     PROTOTYPE: $$
-    CODE:
-	{
-	  RETVAL = rl_username_completion_function(text, state);
-	  ST(0) = sv_newmortal();
-	  if (RETVAL) {
-	    sv_setpv(ST(0), RETVAL);
-	    xfree(RETVAL);
-	  }
-	}
-
-########################################################################
-#
-#	Gnu History Library
-#
-########################################################################
 
-#
-#	2.3.1 Initializing History and State Management
-#
+
+ ########################################################################
+ #
+ #	Gnu History Library
+ #
+ ########################################################################
+
+ #
+ #	2.3.1 Initializing History and State Management
+ #
 void
 using_history()
     PROTOTYPE:
 
-#  history_get_history_state() and history_set_history_state() are useless
-#  and too dangerous to be used in Perl code
-# void
-# history_get_history_state()
-#     PROTOTYPE:
-#     PPCODE:
-# 	{
-# 	  HISTORY_STATE *state;
-#
-# 	  state = history_get_history_state();
-# 	  EXTEND(sp, 4);
-# 	  PUSHs(sv_2mortal(newSViv(state->offset)));
-# 	  PUSHs(sv_2mortal(newSViv(state->length)));
-# 	  PUSHs(sv_2mortal(newSViv(state->size)));
-# 	  PUSHs(sv_2mortal(newSViv(state->flags)));
-# 	  xfree((char *)state);
-# 	}
+ #  history_get_history_state() and history_set_history_state() are useless
+ #  and too dangerous to be used in Perl code
+ # void
+ # history_get_history_state()
+ #     PROTOTYPE:
+ #     PPCODE:
+ # 	{
+ # 	  HISTORY_STATE *state;
+ #
+ # 	  state = history_get_history_state();
+ # 	  EXTEND(sp, 4);
+ # 	  PUSHs(sv_2mortal(newSViv(state->offset)));
+ # 	  PUSHs(sv_2mortal(newSViv(state->length)));
+ # 	  PUSHs(sv_2mortal(newSViv(state->size)));
+ # 	  PUSHs(sv_2mortal(newSViv(state->flags)));
+ # 	  xfree((char *)state);
+ # 	}
 
-#
-#	2.3.2 History List Management
-#
+ #
+ #	2.3.2 History List Management
+ #
 
 void
 add_history(string)
@@ -2143,11 +2120,11 @@ int
 history_is_stifled()
     PROTOTYPE:
 
-#
-#	2.3.3 Information about the History List
-#
+ #
+ #	2.3.3 Information about the History List
+ #
 
-# history_list() is implemented as a perl function in Gnu.pm.
+ # history_list() is implemented as a perl function in Gnu.pm.
 
 int
 where_history()
@@ -2166,9 +2143,9 @@ int
 history_total_bytes()
     PROTOTYPE:
 
-#
-#	2.3.4 Moving Around the History List
-#
+ #
+ #	2.3.4 Moving Around the History List
+ #
 int
 history_set_pos(pos)
 	int pos
@@ -2182,9 +2159,9 @@ HIST_ENTRY *
 next_history()
     PROTOTYPE:
 
-#
-#	2.3.5 Searching the History List
-#
+ #
+ #	2.3.5 Searching the History List
+ #
 int
 history_search(string, direction = -1)
 	CONST char *	string
@@ -2204,9 +2181,9 @@ history_search_pos(string, direction = -1, pos = where_history())
 	int pos
     PROTOTYPE: $;$$
 
-#
-#	2.3.6 Managing the History File
-#
+ #
+ #	2.3.6 Managing the History File
+ #
 int
 read_history_range(filename = NULL, from = 0, to = -1)
 	CONST char *	filename
@@ -2231,9 +2208,9 @@ history_truncate_file(filename = NULL, nlines = 0)
 	int nlines
     PROTOTYPE: ;$$
 
-#
-#	2.3.7 History Expansion
-#
+ #
+ #	2.3.7 History Expansion
+ #
 void
 history_expand(line)
 	# should be defined as 'const char *'
@@ -2300,7 +2277,7 @@ history_tokenize(text)
 
 #define DALLAR '$'		/* define for xsubpp bug */
 
-char *
+t_xstr
 _history_arg_extract(line, first = 0 , last = DALLAR)
 	CONST char *	line
 	int first
@@ -2310,13 +2287,11 @@ _history_arg_extract(line, first = 0 , last = DALLAR)
 	RETVAL = history_arg_extract(first, last, line);
     OUTPUT:
 	RETVAL
-    CLEANUP:
-	xfree(RETVAL);
 
 
-#
-#	GNU Readline/History Library Variable Access Routines
-#
+ #
+ #	GNU Readline/History Library Variable Access Routines
+ #
 
 MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu::Var
 
@@ -2603,22 +2578,23 @@ tgetstr(id)
 	const char *	id
     PROTOTYPE: $
     CODE:
-	{
-	  /*
-	   * The magic number `2032' is derived from bash
-	   * terminal.c:_rl_init_terminal_io().
-	   */
-	  char buffer[2032];
-	  char *bp = buffer;
+	/*
+	 * The magic number `2032' is derived from bash
+	 * terminal.c:_rl_init_terminal_io().
+	 */
+	char buffer[2032];
+	char *bp = buffer;
 
-	  ST(0) = sv_newmortal();
-	  if (id) {
-	    RETVAL = tgetstr(id, &bp);
+	ST(0) = sv_newmortal();
+	if (id) {
+	  RETVAL = tgetstr(id, &bp); /* don't free returned string */
+	  if (RETVAL) {
 	    sv_setpv(ST(0), RETVAL);
 	  }
 	}
-/*
- * Local Variables:
- * c-default-style: "gnu"
- * End:
- */
+
+ #
+ # Local Variables:
+ # c-default-style: "gnu"
+ # End:
+ #
