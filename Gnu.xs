@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.77 1999-04-04 11:22:17 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.78 1999-04-04 12:20:25 hayashi Exp $
  *
  *	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
  *
@@ -1434,7 +1434,8 @@ rl_display_match_list(pmatches, plen = -1, pmax = -1)
 	PROTOTYPE: $;$$
 	CODE:
 	{
-	  unsigned int len, max, l, i;
+	  unsigned int len, max, i;
+	  STRLEN l;
 	  char **matches;
 	  AV *av_matches;
 	  SV *pv, **pvp;
