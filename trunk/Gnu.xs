@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.42 1997-01-21 16:51:55 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.43 1997-01-22 14:59:33 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -53,6 +53,7 @@ rl_get_function_name (Function *function)
 /*
  *	string variable table for _rl_store_str(), _rl_fetch_str()
  */
+
 static struct str_vars {
   char **var;
   int accessed;
@@ -92,7 +93,7 @@ static struct int_vars {
   &rl_pending_input,				0,	/* 4 */
 
   &rl_completion_query_items,			0,	/* 5 */
-  &rl_completion_append_character,		0,	/* 6 : int */
+  &rl_completion_append_character,		0,	/* 6 */
   &rl_ignore_completion_duplicates,		0,	/* 7 */
   &rl_filename_completion_desired,		0,	/* 8 */
   &rl_filename_quoting_desired,			0,	/* 9 */
@@ -149,6 +150,7 @@ static struct fn_vars {
 /*
  * Perl function wrappers
  */
+
 static int void_arg_func_wrapper(int);
 
 static int
@@ -189,6 +191,7 @@ void_arg_func_wrapper(int type)
 /*
  * call a perl function as rl_completion_entry_function
  */
+
 static char *
 completion_entry_function_wrapper(char *text, int state)
 {
@@ -224,6 +227,7 @@ completion_entry_function_wrapper(char *text, int state)
 /*
  * call a perl function as rl_attempted_completion_function
  */
+
 static char **
 attempted_completion_function_wrapper(char *text, int start, int end)
 {
@@ -276,6 +280,7 @@ attempted_completion_function_wrapper(char *text, int start, int end)
  *	If you need more custom functions, define more funntion_wrapper_xx()
  *	and add entry on fntbl[].
  */
+
 static int function_wrapper(int count, int key, int id);
 static int function_wrapper_00(int c, int k) { function_wrapper(c, k,  0); }
 static int function_wrapper_01(int c, int k) { function_wrapper(c, k,  1); }
@@ -350,6 +355,7 @@ callback_handler_wrapper(char *line)
 /*
  *	Misc.
  */
+
 static char *
 dupstr(s)			/* duplicate string */
      char *s;
@@ -357,22 +363,11 @@ dupstr(s)			/* duplicate string */
   /*
    * Use xmalloc(), because allocated block will be freed in GNU
    * Readline Library routine.
-   * Don't make a macro.  Because 's' is evaled twice.
+   * Don't make a macro.  Because 's' is evaluated twice.
    */
   strcpy (xmalloc (strlen (s) + 1), s);
 }
 
-#if 0
-static int
-rl_debug(int count, int key)
-{
-  warn("count:%d,key:%d\n", count, key);
-  warn("rl_get_keymap():%s\n", rl_get_keymap_name(rl_get_keymap()));
-  warn("rl_executing_keymap:%s\n", rl_get_keymap_name(rl_executing_keymap));
-  warn("rl_binding_keymap:%s\n", rl_get_keymap_name(rl_binding_keymap));
-  return 0;
-}
-#endif
 MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu
 
 ########################################################################
@@ -409,8 +404,8 @@ rl_readline(prompt = NULL)
 Function *
 rl_add_defun(name, fn, key = -1)
 	char *name
-	SV *	fn
-	int	key
+	SV *fn
+	int key
 	PROTOTYPE: $$;$
 	CODE:
 	{
@@ -579,8 +574,8 @@ rl_read_init_file(filename = NULL)
 int
 _rl_call_function(function, count = 1, key = -1)
 	Function *function
-	int	count
-	int	key
+	int count
+	int key
 	PROTOTYPE: $;$$
 	CODE:
 	{
@@ -665,7 +660,7 @@ _rl_invoking_keyseqs(function, map = rl_get_keymap())
 
 void
 rl_function_dumper(readable = 0)
-	int	readable
+	int readable
 	PROTOTYPE: ;$
 
 void
@@ -685,10 +680,10 @@ rl_end_undo_group()
 
 void
 rl_add_undo(what, start, end, text)
-	int	what
-	int	start
-	int	end
-	char	*text
+	int what
+	int start
+	int end
+	char *text
 	PROTOTYPE: $$$$
 	CODE:
 	{
@@ -705,8 +700,8 @@ rl_do_undo()
 
 int
 rl_modifying(start = 0, end = rl_end)
-	int	start
-	int	end
+	int start
+	int end
 	PROTOTYPE: ;$$
 
 #
@@ -749,25 +744,25 @@ rl_clear_message()
 #
 int
 rl_insert_text(text)
-	char	*text
+	char *text
 	PROTOTYPE: $
 
 int
 rl_delete_text(start = 0, end = rl_end)
-	int	start
-	int	end
+	int start
+	int end
 	PROTOTYPE: ;$$
 
 char *
 rl_copy_text(start = 0, end = rl_end)
-	int	start
-	int	end
+	int start
+	int end
 	PROTOTYPE: ;$$
 
 int
 rl_kill_text(start = 0, end = rl_end)
-	int	start
-	int	end
+	int start
+	int end
 	PROTOTYPE: ;$$
 
 #
@@ -784,7 +779,7 @@ rl_getc(stream)
 
 int
 rl_stuff_char(c)
-	int	c
+	int c
 	PROTOTYPE: $
 
 int
@@ -805,8 +800,8 @@ ding()
 #
 void
 rl_callback_handler_install(prompt, lhandler)
-	char * prompt
-	SV * lhandler
+	char *prompt
+	SV *lhandler
 	PROTOTYPE: $$
 	CODE:
 	{
@@ -848,8 +843,8 @@ rl_complete_internal(what_to_do = TAB)
 
 void
 completion_matches(text, fn = NULL)
-	char * text
-	SV * fn
+	char *text
+	SV *fn
 	PROTOTYPE: $;$
 	PPCODE:
 	{
@@ -1138,7 +1133,7 @@ history_expand(line)
 
 void
 _rl_store_str(pstr, id)
-	const char *	pstr
+	const char *pstr
 	int id
 	PROTOTYPE: $$
 	CODE:
@@ -1299,8 +1294,8 @@ _rl_fetch_keymap(id)
 
 void
 _rl_store_function(fn, id)
-	SV *	fn
-	int	id
+	SV *fn
+	int id
 	PROTOTYPE: $$
 	CODE:
 	{
@@ -1328,7 +1323,7 @@ _rl_store_function(fn, id)
 
 void
 _rl_fetch_function(id)
-	int	id
+	int id
 	PROTOTYPE: $
 	CODE:
 	{
