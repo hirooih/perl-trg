@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.40 1997-03-18 17:49:29 hayashi Exp $
+#	$Id: Gnu.pm,v 1.41 1997-03-22 13:41:33 hayashi Exp $
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
 #
@@ -174,6 +174,9 @@ is in C<Features>.
 =cut
 
 use vars qw($_Preput $_Saved_Startup_Hook);
+
+# to peacify -w
+$Term::ReadLine::registered = $Term::ReadLine::registered;
 
 sub readline {			# should be ReadLine
     my $self = shift;
@@ -683,7 +686,7 @@ sub AUTOLOAD {
 	croak "Cannot do `$AUTOLOAD' in Term::ReadLine::Gnu";
     }
     local $^W = 0;		# Why this line is necessary ?
-    *$AUTOLOAD = sub { shift; &$name };
+    *$AUTOLOAD = sub { shift; &$name(@_); };
     goto &$AUTOLOAD;
 }
 1;
