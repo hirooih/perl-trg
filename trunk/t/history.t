@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	history.t --- Term::ReadLine:GNU History Library Test Script
 #
-#	$Id: history.t,v 1.2 1998-03-26 14:49:26 hayashi Exp $
+#	$Id: history.t,v 1.3 1998-05-08 17:40:03 hayashi Exp $
 #
 #	Copyright (c) 1998 Hiroo Hayashi.  All rights reserved.
 #
@@ -363,7 +363,7 @@ print $cindex == 16 && $text eq 'blue red' ? "ok $n\n" : "not ok $n\n"; $n++;
 
 # history_tokenize(), history_arg_extract()
 
-$string = 'foo   "double quoted"& \'single quoted\' (paren)';
+$string = ' foo   "double quoted"& \'single quoted\' (paren)';
 # for history_tokenize()
 @exp = ('foo', '"double quoted"', '&', '\'single quoted\'', '(', 'paren', ')');
 # for history_arg_extract()
