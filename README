@@ -1,4 +1,4 @@
-$Id: README,v 1.13 1999-02-22 16:35:40 hayashi Exp $
+$Id: README,v 1.14 1999-04-04 04:26:30 hayashi Exp $
 
 Term::ReadLine::Gnu --- GNU Readline Library Wrapper Module
 
@@ -42,10 +42,6 @@ How to build/install:
 	See INSTALL.
 
 Bugs:
-	If you use Solaris 2.5 and dynamic loading, "make test" causes
-	core dump.  The only fix I know now is to link this module
-	statically.  See INSTALL for more details.
-
 	The GNU Readline Library is very stable.  But this is my first
 	XS programming, my first Perl module programming, and my first
 	object oriented programming, and...  There must be many bugs
@@ -58,6 +54,75 @@ Author:
 
 Revision History:
 
+1.05  1999-04-04
+	- bug fix
+		Term::ReadLine::Perl compatibility variable
+		`completion_function' and function `rl_filename_list' are
+		now compatible with Term::ReadLine::Perl.  Completion code
+		written for Term::ReadLine::Perl, e.g. perl5db.pl, works
+		with this module.
+
+		search text of list_completion is quoted
+	
+	- add support of new variables and functions introduced by GNU
+	  Readline Library Version 4.0
+	    new variable
+		rl_erase_empty_line
+		rl_catch_signals
+		rl_catch_sigwinch
+		rl_pre_input_hook
+		completion_display_matches_hook
+		history_inhibit_expansion_function
+	    new function
+		rl_display_match_list()
+		rl_cleanup_after_signal()
+		rl_free_line_state()
+		rl_reset_after_signal()
+		rl_resize_terminal()
+		rl_set_signals()
+		rl_clear_signals()
+	
+	- add support of variables and function which were not supported
+	  yet
+		filename_quoting_function
+		filename_dequoting_function
+		char_is_quoted_p
+		ignore_some_completions_function
+		directory_completion_hook
+
+	  	rl_get_all_function_names()
+
+	- add support of functions which are specific to Term::ReadLine::Gnu
+		display_readline_version()
+		change_ornaments()
+		shadow_redisplay()
+
+	- rename some functions for the orthogonality
+		rl_unbind_function_in_map to rl_unbind_function
+		rl_unbind_command_in_map to rl_unbind_command
+
+	- `make test' is executed non-interactively and comprehensively
+	
+	- sample code improvement
+	  eg/perlsh
+	  	Perl symbol completion was rewritten and much more
+		improved.
+		SIGINT clears the current line
+		add support \w (current working package) in the prompt
+		string
+		add support `afterinit' hook as Perl debugger.
+	
+	  eg/pftp
+		password input is now invisible.
+		displaying of completion candidates are improved by using
+		completion_display_matches_hook.
+	
+	- internal changes
+		Perl code for Term::ReadLine::Gnu::XS package are moved
+		into separate file Gnu/XS.pm and `AutoSplit'ed.
+	
+		replace operate_and_get_next() to one borrowed from bash.
+	
 1.04  1999-02-23
 	- fix a bug by which $if-$endif feature in ~/.inputrc was
 	  disabled.
