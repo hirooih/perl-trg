@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.68 1999-03-10 15:12:23 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.69 1999-03-10 15:45:59 hayashi Exp $
  *
  *	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
  *
@@ -1337,8 +1337,11 @@ ding()
 #if (RLMAJORVER >= 4)
 
 void
-rl_display_match_list(...)
-	PROTOTYPE: @
+rl_display_match_list(pmatches, plen = -1, pmax = -1)
+	SV *pmatches
+	int plen
+	int pmax
+	PROTOTYPE: $;$$
 	CODE:
 	{
 	  int len, max, l, i;
@@ -1346,51 +1349,29 @@ rl_display_match_list(...)
 	  AV *av_matches;
 	  SV *pv, **pvp;
 
-	  if (items == 0)
+	  if (SvTYPE(SvRV(pmatches)) != SVt_PVAV) {
+	    warn("Gnu.xs:_rl_display_match_list: the 1st arguments must be a reference of an array\n");
 	    return;
-	  else if (SvROK(ST(0))) {
-	    /*
-	     * If the first argument is a reference of an array, use it as
-	     * matches.  If there are some other arguments, ignore them.
-	     */
-	    if (SvTYPE(SvRV(ST(0))) != SVt_PVAV) {
-	      warn("Gnu.xs:_rl_display_match_list: arguments must be an array or a reference of an array\n");
-	      return;
-	    }
-	    av_matches = (AV *)SvRV(ST(0));
-	    /* index zero contains possible match and is ignored */
-	    if ((len = av_len(av_matches) + 1 - 1) == 0)
-	      return;
-	    matches = (char **)xmalloc (sizeof(char *) * (len + 2));
-	    max = 0;
-	    for (i = 1; i <= len; i++) {
-	      pvp = av_fetch(av_matches, i, 0);
-	      if (SvPOKp(*pvp)) {
-		matches[i] = dupstr(SvPV(*pvp, l));
-		if (l > max)
-		  max = l;
-	      }
-	    }
-	    matches[len + 1] = NULL;
-	  } else {
-	    /*
-	     * Assume arguments are array of strings.
-	     */
-	    /* index zero contains possible match and is ignored */
-	    len = items - 1;
-	    matches = (char **)xmalloc (sizeof(char *) * (len + 2));
-	    max = 0;
-	    for (i = 1 ; i <= len; i++) {
-	      pv = ST(i);
-	      if (SvPOKp(pv)) {
-		matches[i] = dupstr(SvPV(pv, l));
-		if (l > max)
-		  max = l;
-	      }
-	    }
-	    matches[len + 1] = NULL;
 	  }
-	  rl_display_match_list(matches, len, max);
+	  av_matches = (AV *)SvRV(ST(0));
+	  /* index zero contains possible match and is ignored */
+	  if ((len = av_len(av_matches) + 1 - 1) == 0)
+	    return;
+	  matches = (char **)xmalloc (sizeof(char *) * (len + 2));
+	  max = 0;
+	  for (i = 1; i <= len; i++) {
+	    pvp = av_fetch(av_matches, i, 0);
+	    if (SvPOKp(*pvp)) {
+	      matches[i] = dupstr(SvPV(*pvp, l));
+	      if (l > max)
+		max = l;
+	    }
+	  }
+	  matches[len + 1] = NULL;
+
+	  rl_display_match_list(matches,
+				plen < 0 ? len : plen,
+				pmax < 0 ? max : pmax);
 
 	  for (i = 1; i <= len; i++)
 	    xfree(matches[i]);
