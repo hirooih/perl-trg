@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.35 1997-02-04 16:24:02 hayashi Exp $
+#	$Id: Gnu.pm,v 1.36 1997-03-07 15:14:33 hayashi Exp $
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
 #
@@ -50,7 +50,7 @@ use strict;
 use vars qw($VERSION @ISA %EXPORT_TAGS @EXPORT_OK);
 use Carp;
 
-$VERSION = '0.06';
+$VERSION = '0.07';
 
 require Exporter;
 require DynaLoader;
@@ -94,7 +94,7 @@ my @miscfn = qw( rl_begin_undo_group	rl_end_undo_group	rl_add_undo
 		 rl_read_key		rl_getc			rl_stuff_char
 		 rl_initialize		rl_reset_terminal	ding
 
-		 $rl_line_buffer	$rl_buffer_len
+		 $rl_line_buffer
 		 $rl_point		$rl_end			$rl_mark
 		 $rl_done		$rl_pending_input	$rl_prompt
 		 $rl_instream		$rl_outstream
@@ -218,6 +218,9 @@ my $Next_Operate_Index;
 sub new {
     my $this = shift;		# Package
     my $class = ref($this) || $this;
+
+    # initialize the GNU Readline Library first
+    rl_initialize();
 
     my $name = shift;
     rl_store_var('rl_readline_name', $name);
@@ -638,17 +641,10 @@ sub rl_store_var ($$) {
     my ($type, $id) = @{$_rl_vars{$name}};
     if ($type eq 'S') {
 	if ($name eq 'rl_line_buffer') {
-	    # If you modify rl_line_buffer directly, you must manage
-	    # rl_line_buffer_len.
-	    &rl_begin_undo_group;
-	    &rl_delete_text();
-	    rl_store_var('rl_point', 0); # rl_delete_text() does not
-                                         # care rl_point ;-<
-	    rl_insert_text($value);
-	    &rl_end_undo_group;
-	    return $value;
+	    return _rl_store_rl_line_buffer($value);
+	} else {
+	    return _rl_store_str($value, $id);
 	}
-	return _rl_store_str($value, $id);
     } elsif ($type eq 'I') {
 	return _rl_store_int($value, $id);
     } elsif ($type eq 'C') {
@@ -1214,7 +1210,7 @@ support TkRunning as Term::ReadLine::Perl
 
 =head1 BUGS
 
-rl_add_defun() can be defined up to 16 functions.
+rl_add_defun() can define up to 16 functions.
 
 rl_message() does not work.  See display_readline_version() in
 t/readline.t.
