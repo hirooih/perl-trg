@@ -1,9 +1,9 @@
 #
 #	Makefile.PL for Term::ReadLine::Gnu
 #
-#	$Id: Makefile.PL,v 1.23 2001-10-26 03:45:39 hayashi Exp $
+#	$Id: Makefile.PL,v 1.24 2002-03-28 03:46:18 hiroo Exp $
 #
-#	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 2002 Hiroo Hayashi.  All rights reserved.
 #		<hiroo.hayashi@computer.org>
 #
 #	This program is free software; you can redistribute it and/or
@@ -50,11 +50,9 @@ die "Could not find neither libtermcap.a, libncureses.a, or libcurses.\n"
 # Ignore outside of OS/2. Set to 1 if linking with readline.dll under
 # OS/2.
 # Check ftp://ftp.math.ohio-state.edu/pub/users/ilya/os2/
-$os2_usedll = $Config{osname} eq 'os2';
-if ($Config{osname} =~ /cygwin/i) {
-    $libs = "-lreadline $TERMCAP_LIB -luser32";
-} elsif ($os2_usedll == 0) {
+if ($Config{osname} ne 'os2') {
     $libs = "-lreadline $TERMCAP_LIB";
+    $ldflags = '-static' if ($Config{osname} =~ /cygwin/i);
 } else {
     $libs = '-lreadline_import';
     $defs .= ' -DOS2_USEDLL';
@@ -81,7 +79,7 @@ EOF
 close(F);
 
 # compile it
-$comp_cmd = "$Config{cc} $RLINC $Config{ccflags} $defs $frlver -o rlver $RLLIB $Config{ldflags} $libs";
+$comp_cmd = "$Config{cc} $RLINC $Config{ccflags} $defs $frlver -o rlver $RLLIB $ldflags $Config{ldflags} $libs";
 print $comp_cmd, "\n";
 system($comp_cmd);
 if ($?) {
@@ -124,9 +122,9 @@ WriteMakefile(
     'VERSION_FROM' => 'Gnu.pm',
     'LIBS'	=> [ "$RLLIB $libs" ],
     'LDFLAGS'	=> "$RLLIB $Config{ldflags}",
-    'LDDLFLAGS'	=> "$RLLIB $Config{lddlflags}",
+    'LDDLFLAGS'	=> "$RLLIB $ldflags $Config{lddlflags}",
     'DEFINE'	=> $defs,
-    ($os2_usedll ? 
+    ($Config{osname} eq 'os2' ?
 	(
 	IMPORTS	=> { xfree => 'emxlibcm.401' },	# Yuck!
 	) : () ),
