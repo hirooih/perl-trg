@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.85 2001-02-14 15:17:20 hayashi Exp $
+#	$Id: Gnu.pm,v 1.86 2001-03-09 15:58:03 hayashi Exp $
 #
 #	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
 #
@@ -469,7 +469,8 @@ use vars qw(%_rl_vars);
        rl_special_prefixes			=> ['S', 10],
        history_no_expand_chars			=> ['S', 11],
        history_search_delimiter_chars		=> ['S', 12],
-       rl_executing_macro			=> ['S', 13], # GPL4.2
+       rl_executing_macro			=> ['S', 13], # GRL4.2
+       history_word_delimiters			=> ['S', 14], # GRL4.2
        
        rl_point					=> ['I', 0],
        rl_end					=> ['I', 1],
@@ -484,24 +485,25 @@ use vars qw(%_rl_vars);
        rl_inhibit_completion			=> ['I', 10],
        history_base				=> ['I', 11],
        history_length				=> ['I', 12],
-       max_input_history			=> ['I', 13],
+       history_max_entries			=> ['I', 13],
+       max_input_history			=> ['I', 13], # before GRL 4.2
        history_expansion_char			=> ['C', 14],
        history_subst_char			=> ['C', 15],
        history_comment_char			=> ['C', 16],
        history_quotes_inhibit_expansion		=> ['I', 17],
-       rl_erase_empty_line			=> ['I', 18], # GPL 4.0
-       rl_catch_signals				=> ['I', 19], # GPL 4.0
-       rl_catch_sigwinch			=> ['I', 20], # GPL 4.0
-       rl_already_prompted			=> ['I', 21], # GPL 4.1
-       rl_num_chars_to_read			=> ['I', 22], # GPL 4.2
-       rl_dispatching				=> ['I', 23], # GPL 4.2
-       rl_gnu_readline_p			=> ['I', 24], # GPL 4.2
-       rl_readline_state			=> ['I', 25], # GPL 4.2
-       rl_explicit_arg				=> ['I', 26], # GPL 4.2
-       rl_numeric_arg				=> ['I', 27], # GPL 4.2
-       rl_editing_mode				=> ['I', 28], # GPL 4.2
-       rl_attempted_completion_over		=> ['I', 29], # GPL 4.2
-       rl_completion_type			=> ['I', 30], # GPL 4.2
+       rl_erase_empty_line			=> ['I', 18], # GRL 4.0
+       rl_catch_signals				=> ['I', 19], # GRL 4.0
+       rl_catch_sigwinch			=> ['I', 20], # GRL 4.0
+       rl_already_prompted			=> ['I', 21], # GRL 4.1
+       rl_num_chars_to_read			=> ['I', 22], # GRL 4.2
+       rl_dispatching				=> ['I', 23], # GRL 4.2
+       rl_gnu_readline_p			=> ['I', 24], # GRL 4.2
+       rl_readline_state			=> ['I', 25], # GRL 4.2
+       rl_explicit_arg				=> ['I', 26], # GRL 4.2
+       rl_numeric_arg				=> ['I', 27], # GRL 4.2
+       rl_editing_mode				=> ['I', 28], # GRL 4.2
+       rl_attempted_completion_over		=> ['I', 29], # GRL 4.2
+       rl_completion_type			=> ['I', 30], # GRL 4.2
 
        rl_startup_hook				=> ['F', 0],
        rl_event_hook				=> ['F', 1],
@@ -515,10 +517,10 @@ use vars qw(%_rl_vars);
        rl_ignore_some_completions_function	=> ['F', 9],
        rl_directory_completion_hook		=> ['F', 10],
        history_inhibit_expansion_function	=> ['F', 11],
-       rl_pre_input_hook			=> ['F', 12], # GPL 4.0
-       rl_completion_display_matches_hook	=> ['F', 13], # GPL 4.0
-       rl_prep_term_function			=> ['F', 14], # GPL 4.2
-       rl_deprep_term_function			=> ['F', 15], # GPL 4.2
+       rl_pre_input_hook			=> ['F', 12], # GRL 4.0
+       rl_completion_display_matches_hook	=> ['F', 13], # GRL 4.0
+       rl_prep_term_function			=> ['F', 14], # GRL 4.2
+       rl_deprep_term_function			=> ['F', 15], # GRL 4.2
 
        rl_instream				=> ['IO', 0],
        rl_outstream				=> ['IO', 1],
@@ -881,6 +883,10 @@ detail see 'GNU Readline Library Manual'.
 
 	int	rl_reset_line_state()
 
+=item C<rl_show_char(C)>
+
+	int	rl_show_char(int c)
+
 =item C<message(FMT[, ...])>
 
 	int	rl_message(str fmt, ...)
@@ -901,9 +907,13 @@ detail see 'GNU Readline Library Manual'.
 
 	void	rl_restore_prompt()
 
-=item C<expand_prompt>
+=item C<expand_prompt(PROMPT)>
 
 	int	rl_expand_prompt(str prompt)	# GRL 4.2
+
+=item C<set_prompt(PROMPT)>
+
+	int	rl_set_prompt(const str prompt)	# GRL 4.2
 
 =back
 
@@ -917,15 +927,19 @@ detail see 'GNU Readline Library Manual'.
 
 =item C<delete_text([START [,END]])>
 
-	int	rl_delete_text(start = 0, end = rl_end)
+	int	rl_delete_text(int start = 0, int end = rl_end)
 
 =item C<copy_text([START [,END]])>
 
-	str	rl_copy_text(start = 0, end = rl_end)
+	str	rl_copy_text(int start = 0, int end = rl_end)
 
 =item C<kill_text([START [,END]])>
 
-	int	rl_kill_text(start = 0, end = rl_end)
+	int	rl_kill_text(int start = 0, int end = rl_end)
+
+=item C<push_macro_input(MACRO)>
+
+	int	rl_push_macro_input(str macro)
 
 =back
 
@@ -952,6 +966,10 @@ detail see 'GNU Readline Library Manual'.
 =item C<clear_pending_input()>
 
 	int	rl_clear_pending_input()	# GRL 4.2
+
+=item C<set_keyboard_input_timeout(uSEC)>	# GRL 4.2
+
+	int	rl_set_keyboard_input_timeout(int usec)
 
 =back
 
@@ -1005,6 +1023,28 @@ When C<MAX> is ommited, the max length of an item in @matches is used.
 
 =back
 
+=item Miscellaneous Functions
+
+=item C<macro_bind(KEYSEQ, MACRO [,MAP])>
+
+	int	rl_macro_bind(const str keyseq, const str macro, Keymap map)
+
+=item C<macro_dumper(READABLE)>
+
+	int	rl_macro_dumper(int readline)
+
+=item C<variable_bind(VARIABLE, VALUE)>
+
+	int	rl_variable_bind(const str variable, const str value)
+
+=item C<variable_dumper(READABLE)>
+
+	int	rl_variable_dumper(int readline)
+
+=over 4
+
+=back
+
 =item Alternate Interface
 
 =over 4
@@ -1048,6 +1088,10 @@ When C<MAX> is ommited, the max length of an item in @matches is used.
 =item C<set_screen_size(ROWS, COLS)>
 
 	void	rl_set_screen_size(int ROWS, int COLS)	# GRL 4.2
+
+=item C<get_screen_size()>
+
+	(int rows, int cols)	rl_get_screen_size()	# GRL 4.2
 
 =item C<set_signals>
 
@@ -1259,14 +1303,6 @@ F<~/.history>.  Returns true if successful, or false if not.
 
 Note that this function returns C<expansion> in scalar context.
 
-=item C<history_arg_extract(LINE, [FIRST [,LAST]])>
-
-	str history_arg_extract(str line, int first = 0, int last = '$')
-
-=cut
-
-# '	to make emacs font-lock happy
-
 =item C<get_history_event(STRING, CINDEX [,QCHAR])>
 
 	(str text, int cindex) = get_history_event(str  string,
@@ -1276,6 +1312,10 @@ Note that this function returns C<expansion> in scalar context.
 =item C<history_tokenize(LINE)>
 
 	(@str)	history_tokenize(str line)
+
+=item C<history_arg_extract(LINE, [FIRST [,LAST]])>
+
+	str history_arg_extract(str line, int first = 0, int last = '$')
 
 =back
 
@@ -1368,10 +1408,11 @@ Examples:
 
 	int history_base
 	int history_length
-	int max_input_history (read only)
+	int history_max_entries (called `max_input_history'. read only)
 	char history_expansion_char
 	char history_subst_char
 	char history_comment_char
+	str history_word_delimiters (GRL 4.2)
 	str history_no_expand_chars
 	str history_search_delimiter_chars
 	int history_quotes_inhibit_expansion
