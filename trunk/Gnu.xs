@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.89 2000-12-05 15:29:38 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.90 2001-02-12 13:59:17 hayashi Exp $
  *
  *	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
  *
@@ -81,6 +81,8 @@ static void rl_restore_prompt() { _rl_restore_prompt(); }
 /* features introduced by GNU Readline 4.1 */
 #if (RLMAJORVER < 4 || RLMAJORVER == 4 && RLMINORVER < 1)
 static int rl_already_prompted = 0;
+static int rl_num_chars_to_read = 0;
+static int rl_gnu_readline_p = 0;
 #endif /* (RLMAJORVER < 4 || RLMAJORVER = 4 && RLMINORVER < 1) */
 
 /* features introduced by GNU Readline 4.2 */
@@ -91,12 +93,28 @@ typedef int rl_command_func_t __P((int, int));
 typedef char *rl_compentry_func_t __P((const char *, int));
 
 static char *rl_executing_macro = NULL;
+static int rl_explicit_arg = 0;
+static int rl_numeric_arg = 0;
+static int rl_editing_mode = 0;
 static int rl_readline_state = 0;
 
 static void
 rl_free_undo_list ()
 {
   free_undo_list ();
+}
+
+static int
+rl_crlf ()
+{
+  crlf ();
+}
+
+static void
+rl_tty_set_default_bindings (keymap)
+Keymap keymap;
+{
+  rltty_set_default_bindings (keymap);
 }
 
 static int
@@ -278,7 +296,15 @@ static struct int_vars {
   { &rl_catch_signals,				0, 0 },	/* 19 */
   { &rl_catch_sigwinch,				0, 0 },	/* 20 */
   { &rl_already_prompted,			0, 0 },	/* 21 */
-  { &rl_readline_state,				0, 0 }	/* 22 */
+  { &rl_num_chars_to_read,			0, 0 },	/* 22 */
+  { &rl_dispatching,				0, 0 },	/* 23 */
+  { &rl_gnu_readline_p,				0, 1 },	/* 24 */
+  { &rl_readline_state,				0, 0 },	/* 25 */
+  { &rl_explicit_arg,				0, 0 },	/* 26 */
+  { &rl_numeric_arg,				0, 0 },	/* 27 */
+  { &rl_editing_mode,				0, 0 },	/* 28 */
+  { &rl_attempted_completion_over,		0, 0 },	/* 29 */
+  { &rl_completion_type,			0, 0 }	/* 30 */
 };
 
 /*
@@ -1546,6 +1572,10 @@ _rl_message(text)
 	RETVAL
 
 int
+rl_crlf()
+	PROTOTYPE:
+
+int
 rl_clear_message()
 	PROTOTYPE:
 
@@ -1556,6 +1586,17 @@ rl_save_prompt()
 void
 rl_restore_prompt()
 	PROTOTYPE:
+
+int
+rl_expand_prompt(prompt)
+	char *prompt
+	PROTOTYPE: $
+	CODE:
+	{
+	  RETVAL = rl_expand_prompt(prompt);
+	}
+	OUTPUT:
+	RETVAL
 
 #
 #	2.4.7 Modifying Text
@@ -1584,7 +1625,7 @@ rl_kill_text(start = 0, end = rl_end)
 	PROTOTYPE: ;$$
 
 #
-#	2.4.8 Utility Functions
+#	2.4.8 Character Input
 #
 int
 rl_read_key()
@@ -1600,18 +1641,72 @@ rl_stuff_char(c)
 	int c
 	PROTOTYPE: $
 
+#if (RLMAJORVER >= 4)
+
 int
-rl_initialize()
+rl_execute_next(c)
+	int c
+	PROTOTYPE: $
+
+#endif /* (RLMAJORVER >= 4) */
+#if (RLMAJORVER > 4 || RLMAJORVER == 4 && RLMINORVER >= 2)
+
+int
+rl_clear_pending_input()
 	PROTOTYPE:
+
+#endif /* (RLMAJORVER > 4 || RLMAJORVER == 4 && RLMINORVER >= 2) */
+
+#
+#	2.4.9 Terminal Management
+#
+
+#if (RLMAJORVER >= 4)
+
+void
+rl_prep_terminal(meta_flag)
+	int meta_flag
+	PROTOTYPE: $
+
+void
+rl_deprep_terminal()
+	PROTOTYPE:
+
+void
+_rl_tty_set_default_bindings(kmap = rl_get_keymap())
+	Keymap kmap
+	PROTOTYPE: ;$
+	CODE:
+	{
+	  rl_tty_set_default_bindings(kmap);
+	}
+
+#endif /* (RLMAJORVER >= 4) */
 
 int
 rl_reset_terminal(terminal_name = NULL)
 	char *terminal_name
 	PROTOTYPE: ;$
 
+#
+#	2.4.10 Utility Functions
+#
+int
+rl_initialize()
+	PROTOTYPE:
+
 int
 rl_ding()
 	PROTOTYPE:
+
+#if (RLMAJORVER > 4 || RLMAJORVER == 4 && RLMINORVER >= 2)
+
+int
+rl_alphabetic(c)
+	int c
+	PROTOTYPE: $
+
+#endif /* (RLMAJORVER > 4 || RLMAJORVER == 4 && RLMINORVER >= 2) */
 
 #if (RLMAJORVER >= 4)
 
@@ -1720,6 +1815,16 @@ rl_reset_after_signal()
 void
 rl_resize_terminal()
 	PROTOTYPE:
+
+#if (RLMAJORVER > 4 || RLMAJORVER == 4 && RLMINORVER >= 2)
+
+void
+rl_set_screen_size(rows, cols)
+	int rows
+	int cols
+	PROTOTYPE: $$
+
+#endif /* (RLMAJORVER > 4 || RLMAJORVER == 4 && RLMINORVER >= 2) */
 
 int
 rl_set_signals()
