@@ -1,0 +1,42 @@
+$Id: README,v 1.1 1996-11-13 15:38:37 hayashi Exp $
+
+Term::ReadLine::Gnu --- GNU Readline Library wrapper module
+
+	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
+
+	This program is free software; you can redistribute it and/or
+	modify it under the same terms as Perl itself.
+
+Description:
+
+	This is an implementation of the interface to the GNU Readline
+	Library.  This module gives you input line editing facility,
+	input history management ficility, word completion facility,
+	etc.  It uses the real GNU Readline Library which is very
+	strong and used by many people over the World, so it works
+	just like using the GNU Readline Library :-)
+
+	Ilya Zakharevich distributes his implementation, which bases
+	on Jeffrey Friedl's readline.pl.  This works very good, and is
+	easy to install.  But unfortunately this package is not 8 bit
+	clean.  We Japanese usually use 8 bit characters, so this is
+	bad feature for me.  Because I had interest with C interface
+	facility and dynamic loading facility and it was a good chance
+	for me to study them, I made this module instead of fixing his
+	module.
+
+Prerequisites:
+	You must make GNU Readline Library.  See INSTALL.
+
+How to build/install:
+	See INSTALL.
+
+Bugs:
+	The GNU Readline Library is very stable.  But this is my first
+	XS programming, my first module programming and, my first
+	object oriented programming, ...  Yes, there must be many bugs
+	in both programs and documents.  Comments and bug reports are
+	very welcome.
+
+Author:
+	Hiroo Hayashi <hayashi@pdcd.ilab.toshiba.co.jp>
