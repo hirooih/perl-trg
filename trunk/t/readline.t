@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.26 1999-03-04 16:18:25 hayashi Exp $
+#	$Id: readline.t,v 1.27 1999-03-06 13:01:33 hayashi Exp $
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -28,6 +28,8 @@ print "ok $n\n"; $n++;
 
 ########################################################################
 # test new method
+
+$ENV{'INPUTRC'} = '/dev/null';	# stop reading ~/.inputrc
 
 my $t = new Term::ReadLine 'ReadLineTest';
 print defined $t ? "ok $n\n" : "not ok $n\n"; $n++;
@@ -71,7 +73,7 @@ my $a = $t->Attribs;
 print defined $a ? "ok $n\n" : "not ok $n\n"; $n++;
 
 ########################################################################
-# test tied variable
+# 2.3 Readline Variables
 
 my ($version) = $a->{library_version} =~ /(\d+\.\d+)/;
 
@@ -81,20 +83,6 @@ print $version > 2.0 ? "ok $n\n" : "not ok $n\n"; $n++;
 ########################################################################
 # test key binding functions
 
-my ($M, $F, $B, $MF, $MB, $E, $A, $H, $D, $I);
-
-# bind basic functions since ~/.inputrc may change their binding.
-$t->generic_bind(ISFUNC, $M  = "\cC", 'accept-line');
-$t->generic_bind(ISFUNC, $F  = "\cF", 'forward-char');
-$t->generic_bind(ISFUNC, $B  = "\cB", 'backward-char');
-$t->generic_bind(ISFUNC, $MF = "\ef", 'forward-word');
-$t->generic_bind(ISFUNC, $MB = "\eb", 'backward-word');
-$t->generic_bind(ISFUNC, $E  = "\cE", 'end-of-line');
-$t->generic_bind(ISFUNC, $A  = "\cA", 'beginning-of-line');
-$t->generic_bind(ISFUNC, $H  = "\cH", 'backward-delete-char');
-$t->generic_bind(ISFUNC, $D  = "\cD", 'delete-char');
-$t->generic_bind(ISFUNC, $I  = "\cI", 'complete');
-
 sub is_boundp {
     my ($seq, $fname) = @_;
     my ($fn, $type) = $t->function_of_keyseq($seq);
@@ -102,16 +90,16 @@ sub is_boundp {
 	    && $type == ISFUNC);
 }
 
-if (is_boundp($M, 'accept-line')
-    && is_boundp($F,  'forward-char')
-    && is_boundp($B,  'backward-char')
-    && is_boundp($MF, 'forward-word')
-    && is_boundp($MB, 'backward-word')
-    && is_boundp($E,  'end-of-line')
-    && is_boundp($A,  'beginning-of-line')
-    && is_boundp($H,  'backward-delete-char')
-    && is_boundp($D,  'delete-char')
-    && is_boundp($I,  'complete')) {
+if (is_boundp("\cM", 'accept-line')
+    && is_boundp("\cF", 'forward-char')
+    && is_boundp("\cB", 'backward-char')
+    && is_boundp("\ef", 'forward-word')
+    && is_boundp("\eb", 'backward-word')
+    && is_boundp("\cE", 'end-of-line')
+    && is_boundp("\cA", 'beginning-of-line')
+    && is_boundp("\cH", 'backward-delete-char')
+    && is_boundp("\cD", 'delete-char')
+    && is_boundp("\cI", 'complete')) {
     print "ok $n\n"; $n++;
 } else {    
     print "not ok $n\n"; $n++;
@@ -290,26 +278,26 @@ $a->{getc_function} = sub {
     return ord $c;
 } unless $verbose;
 
-$INSTR = "abcdefgh${M}";
+$INSTR = "abcdefgh\cM";
 $line = $t->readline("self insert> ");
 print $line eq 'abcdefgh' ? "ok $n\n" : "not ok $n\n"; $n++;
 
-$INSTR = "${A}e${F}f${B}g${E}h${H} ij kl${MB}${MB}m${D}n${M}";
+$INSTR = "\cAe\cFf\cBg\cEh\cH ij kl\eb\ebm\cDn\cM";
 $line = $t->readline("cursor move> ", 'abcd'); # default string
 print $line eq 'eagfbcd mnj kl' ? "ok $n\n" : "not ok $n\n"; $n++;
 
 # test reverse_line, display_readline_version, invert_case_line
-$INSTR = "\cXvabcdefgh XYZ\e6${B}\e4\ec\cT${M}";
+$INSTR = "\cXvabcdefgh XYZ\e6\cB\e4\ec\cT\cM";
 $line = $t->readline("custom commands> ");
 print $line eq 'ZYx HGfedcba' ? "ok $n\n" : "not ok $n\n"; $n++;
 
 # test macro, change_ornaments
-$INSTR = "1234\e?i\eoB${M}${M}";
+$INSTR = "1234\e?i\eoB\cM\cM";
 $line = $t->readline("keyboard macro> ");
 print $line eq "[insert text from beginning of line]1234"
     ? "ok $n\n" : "not ok $n\n"; $n++;
 
-$INSTR = "${M}";
+$INSTR = "\cM";
 $line = $t->readline("bold face prompt> ");
 print $line eq '' ? "ok $n\n" : "not ok $n\n"; $n++;
 
@@ -328,19 +316,19 @@ sub prompt {
     "$nline> ";
 }
 
-$INSTR = "!1${M}";
+$INSTR = "!1\cM";
 $line = $t->readline(prompt());
 print $line eq 'abcdefgh' ? "ok $n\n" : "not ok $n\n"; $n++;
 
-$INSTR = "123${M}";		# too short
+$INSTR = "123\cM";		# too short
 $line = $t->readline(prompt());
-$INSTR = "!!${M}";
+$INSTR = "!!\cM";
 $line = $t->readline(prompt());
 print $line eq 'abcdefgh' ? "ok $n\n" : "not ok $n\n"; $n++;
 
-$INSTR = "1234${M}";
+$INSTR = "1234\cM";
 $line = $t->readline(prompt());
-$INSTR = "!!${M}";
+$INSTR = "!!\cM";
 $line = $t->readline(prompt());
 print $line eq '1234' ? "ok $n\n" : "not ok $n\n"; $n++;
 
@@ -367,25 +355,25 @@ unless (@keyseqs) {
 ########################################################################
 # test custom completion function
 
-$INSTR = "t/comp${I}R${I}${M}";
+$INSTR = "t/comp\cIR\cI\cM";
 $line = $t->readline("filename completion (default)>");
 print $line eq 't/comptest/README ' ? "ok $n\n" : "not ok $n\n"; $n++;
 
 $a->{completion_entry_function} = $a->{'username_completion_function'};
-$INSTR = "root${I}${M}";
+$INSTR = "root\cI\cM";
 $line = $t->readline("username completion>");
 print $line eq 'root ' ? "ok $n\n" : "not ok $n\n"; $n++;
 
 $a->{completion_word} = [qw(a list of words for completion and another word)];
 $a->{completion_entry_function} = $a->{'list_completion_function'};
 print $OUT "given list is: a list of words for completion and another word\n";
-$INSTR = "a${I}${I}n${I}${I}o${I}${M}";
+$INSTR = "a\cI\cIn\cI\cIo\cI\cM";
 $line = $t->readline("list completion>");
 print $line eq 'another ' ? "ok $n\n" : "not ok $n\n"; $n++;
 
 
 $a->{completion_entry_function} = $a->{'filename_completion_function'};
-$INSTR = "t/comp${I}${I}${I}0${I}${I}1${I}${I}${M}";
+$INSTR = "t/comp\cI\cI\cI0\cI\cI1\cI\cI\cM";
 $line = $t->readline("filename completion>");
 print $line eq 't/comptest/0123' ? "ok $n\n" : "not ok $n\n"; $n++;
 
@@ -401,7 +389,7 @@ sub sample_completion {
 
 $a->{attempted_completion_function} = \&sample_completion;
 print $OUT "given list is: a list of words for completion and another word\n";
-$INSTR = "li${I}t/comp${I}${I}${I}0${I}${I}2${I}${M}";
+$INSTR = "li\cIt/comp\cI\cI\cI0\cI\cI2\cI\cM";
 $line = $t->readline("list & filename completion>");
 print $line eq 'list t/comptest/023456 ' ? "ok $n\n" : "not ok $n\n"; $n++;
 
@@ -411,7 +399,7 @@ $a->{attempted_completion_function} = undef;
 # test ornaments
 {
     local $^W = 0;		# Term::Cap.pm warns for unsupported function
-    $INSTR = "${M}${M}${M}${M}${M}${M}${M}";
+    $INSTR = "\cM\cM\cM\cM\cM\cM\cM";
     print $OUT "# ornaments test\n";
     print $OUT "# Note: Some function may not work on your terminal.\n";
     # Kterm seems to have a bug with 'ue' (End underlining) does not work\n";
@@ -442,7 +430,7 @@ print "ok $n\n"; $n++;
 #sub move_cursor { $a->{point} = 10; };
 #$a->{startup_hook} = \&move_cursor;
 $a->{startup_hook} = sub { $a->{point} = 10; };
-$INSTR = "insert${M}";
+$INSTR = "insert\cM";
 $line = $t->readline("rl_startup_hook test>", "cursor is, <- here");
 print $line eq 'cursor is,insert <- here' ? "ok $n\n" : "not ok $n\n"; $n++;
 $a->{startup_hook} = undef;
