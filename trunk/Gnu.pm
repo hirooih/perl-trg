@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.24 1997-01-16 15:19:53 hayashi Exp $
+#	$Id: Gnu.pm,v 1.25 1997-01-17 17:48:10 hayashi Exp $
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
 #
@@ -177,7 +177,7 @@ installed this package,  possible value is C<Term::ReadLine::Gnu>.
 
 sub ReadLine { 'Term::ReadLine::Gnu'; }
 
-=item C<new(NAME,[IN[,OUT]]>
+=item C<new(NAME,[IN[,OUT]])>
 
 returns the handle for subsequent calls to following functions.
 Argument is the name of the application.  Optionally can be followed
@@ -548,7 +548,7 @@ sub FetchVar {
     rl_fetch_var(@_);
 }
 
-sub rl_fetch_var ($) {
+sub rl_fetch_var ( $ ) {
     my $name = shift;
     if (! defined $_rl_vars{$name}) {
 	carp "Term::ReadLine::Gnu::FetchVar: Unknown variable name `$name'\n";
@@ -577,7 +577,7 @@ sub StoreVar {
     rl_store_var(@_);
 }
 
-sub rl_store_var ($$) {
+sub rl_store_var ( $$ ) {
     my $name = shift;
     if (! defined $_rl_vars{$name}) {
 	carp "Term::ReadLine::Gnu::StoreVar: Unknown variable name `$name'\n";
@@ -605,26 +605,12 @@ sub rl_store_var ($$) {
     }
 }
 
-BEGIN {
-    my @IOS = (\*STDIN, \*STDOUT);	# default value of GNU Readline Library
-
-    sub _rl_fetch_iostream ($) {
-	$IOS[$_[0]];
-    }
-
-    sub _rl_store_iostream ($$) {
-  	my ($value, $id) = @_;
-
-  	$IOS[$id] = $value;
-	if ($id == 0) {
-	    _rl_store_instream(fileno($value));
-	} elsif ($id == 1) {
-	    _rl_store_outstream(fileno($value));
-	} else {
-	    croak "Internal Error (\$id:$id)";
-	}
-    }
-}    
+#	Readline function
+sub rl_message {
+    my $fmt = shift;
+    my $line = sprintf($fmt, @_);
+    _rl_message($line);
+}
 
 #
 #	Tie functions for Readline/History Library variables
@@ -659,27 +645,7 @@ foreach (keys %_rl_vars) {
 }
 
 #
-#	Custom Completion Support
-#
-
-BEGIN {
-    my $i;
-
-    sub list_completion_function ($$) {
-	my($text, $state) = @_;
-	my $entry;
-
-	$i = $state ? $i + 1 : 0; # clear counter at the first call
-	for (; $i <= $#Completion_Word_List; $i++) {
-	    return $entry
-		if (($entry = $Completion_Word_List[$i]) =~ /^$text/);
-	}
-	return undef;
-    }
-}
-
-#
-#	constant definition
+#	GNU Readline/History Library constant definition
 #
 # for rl_filename_quoting_function
 sub NO_MATCH	 { 0; }
@@ -696,6 +662,26 @@ sub UNDO_DELETE	{ 0; }
 sub UNDO_INSERT	{ 1; }
 sub UNDO_BEGIN	{ 2; }
 sub UNDO_END	{ 3; }
+
+#
+#	List Completion Function
+#
+
+BEGIN {
+    my $i;
+
+    sub list_completion_function ( $$ ) {
+	my($text, $state) = @_;
+	my $entry;
+
+	$i = $state ? $i + 1 : 0; # clear counter at the first call
+	for (; $i <= $#Completion_Word_List; $i++) {
+	    return $entry
+		if (($entry = $Completion_Word_List[$i]) =~ /^$text/);
+	}
+	return undef;
+    }
+}
 
 #
 #	a sample custom function
