@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.20 1996-12-31 13:58:03 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.21 1997-01-02 14:48:37 hayashi Exp $
  *
  *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
  *
@@ -172,6 +172,16 @@ dismiss_defun(int key)
 }
 
 static int
+rl_debug(int count, int key)
+{
+  warn("count:%d,key:%d\n", count, key);
+  warn("rl_get_keymap():%s\n", rl_get_keymap_name(rl_get_keymap()));
+  warn("rl_executing_keymap:%s\n", rl_get_keymap_name(rl_executing_keymap));
+  warn("rl_binding_keymap:%s\n", rl_get_keymap_name(rl_binding_keymap));
+  return 0;
+}
+
+static int
 custom_function_lapper(int count, int key)
 {
   dSP;
@@ -179,6 +189,11 @@ custom_function_lapper(int count, int key)
 
   if ((np = lookup_defun(key)) == NULL)
     croak("Gnu.xs:custom_function_lapper: Internal error (lookup_defun)");
+
+  warn("count:%d,key:%d\n", count, key);
+  warn("rl_get_keymap():%s\n", rl_get_keymap_name(rl_get_keymap()));
+  warn("rl_executing_keymap:%s\n", rl_get_keymap_name(rl_executing_keymap));
+  warn("rl_binding_keymap:%s\n", rl_get_keymap_name(rl_binding_keymap));
 
   PUSHMARK(sp);
   XPUSHs(sv_2mortal(newSViv(count)));
@@ -324,13 +339,19 @@ _rl_readline(prompt = NULL, preput = NULL)
 #
 #	2.4.1 Naming a Function
 int
-rl_add_defun(fn, key, name = "")
+rl_add_defun(name, fn, key = -1)
+	char *name
 	SV *	fn
 	int	key
-	char *name
 	PROTOTYPE: $$;$
 	CODE:
 	{
+	  if (strcmp(name, "debug") == 0) {
+	    rl_add_defun(name, rl_debug, -1);
+	    RETVAL = 0;
+	    return;
+	  }
+
 	  /*warn("add_defun:[%d,%p]\n", key, fn);*/
 	  register_defun(key, fn);
 
@@ -345,15 +366,92 @@ rl_add_defun(fn, key, name = "")
 
 #	2.4.2 Selection a Keymap
 
-#	2.4.3 Binding Keys
-int
-rl_unbind_key(key)
-	int	key
-	PROTOTYPE: $
+void
+rl_get_keymap()
 	CODE:
 	{
+	  char *keymap_name = rl_get_keymap_name(rl_get_keymap());
+
+	  ST(0) = sv_newmortal();
+	  if (keymap_name)
+	    sv_setpv(ST(0), keymap_name);
+	}
+
+void
+rl_set_keymap(keymap_name)
+	char *keymap_name
+	CODE:
+	{
+	  Keymap keymap = rl_get_keymap_by_name(keymap_name);
+
+	  ST(0) = sv_newmortal();
+	  if (keymap_name && keymap) {
+	    rl_set_keymap(keymap);
+	    sv_setpv(ST(0), keymap_name);
+	  }
+	}
+
+#	2.4.3 Binding Keys
+int
+rl_bind_key(key, function, map = NULL)
+	int key
+	char *function
+	char *map
+	PROTOTYPE: $$;$
+	CODE:
+	{
+	  /* add code for custom function !!! */
+	  Function *fn = rl_named_function(function);
+	  Keymap keymap = map ? rl_get_keymap_by_name(map) : rl_get_keymap();
+
+	  rl_bind_key_in_map(key, fn, keymap);
+	}
+
+int
+rl_unbind_key(key, map = NULL)
+	int	key
+	char *map
+	PROTOTYPE: $;$
+	CODE:
+	{
+	  Keymap keymap = map ? rl_get_keymap_by_name(map) : rl_get_keymap();
 	  dismiss_defun(key);	/* do nothing if key is bind to C function */
-	  rl_unbind_key(key);
+	  rl_unbind_key_in_map(key, map);
+	}
+
+int
+rl_generic_bind(type, keyseq, data, map = NULL)
+	int type
+	char *keyseq
+	char *data
+	char *map
+	PROTOTYPE: $$$;$
+	CODE:
+	{
+	  Keymap keymap = map ? rl_get_keymap_by_name(map) : rl_get_keymap();
+	  void *p;
+
+	  switch (type) {
+	  case ISFUNC:
+	    /* add code for custom function !!! */
+	    p = rl_named_function(data);
+	    break;
+
+	  case ISKMAP:
+	    p = rl_get_keymap_by_name(data);
+	    break;
+
+	  case ISMACR:
+	    p = data;
+	    break;
+
+	  defaults:
+	    warn("Gnu.xs:rl_generic_bind: illegal type `%d'\n", type);
+	    RETVAL = -1;
+	    return;
+	  }
+
+	  rl_generic_bind(type, keyseq, p, keymap);
 	}
 
 void
@@ -470,8 +568,9 @@ int
 rl_initialize()
 
 int
-rl_reset_terminal(terminal_name)
+rl_reset_terminal(terminal_name = NULL)
 	char *terminal_name
+	PROTOTYPE: ;$
 
 int
 ding()
