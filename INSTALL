@@ -1,9 +1,12 @@
-#	$Id: INSTALL,v 1.18 1999-07-19 13:26:33 hayashi Exp $
+-*- Indented-text -*-
+#	$Id: INSTALL,v 1.19 2002-03-28 03:42:56 hiroo Exp $
 
 1. How to Install Term::ReadLine::Gnu
 
-	See the section `3. Tips for Cygwin Environment' for Windows
-	98 and Windows NT.
+	You need the GNU Readline library installed.  Except this, you
+	can install this module by the standard method, i.e.
+
+		perl Makefile.PL; make install
 
 1.1 Install GNU Readline library 2.1 or later and their header files.
 
@@ -28,6 +31,11 @@
 
 	% perl Makefile.PL --prefix=/mydir
 
+	If you are not an administrator and cannot install Perl module
+	in your system directory, try
+		perldoc perlfaq8
+	and see the section 'How do I keep my own module/library
+	directory?'. (This section is for Perl 5.6 document.)
 
 1.3 Trouble Shooting
 
@@ -43,21 +51,41 @@
 
 2. How to Install GNU Readline Library
 
-	Now this module supports only GNU Readline Library 2.1, 2.2.1
-	and 4.0. (readline-2.[12].tar.gz, readline-4.0.tar.gz or
-	libraries which are included in the GNU Bash version 2.0 or
-	later) Executing `perl Makefile.PL` detects which version of
+	Now this module supports only GNU Readline Library 2.1 and
+	later. Executing `perl Makefile.PL` detects which version of
 	the GNU Readline Library is already installed and warns you if
 	you have the unsupported version.
 
-	Note that some free Unix distribution and Cygwin32-b19 and b20
-	include the GNU Readline Library 2.0 which is not supported by
-	this module.
-
 	In the following example, the install prefix directory is
-	`/usr/local/gnu'.  If you install the library and header files
-	in another directory, you must edit `LIBS' and/or `INC'
-	section in Makefile.PL.
+	`/usr/local/gnu'.
+	
+	You can specify any directory for the GNU Readline library and
+	its header files, by editing `LIBS' and/or `INC' section in
+	Makefile.PL.
+
+2.1. Install
+
+	readline-2.2.tar.gz has some bugs, so I strongly recommend you
+	to use readline-2.2.1.tar.gz and/or later instead.
+
+	1. get and extract readline-XX.tar.gz
+
+	2. configure
+		% ./configure --prefix=/usr/local/gnu
+	3. make and install
+		% make install
+
+	If you have any reason in which use must use one of the follows;
+		readline-2.1
+		libreadline.a in bash-2.0.tar.gz
+		Cygwin b20.1
+	see INSTALL file which is included in Term-ReadLine-Gnu-1.11.
+
+2.2 Shared Library
+
+	If you want to build it as shared library, use readline-4.0
+	(or later).  Type `make shared' instead of `make' to build
+	shared library.
 
 	You HAVE TO build the library as shared library on the
 	following OSs;
@@ -72,196 +100,13 @@
 
 	# Please let me know on your experience on others OSs.
 
-	If you want to build it as shared library, use readline-4.0
-	(or later).  Type `make shared' instead of `make' to build
-	shared library.
-
+2.3 Multibyte Character (Japanese character) Handling
 
 	Since the GNU Readline Library is 8 bit clean, I use Japanese
 	characters without any patch.  But I have to hit Backspace key
-	twice to erase a Japanese character.  If you want to handle
-	Japanese characters better, check the following URL.
-
-		ftp://ftp.yynet.tama.tokyo.jp/pub/misc/readline/
-
-	I've not tried it, but it should work with my module.
-
-2.1. readline-4.0.tar.gz, readline-2.2.1.tar.gz
-
-	readline-2.2.tar.gz has some bugs, so I strongly recommend you
-	to use readline-2.2.1.tar.gz or later instead.
-
-	1. get and extract readline-XX.tar.gz
-
-	2. configure
-		% ./configure --prefix=/usr/local/gnu
-	3. make and install
-		% make install
-
-2.2. readline-2.1.tar.gz
-
-	1. get and extract readline-2.1.tar.gz
-
-	2. add following patch;
-========================================================================
-*** Makefile.in.orig	Wed Jun  4 00:29:31 1997
---- Makefile.in	Sun Jul 13 23:31:09 1997
-***************
-*** 194,200 ****
-  	-test -n "$(RANLIB)" && -$(RANLIB) -t $(libdir)/libreadline.a
-  	-( if test -d doc ; then \
-  		cd doc && \
-! 		${MAKE} ${MFLAGS} infodir=$(infodir) INSTALL_DATA=$(INSTALL_DATA) $@; \
-  	  fi )
-  
-  installdirs: $(srcdir)/support/mkdirs
---- 194,200 ----
-  	-test -n "$(RANLIB)" && -$(RANLIB) -t $(libdir)/libreadline.a
-  	-( if test -d doc ; then \
-  		cd doc && \
-! 		${MAKE} ${MFLAGS} infodir=$(infodir) INSTALL_DATA="$(INSTALL_DATA)" $@; \
-  	  fi )
-  
-  installdirs: $(srcdir)/support/mkdirs
-========================================================================
-
-	3. configure
-		% ./configure --prefix=/usr/local/gnu
-	4. make and install
-		% make install
-
-2.3. libreadline.a in bash-2.0.tar.gz
-
-# I reported this patch to Chet Ramey, the bash maintainer, but he
-# fixed Makefile.in as follows;
-#
-# $ grep -A2 ^install: bash-2.02/lib/readline/Makefile.in 
-# install:
-#        @echo "This version of the readline library should not be installed."
-#
-# Get readline-2.2.1.tar.gz and install it.
-
-	The libreadline.a which is made when you make bash does not
-	work as stand-alone library.  You must make it without defining
-	a CPP macro `SHELL'.
-
-	1. get and extract bash-2.0.tar.gz
-	2. add following patch
-	  (I reported this patch to bug-bash@prep.ai.mit.edu, so I
-	   hope this patch will not be required by the future
-	   releases.)
-
-========================================================================
-*** lib/readline/Makefile.in.orig	Tue Nov 26 02:40:21 1996
---- lib/readline/Makefile.in	Fri Dec 27 00:16:50 1996
-***************
-*** 4,9 ****
---- 4,16 ----
-  #								   #
-  ####################################################################
-  
-+ # Include some boilerplate Gnu makefile definitions.
-+ prefix = @prefix@
-+ 
-+ exec_prefix = @exec_prefix@
-+ libdir = $(exec_prefix)/lib
-+ includedir = @includedir@
-+ 
-  srcdir = @srcdir@
-  VPATH = .:@srcdir@
-  topdir = @top_srcdir@
-***************
-*** 108,114 ****
-  	done
-  	-${MV} $(libdir)/libreadline.a $(libdir)/libreadline.old
-  	${INSTALL_DATA} libreadline.a $(libdir)/libreadline.a
-! 	-test -n "$(RANLIB)" && $(RANLIB) -t $(bindir)/libreadline.a
-  
-  installdirs:	$(topdir)/support/mkdirs
-  	$(SHELL) $(topdir)/support/mkdirs $(includedir) \
---- 115,121 ----
-  	done
-  	-${MV} $(libdir)/libreadline.a $(libdir)/libreadline.old
-  	${INSTALL_DATA} libreadline.a $(libdir)/libreadline.a
-! 	-test -n "$(RANLIB)" && $(RANLIB) -t $(libdir)/libreadline.a
-  
-  installdirs:	$(topdir)/support/mkdirs
-  	$(SHELL) $(topdir)/support/mkdirs $(includedir) \
-
-========================================================================
-
-	3. configure
-		% ./configure --prefix=/usr/local/gnu
-	4. change directory to the Readline Library directory
-		% cd lib/readline
-	5. remove *.a and *.o, if you made libreadline.a for bash in
-	   the directory
-		% make clean
-	6. make
-		% make
-	7. install
-		% make install
-
-
-3. Tips for Cygwin Environment
-
-	I could install Term::ReadLine::Gnu successfully on my kids'
-	game launcher called Windows 98 with the following procedure.
-
-3.1 Install Cygwin b20.1
-
-	Get full.exe from http://sourceware.cygnus.com/cygwin/ and
-	execute it.
-
-3.2 Install Perl
-
-	Download dynamically-linked version perl from the following URL;
-
-		http://cygutils.netpedia.net/
-
-	I downloaded the patch from this site and build perl by
-	myself.  If you have fast access to the Internet, it should be
-	easier to download binary distribution.
-
-	There is older static distribution on the site.  Once I tried
-	it but it required some hack.  I recommend you to use the
-	dynamically-linked version.
-
-3.3 Install GNU Readline Library.
-
-	The version of the GNU Readline Library included in Cygwin
-	b20.1 is not supported Term::ReadLine::Gnu.  But you can
-	install up to date version with standard configuration
-	process.
-
-	readline-4.0.tar.gz has a bug on the Cygwin environment in
-	history file access routine.  Apply the following patch.
-
-	All other tasks are same as installation on UNIX.
-
---- histfile.c-dist	Wed Sep 16 02:01:56 1998
-+++ histfile.c	Mon May 17 00:59:10 1999
-@@ -158,7 +158,7 @@
- #if 0
-   if (read (file, buffer, file_size) != file_size)
- #else
--  if (read (file, buffer, file_size) < 0)
-+  if ((file_size = read (file, buffer, file_size)) < 0)
- #endif
-     {
-   error_and_exit:
-@@ -279,7 +279,7 @@
-      truncate to. */
-   if (i && ((file = open (filename, O_WRONLY|O_TRUNC|O_BINARY, 0600)) != -1))
-     {
--      write (file, buffer + i, file_size - i);
-+      write (file, buffer + i, chars_read - i);
- 
- #if defined (__BEOS__)
-       /* BeOS ignores O_TRUNC. */
-
-3.4 Install Term::Readline::Gnu
-
-	See section 1.
+	twice to erase a Japanese character.
+	
+	If you are using EUC Japanese charactor try to use
+	Gnu/euc_jp.pm module.
 
 EOF
