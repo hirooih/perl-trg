@@ -1,12 +1,12 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.8 1997-01-21 17:05:13 hayashi Exp $
+#	$Id: readline.t,v 1.9 1997-01-22 15:26:35 hayashi Exp $
 #
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl t/readline.t'
 
-BEGIN {print "1..10\n";}
+BEGIN {print "1..11\n";}
 END {print "not ok 1\n" unless $loaded;}
 
 $^W = 1;			# perl -w
@@ -68,7 +68,7 @@ if (%features) {
 print $rl_library_version > 2.0 ? "ok 5\n" : "not ok 5\n";
 
 ########################################################################
-# test keybind functions
+# test key binding functions
 
 my %TYPE = (0 => 'Function', 1 => 'Keymap', 2 => 'Macro');
 
@@ -87,6 +87,7 @@ sub display_readline_version {
     my($count, $key) = @_;	# ignored in this sample function
     print $OUT "GNU Readline Library version: $rl_library_version\n";
 #    rl_message("GNU Readline Library version: $rl_library_version\n");
+    rl_on_new_line();
 }
 # using function
 rl_add_defun('display-readline-version', \&display_readline_version);
@@ -124,10 +125,7 @@ foreach ("\co", "\ct", "\cx",
 my @keyseqs = rl_invoking_keyseqs('reverse-line');
 print "reverse-line is bound to ", join(', ',@keyseqs), "\n";
 
-#$term->UnbindKey("\co");
-#$term->readline('unbind "\C-o">');
-
-print "ok 8\n";
+print "ok 6\n";
 
 ########################################################################
 # test history expansion
@@ -147,11 +145,16 @@ for ($nline = 0;
     print $OUT "<<$line>>\n";
 }
 print $OUT "\n";
-print "ok 5\n";
+print "ok 7\n";
 
-$term->UnbindKey("\co");
+########################################################################
+# test key unbinding functions
 
-# goto end_of_test;
+$term->UnbindKey(ord "\ct");
+rl_unbind_key(ord "t", 'emacs-ctlx');
+my @keyseqs = rl_invoking_keyseqs('reverse-line');
+print "reverse-line is bound to ", join(', ',@keyseqs), "\n";
+print "ok 8\n";
 
 ########################################################################
 # test custom completion function
@@ -184,7 +187,8 @@ $rl_attempted_completion_function = \&sample_completion;
 $term->readline("username filename completion>");
 $rl_attempted_completion_function = undef;
 
-print "ok 6\n";
+print "ok 9\n";
+
 ########################################################################
 # test WriteHistory(), ReadHistory()
 
@@ -193,7 +197,7 @@ $term->WriteHistory(".history_test") || warn "error at write_history: $!\n";
 $term->SetHistory();
 $term->ReadHistory(".history_test") || warn "error at read_history: $!\n";
 my @list_read = $term->GetHistory();
-print cmp_list(\@list_write, \@list_read) ? "ok 9\n" : "not ok 9\n";
+print cmp_list(\@list_write, \@list_read) ? "ok 10\n" : "not ok 10\n";
 
 ########################################################################
 # test SetHistory(), GetHistory()
@@ -201,7 +205,8 @@ print cmp_list(\@list_write, \@list_read) ? "ok 9\n" : "not ok 9\n";
 my @list_set = qw(one two three);
 $term->SetHistory(@list_set);
 my @list_get = $term->GetHistory();
-print cmp_list(\@list_set, \@list_get) ? "ok 10\n" : "not ok 10\n";
+print cmp_list(\@list_set, \@list_get) ? "ok 11\n" : "not ok 11\n";
 
 end_of_test:
+
 exit 0;
