@@ -1,6 +1,6 @@
 #! /usr/local/bin/perl
 #
-#	$Id: perlsh,v 1.8 1997-03-17 17:39:15 hayashi Exp $	
+#	$Id: perlsh,v 1.9 1997-03-18 17:26:06 hayashi Exp $	
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi. All Rights Reserved.
 #
@@ -61,7 +61,7 @@ my $attribs = $term->Attribs;
 &toplevel;			# never returns
 
 sub toplevel {
-    $term->StifleHistory($HISTSIZE);
+    $term->stifle_history($HISTSIZE);
     if (-f $HISTFILE) {
 	$term->ReadHistory($HISTFILE)
 	    or warn "perlsh: cannot read history file: $!\n";
