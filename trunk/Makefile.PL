@@ -1,7 +1,7 @@
 #
 #	Makefile.PL for Term::ReadLine::Gnu
 #
-#	$Id: Makefile.PL,v 1.13 1999-05-04 17:45:22 hayashi Exp $
+#	$Id: Makefile.PL,v 1.14 1999-05-17 13:57:49 hayashi Exp $
 #
 #	Copyright (c) 1996,1997,1998 Hiroo Hayashi.  All rights reserved.
 #		<hiroo.hayashi@computer.org>
@@ -115,14 +115,20 @@ sub search_lib {
 	return undef;
     }
     my $libbase = 'lib' . substr($lib, 2) . $Config{lib_ext};
+    my $libbase_so = 'lib' . substr($lib, 2) . "." . $Config{so};
     foreach (split(' ', $Config{libpth})) {
-#	print $_ . '/' . $libbase, "\n";
+#	print "$_/$libbase\n";
 	if (-f $_ . '/' . $libbase) {
 	    print "Find \`$_/$libbase\'.\n";
 	    return $lib;
 	}
+#	print "$_/$libbase_so\n";
+	if (-f $_ . '/' . $libbase_so) {
+	    print "Find \`$_/$libbase_so\'.\n";
+	    return $lib;
+	}
     }
     return undef;
-}    
+}
 
 # End of Makefile.PL
