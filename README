@@ -1,4 +1,4 @@
-$Id: README,v 1.4 1997-02-04 16:19:59 hayashi Exp $
+$Id: README,v 1.5 1997-03-17 17:40:07 hayashi Exp $
 
 Term::ReadLine::Gnu --- GNU Readline Library Wrapper Module
 
@@ -41,6 +41,9 @@ Prerequisites:
 
 How to build/install:
 	See INSTALL.
+
+Recent changes in this release:
+	See Changes.
 
 Bugs:
 	The GNU Readline Library is very stable.  But this is my first
