@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	history.t --- Term::ReadLine:GNU History Library Test Script
 #
-#	$Id: history.t,v 1.3 1998-05-08 17:40:03 hayashi Exp $
+#	$Id: history.t,v 1.4 1999-04-03 09:34:20 hayashi Exp $
 #
 #	Copyright (c) 1998 Hiroo Hayashi.  All rights reserved.
 #
@@ -11,7 +11,7 @@
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl t/history.t'
 
-BEGIN {print "1..78\n"; $n = 1}
+BEGIN {print "1..81\n"; $n = 1}
 END {print "not ok $n\n" unless $loaded;}
 
 $^W = 1;			# perl -w
@@ -30,10 +30,10 @@ print "ok $n\n"; $n++;
 my $t = new Term::ReadLine 'ReadLineTest';
 print defined $t ? "ok $n\n" : "not ok $n\n"; $n++;
 
+my $OUT = $t->OUT || \*STDOUT;
+
 ########################################################################
 # test ReadLine method
-
-my $OUT = $t->OUT || \*STDOUT;
 
 if ($t->ReadLine eq 'Term::ReadLine::Gnu') {
     print "ok $n\n";
@@ -73,14 +73,12 @@ print $attribs->{history_comment_char} eq "\0"
     ? "ok $n\n" : "not ok $n\n"; $n++;
 print $attribs->{history_no_expand_chars} eq " \t\n\r="
     ? "ok $n\n" : "not ok $n\n"; $n++;
-$^W = 0;			#  (char *)history_serch_delimiter_char == NULL
-print $attribs->{history_search_delimiter_chars} eq ''
+print ! defined $attribs->{history_search_delimiter_chars}
     ? "ok $n\n" : "not ok $n\n"; $n++;
-$^W = 1;
 print $attribs->{history_quotes_inhibit_expansion} == 0
     ? "ok $n\n" : "not ok $n\n"; $n++;
-
-print "ok $n\n"; $n++;
+print ! defined $attribs->{history_inhibit_expansion_function}
+    ? "ok $n\n" : "not ok $n\n"; $n++;
 
 ########################################################################
 # 2.3.2 History List Management
@@ -381,6 +379,27 @@ print $ret eq $exp ? "ok $n\n" : "not ok $n\n"; $n++;
 $_ = $string;
 $ret = $t->history_arg_extract;
 print $ret eq $exp ? "ok $n\n" : "not ok $n\n"; $n++;
+
+########################################################################
+# 2.4 History Variables
+
+# history_base, history_length, max_input_history are tested above
+
+# history_inhibit_expansion_function
+@list_set = ('red yellow', 'blue red', 'yellow blue', 'green blue');
+$t->SetHistory(@list_set);
+$t->history_set_pos(2);
+$attribs->{history_inhibit_expansion_function} = sub {
+    my ($string, $index) = @_;
+    substr($string, $index + 1, 1) eq '!'; # inhibit expanding '!!'
+};
+
+print $t->history_expand('!!') eq '!!'
+    ? "ok $n\n" : "not ok $n\n"; $n++;
+print $t->history_expand(' !r') eq ' red yellow'
+    ? "ok $n\n" : "not ok $n\n"; $n++;
+print $t->history_expand('!! !y') eq 'green blue yellow blue'
+    ? "ok $n\n" : "not ok $n\n"; $n++;
 
 end_of_test:
 
