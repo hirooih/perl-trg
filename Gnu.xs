@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.15 1996-12-29 15:31:01 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.16 1996-12-29 15:56:07 hayashi Exp $
  *
  *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
  *
@@ -33,19 +33,19 @@ static struct str_vars {
 } str_tbl[] = {
   /* When you change length of rl_line_buffer, change
      rl_line_buffer_len also. */
-  (char *)NULL,	&rl_line_buffer, 0,			/* 0 */
-  (char *)NULL,	&rl_library_version, 1,			/* 1 */
-  (char *)NULL,	&rl_readline_name, 0,			/* 2 */
+  NULL,	&rl_line_buffer,			0,	/* 0 */
+  NULL,	&rl_library_version,			1,	/* 1 */
+  NULL,	&rl_readline_name,			0,	/* 2 */
 
-  (char *)NULL,	&rl_basic_word_break_characters, 0,	/* 3 */
-  (char *)NULL, &rl_basic_quote_characters, 0,		/* 4 */
-  (char *)NULL,	&rl_completer_word_break_characters, 0,	/* 5 */
-  (char *)NULL,	&rl_completer_quote_characters, 0,	/* 6 */
-  (char *)NULL,	&rl_filename_quote_characters, 0,	/* 7 */
-  (char *)NULL,	&rl_special_prefixes, 0,		/* 8 */
+  NULL,	&rl_basic_word_break_characters,	0,	/* 3 */
+  NULL, &rl_basic_quote_characters,		0,	/* 4 */
+  NULL,	&rl_completer_word_break_characters,	0,	/* 5 */
+  NULL,	&rl_completer_quote_characters,		0,	/* 6 */
+  NULL,	&rl_filename_quote_characters,		0,	/* 7 */
+  NULL,	&rl_special_prefixes,			0,	/* 8 */
 
-  (char *)NULL,	&history_no_expand_chars, 0,		/* 9 */
-  (char *)NULL,	&history_search_delimiter_chars, 0	/* 10 */
+  NULL,	&history_no_expand_chars,		0,	/* 9 */
+  NULL,	&history_search_delimiter_chars,	0	/* 10 */
 };
 
 /*
@@ -98,7 +98,7 @@ dupstr (s)			/* duplicate string */
   return (r);
 }
      
-static char *preput_str = (char *)NULL;
+static char *preput_str = NULL;
 static int
 rl_insert_preput ()
 {
@@ -116,7 +116,7 @@ struct fnode {			/* table entry */
   SV *fn;
 };
 
-static struct fnode *flist = (struct fnode *)NULL;
+static struct fnode *flist = NULL;
 
 struct fnode *
 lookup_defun(int key)
@@ -129,7 +129,7 @@ lookup_defun(int key)
       return np;
     }
 
-  return (struct fnode *)NULL;
+  return NULL;
 }
 
 static int
@@ -138,7 +138,7 @@ register_defun(int key, SV *fn)
   struct fnode *np;
 
   /*warn("register:[%d,%p]\n", key, fn);*/
-  if ((np = lookup_defun(key)) != (struct fnode *)NULL) {
+  if ((np = lookup_defun(key)) != NULL) {
     np->key = key;
     np->fn = newSVsv(fn);
     return 0;
@@ -192,7 +192,7 @@ custom_function_lapper(int count, int key)
 /*
  * call a perl function as rl_completion_entry_function
  */
-static SV * completion_entry_function = (SV *)NULL;
+static SV * completion_entry_function = NULL;
 
 static char *
 completion_entry_function_lapper(char *text, int state)
@@ -218,7 +218,7 @@ completion_entry_function_lapper(char *text, int state)
     croak("Gnu.xs:completion_entry_function_lapper: Internal error\n");
 
   match = POPs;
-  str = SvOK(match) ? dupstr(SvPV(match, na)) : (char *)NULL;
+  str = SvOK(match) ? dupstr(SvPV(match, na)) : NULL;
 
   PUTBACK;
   FREETMPS;
@@ -229,7 +229,7 @@ completion_entry_function_lapper(char *text, int state)
 /*
  * call a perl function as rl_attempted_completion_function
  */
-static SV * attempted_completion_function = (SV *)NULL;
+static SV * attempted_completion_function = NULL;
 
 static char **
 attempted_completion_function_lapper(char *text, int start, int end)
@@ -252,13 +252,13 @@ attempted_completion_function_lapper(char *text, int start, int end)
 
   SPAGAIN;
 
-  matches = (char **)NULL;
+  matches = NULL;
 
   if (count > 1) {
     int i;
 
     matches = (char **)xmalloc (sizeof(char *) * (count + 1));
-    matches[count] = (char *)NULL;
+    matches[count] = NULL;
     for (i = count - 1; i >= 0; i--)
       matches[i] = dupstr(POPp);
 
@@ -268,7 +268,7 @@ attempted_completion_function_lapper(char *text, int start, int end)
     if (SvOK(v)) {
       matches = (char **)xmalloc (sizeof(char *) * 2);
       matches[0] = dupstr(SvPV(v, na));
-      matches[1] = (char *)NULL;
+      matches[1] = NULL;
     }
   }
 
@@ -290,7 +290,7 @@ MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu
 #	readline()
 #
 void
-_rl_readline(prompt = (char *)NULL, preput = (char *)NULL)
+_rl_readline(prompt = NULL, preput = NULL)
 	char *prompt
 	char *preput
 	PROTOTYPE: ;$$
@@ -310,7 +310,7 @@ _rl_readline(prompt = (char *)NULL, preput = (char *)NULL)
 	  line_read = readline(prompt);
 
 	  ST(0) = sv_newmortal(); /* default return value is 'undef' */
-	  if (line_read != (char *)NULL) {
+	  if (line_read != NULL) {
 	    sv_setpv(ST(0), line_read);
 	    xfree(line_read);
 	  }
@@ -393,7 +393,7 @@ rl_do_named_function(name, count = 1, key = -1)
 	CODE:
 	{
 	  Function *fn;
-	  if ((fn = rl_named_function(name)) == (Function *)NULL) {
+	  if ((fn = rl_named_function(name)) == NULL) {
 	    warn("Gnu.xs:_rl_do_named_function: undefined function `%s'",
 		 name);
 	    RETVAL = -1;
@@ -467,7 +467,7 @@ _rl_store_completion_entry_function(fn)
 	    rl_completion_entry_function
 	      = (Function *)username_completion_function;
 	  } else {
-	    if (completion_entry_function == (SV *)NULL)
+	    if (completion_entry_function == NULL)
 	      completion_entry_function = newSVsv(fn);
 	    else
 	      SvSetSV(completion_entry_function, fn);
@@ -483,9 +483,9 @@ _rl_store_attempted_completion_function(fn)
 	CODE:
 	{
 	  if (! SvTRUE(fn)) {
-	    rl_attempted_completion_function = (CPPFunction *)NULL;
+	    rl_attempted_completion_function = NULL;
 	  } else {
-	    if (attempted_completion_function == (SV *)NULL)
+	    if (attempted_completion_function == NULL)
 	      attempted_completion_function = newSVsv(fn);
 	    else
 	      SvSetSV(attempted_completion_function, fn);
@@ -510,7 +510,7 @@ completion_matches(text, fn)
 	  } else {
 	    /* use completion_entry_function temporarily */
 	    SV * save = completion_entry_function;
-	    if (save == (SV *)NULL)
+	    if (save == NULL)
 	      completion_entry_function = newSVsv(fn);
 	    else
 	      SvSetSV(completion_entry_function, fn);
@@ -687,25 +687,25 @@ history_search_pos(string, direction, pos)
 #	Managing the History File
 #
 int
-read_history_range(filename = (char *)NULL, from = 0, to = -1)
+read_history_range(filename = NULL, from = 0, to = -1)
 	char *filename
 	int from
 	int to
 	PROTOTYPE: ;$$$
 
 int
-write_history(filename = (char *)NULL)
+write_history(filename = NULL)
 	char *filename
 	PROTOTYPE: ;$
 
 int
-append_history(nelements, filename = (char *)NULL)
+append_history(nelements, filename = NULL)
 	int nelements
 	char *filename
 	PROTOTYPE: ;$
 
 int
-history_truncate_file(filename = (char *)NULL, nlines = 0)
+history_truncate_file(filename = NULL, nlines = 0)
 	char *filename
 	int nlines
 	PROTOTYPE: ;$$
@@ -755,7 +755,7 @@ _rl_store_str(pstr, id)
 	  /* save mortal perl variable value */
 	  if (str_tbl[id].buf != NULL) {
 	    Safefree(str_tbl[id].buf);
-	    str_tbl[id].buf = (char *)NULL;
+	    str_tbl[id].buf = NULL;
 	  }
 	  len =  strlen(pstr)+1;
 	  New(0, str_tbl[id].buf, len, char);
