@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.106 2004-10-15 05:27:05 hiroo Exp $
+ *	$Id: Gnu.xs,v 1.107 2004-10-17 16:47:14 hiroo Exp $
  *
  *	Copyright (c) 2003 Hiroo Hayashi.  All rights reserved.
  *
@@ -12,6 +12,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#define PERLIO_NOT_STDIO 0
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
@@ -363,13 +364,19 @@ static struct int_vars {
 };
 
 /*
+ *	PerlIO variables for _rl_store_iostream(), _rl_fetch_iostream()
+ */
+static PerlIO *instreamPIO = NULL;
+static PerlIO *outstreamPIO = NULL;
+
+/*
  *	function pointer variable table for _rl_store_function(),
  *	_rl_fetch_funtion()
  */
 
 static int startup_hook_wrapper PARAMS((void));
 static int event_hook_wrapper PARAMS((void));
-static int getc_function_wrapper PARAMS((FILE *));
+static int getc_function_wrapper PARAMS((PerlIO *));
 static void redisplay_function_wrapper PARAMS((void));
 static char *completion_entry_function_wrapper PARAMS((const char *, int));;
 static char **attempted_completion_function_wrapper PARAMS((char *, int, int));
@@ -724,11 +731,11 @@ event_hook_wrapper()		{ return voidfunc_wrapper(EVENT_HOOK); }
 
 static int
 getc_function_wrapper(fp)
-     FILE *fp;
+     PerlIO *fp;
 {
   /*
-   * 'FILE *fp' is ignored.  Use rl_instream instead in the getc_function.
-   * How can I pass 'FILE *fp'?
+   * 'PerlIO *fp' is ignored.  Use rl_instream instead in the getc_function.
+   * How can I pass 'PerlIO *fp'?
    */
   return voidfunc_wrapper(GETC_FN);
 }
@@ -2654,19 +2661,25 @@ _rl_fetch_int(id)
 	  }
 	}
 
-FILE *
+PerlIO *
 _rl_store_iostream(stream, id)
-	FILE *	stream
+	PerlIO *stream
 	int id
     PROTOTYPE: $$
     CODE:
 	{
 	  switch (id) {
 	  case 0:
-	    RETVAL = rl_instream = stream;
+	    if (instreamPIO != NULL)
+	      PerlIO_releaseFILE(instreamPIO, rl_instream);
+	    rl_instream = PerlIO_findFILE(stream);
+	    RETVAL = instreamPIO = stream;
 	    break;
 	  case 1:
-	    RETVAL = rl_outstream = stream;
+	    if (outstreamPIO != NULL)
+	      PerlIO_releaseFILE(outstreamPIO, rl_outstream);
+	    rl_outstream = PerlIO_findFILE(stream);
+	    RETVAL = outstreamPIO = stream;
 #ifdef __CYGWIN__
 	    {
 	      /* Cygwin b20.1 library converts NL to CR-NL
@@ -2690,7 +2703,7 @@ _rl_store_iostream(stream, id)
     OUTPUT:
 	RETVAL
 
-FILE *
+PerlIO *
 _rl_fetch_iostream(id)
 	int id
     PROTOTYPE: $
@@ -2698,10 +2711,16 @@ _rl_fetch_iostream(id)
 	{
 	  switch (id) {
 	  case 0:
-	    RETVAL = rl_instream;
+	    if (instreamPIO == NULL)
+	      RETVAL = instreamPIO = PerlIO_importFILE(rl_instream, NULL);
+	    else
+	      RETVAL = instreamPIO;
 	    break;
 	  case 1:
-	    RETVAL = rl_outstream;
+	    if (outstreamPIO == NULL)
+	      RETVAL = outstreamPIO = PerlIO_importFILE(rl_outstream, NULL);
+	    else
+	      RETVAL = outstreamPIO;
 	    break;
 	  default:
 	    warn("Gnu.xs:_rl_fetch_iostream: Illegal `id' value: `%d'", id);
