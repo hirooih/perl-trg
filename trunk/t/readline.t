@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.9 1997-01-22 15:26:35 hayashi Exp $
+#	$Id: readline.t,v 1.10 1997-01-22 15:53:28 hayashi Exp $
 #
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl t/readline.t'
@@ -152,7 +152,8 @@ print "ok 7\n";
 
 $term->UnbindKey(ord "\ct");
 rl_unbind_key(ord "t", 'emacs-ctlx');
-my @keyseqs = rl_invoking_keyseqs('reverse-line');
+
+@keyseqs = rl_invoking_keyseqs('reverse-line');
 print "reverse-line is bound to ", join(', ',@keyseqs), "\n";
 print "ok 8\n";
 
