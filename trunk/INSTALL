@@ -1,11 +1,11 @@
-#	$Id: INSTALL,v 1.2 1996-11-20 13:52:07 hayashi Exp $
+#	$Id: INSTALL,v 1.3 1996-11-24 14:31:05 hayashi Exp $
 
 1. How to Install Term::ReadLine::Gnu
 
 1.1 If you are using dynamic linking
 
 	0. Install GNU readline library and its header files.
-		See the section `How to Install GNU readline'.
+		See the section `How to Install GNU Readline Library'.
 	1. Edit Makefile.PL if you need.  (See section 1.3.)
 	2. Make and install.
 		$ perl Makefile.PL
@@ -17,7 +17,7 @@
 	!!! I have no experience of this method. !!!
 
 	0. Install GNU readline library and its header files.
-		See the section `How to Install GNU readline'.
+		See the section `How to Install GNU Readline Library'.
 	1. Extract this tar in the ext/ subdirectory of the perl
 	   source directory.
 	2. Edit Makefile.PL if you need.  (See section 1.3.)
@@ -26,19 +26,24 @@
 1.3 Editing Makefile.PL
 	* directory for libreadline.a ('LIBS') and include files of GNU
 	  Readline library ('INC').
-	* If your OS misses '/usr/include/strings.h', comment out the
-	  line of 'DEFINE'.
 
-2. How to Install GNU readline
 
-There is two kind of GNU readline distributions.  One is stand-alone
+2. How to Install GNU Readline Library
+
+# When I reported the patches in this section to the bash maintainers,
+# they gave me the information that they were working to release
+# bash-2.0 and readline-2.1.  When they will be released, it will be
+# more easy to install GNU Readline.
+
+There is two kind of GNU Readline distributions.  One is stand-alone
 library "readline-2.0.tar.gz" and the other is included in bash
 distribution.
 
-If you can get both, I RECOMMEND YOU TO USE BASH DISTRIBUTION.
+If you can get both, I recommend you to use bash distribution.
 Because
-	It is newer than readline-2.0 (some bugs are fixed).
-	On my Linux-1.2.13 box, username completion does not work.
+	It is newer than readline-2.0, so some bugs in readline-2.0
+	are fixed.  On my Linux-1.2.13 box, username completion does
+	not work well with readline-2.0.
 
 In following example, the install prefix directory is
 `/usr/local/gnu'.  If you want to install in another directory, edit
@@ -48,7 +53,7 @@ In following example, the install prefix directory is
 
 	The libreadline.a which is made when you make bash does not
 	work as stand-alone library.  You must make it without defining
-	a CPP macro `SHELL'.
+	a CPP macro `SHELL' by adding '-USHELL' option to C compiler.
 
 	1. get and extract bash-1.14.7.tar.gz
 	2. add following patch
