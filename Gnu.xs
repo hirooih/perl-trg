@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.47 1997-02-04 16:26:27 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.48 1997-02-22 16:49:38 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -248,7 +248,11 @@ completion_entry_function_wrapper(text, state)
   SAVETMPS;
 
   PUSHMARK(sp);
-  XPUSHs(sv_2mortal(newSVpv(text, 0)));
+  if (text) {
+    XPUSHs(sv_2mortal(newSVpv(text, 0)));
+  } else {
+    XPUSHs(&sv_undef);
+  }
   XPUSHs(sv_2mortal(newSViv(state)));
   PUTBACK;
 
@@ -286,7 +290,11 @@ attempted_completion_function_wrapper(text, start, end)
   SAVETMPS;
 
   PUSHMARK(sp);
-  XPUSHs(sv_2mortal(newSVpv(text, 0)));
+  if (text) {
+    XPUSHs(sv_2mortal(newSVpv(text, 0)));
+  } else {
+    XPUSHs(&sv_undef);
+  }
   XPUSHs(sv_2mortal(newSVpv(rl_line_buffer, 0)));
   XPUSHs(sv_2mortal(newSViv(start)));
   XPUSHs(sv_2mortal(newSViv(end)));
@@ -447,7 +455,11 @@ callback_handler_wrapper(line)
   dSP;
 
   PUSHMARK(sp);
-  XPUSHs(sv_2mortal(newSVpv(line, 0)));
+  if (line) {
+    XPUSHs(sv_2mortal(newSVpv(line, 0)));
+  } else {
+    XPUSHs(&sv_undef);
+  }
   PUTBACK;
 
   perl_call_sv(callback_handler_callback, G_DISCARD);
