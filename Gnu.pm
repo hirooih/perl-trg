@@ -1,9 +1,9 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.93 2003-10-01 02:18:40 hiroo Exp $
+#	$Id: Gnu.pm,v 1.94 2004-10-17 17:40:21 hiroo Exp $
 #
-#	Copyright (c) 2003 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 2004 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -57,6 +57,16 @@ These methods are standard methods defined by B<Term::ReadLine>.
 
 use strict;
 use Carp;
+
+# This module can't be loaded directly.
+BEGIN {
+    if (not defined $Term::ReadLine::VERSION) {
+        croak <<END;
+It is invalid to load Term::ReadLine::Gnu directly.  Please consult
+the Term::ReadLine documentation for more information.
+END
+    }
+}
 
 {
     use Exporter ();
@@ -525,7 +535,10 @@ use vars qw(%_rl_vars);
        rl_completion_type			=> ['I', 31], # GRL 4.2
        rl_readline_version			=> ['I', 32], # GRL 4.2a
        rl_completion_suppress_append		=> ['I', 33], # GRL 4.3
-       rl_completion_mark_symlink_dirs		=> ['I', 34], # GRL 4.3
+       rl_completion_quote_character		=> ['C', 34], # GRL 5.0
+       rl_completion_suppress_quote		=> ['I', 35], # GRL 5.0
+       rl_completion_found_quote		=> ['I', 36], # GRL 5.0
+       rl_completion_mark_symlink_dirs		=> ['I', 37], # GRL 4.3
 
        rl_startup_hook				=> ['F', 0],
        rl_event_hook				=> ['F', 1],
@@ -541,8 +554,9 @@ use vars qw(%_rl_vars);
        history_inhibit_expansion_function	=> ['F', 11],
        rl_pre_input_hook			=> ['F', 12], # GRL 4.0
        rl_completion_display_matches_hook	=> ['F', 13], # GRL 4.0
-       rl_prep_term_function			=> ['F', 14], # GRL 4.2
-       rl_deprep_term_function			=> ['F', 15], # GRL 4.2
+       rl_completion_word_break_hook		=> ['F', 14], # GRL 5.0
+       rl_prep_term_function			=> ['F', 15], # GRL 4.2
+       rl_deprep_term_function			=> ['F', 16], # GRL 4.2
 
        rl_instream				=> ['IO', 0],
        rl_outstream				=> ['IO', 1],
@@ -1410,7 +1424,7 @@ Examples:
 	int rl_point
 	int rl_end
 	int rl_mark
-	int rl_done		
+	int rl_done
 	int rl_num_chars_to_read (GRL 4.2)
 	int rl_pending_input
 	int rl_dispatching (GRL 4.2)
@@ -1456,11 +1470,15 @@ Examples:
 	str rl_basic_word_break_characters
 	str rl_basic_quote_characters
 	str rl_completer_word_break_characters
+	pfunc rl_completion_word_break_hook (GRL 5.0)
 	str rl_completer_quote_characters
 	str rl_filename_quote_characters
 	str rl_special_prefixes
 	int rl_completion_append_character
 	int rl_completion_suppress_append (GRL 4.3)
+	int rl_completion_quote_charactor (GRL 5.0)
+	int rl_completion_suppress_quote (GRL 5.0)
+	int rl_completion_found_quote (GRL 5.0)
 	int rl_completion_mark_symlink_dirs (GRL 4.3)
 	int rl_ignore_completion_duplicates
 	int rl_filename_completion_desired
