@@ -1,4 +1,4 @@
-$Id: README,v 1.5 1997-03-17 17:40:07 hayashi Exp $
+$Id: README,v 1.6 1997-04-13 14:24:52 hayashi Exp $
 
 Term::ReadLine::Gnu --- GNU Readline Library Wrapper Module
 
@@ -53,4 +53,4 @@ Bugs:
 	grammar).  Comments and bug reports are very welcome.
 
 Author:
-	Hiroo Hayashi <hayashi@pdcd.ilab.toshiba.co.jp>
+	Hiroo Hayashi <hiroo.hayashi@toshiba.co.jp>
