@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.66 1999-03-07 17:07:03 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.67 1999-03-08 16:40:02 hayashi Exp $
  *
  *	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
  *
@@ -825,7 +825,7 @@ function_wrapper(count, key, id)
   return 0;
 }
 
-static SV* callback_handler_callback = NULL;
+static SV *callback_handler_callback = NULL;
 
 static void
 callback_handler_wrapper(line)
@@ -1006,7 +1006,7 @@ _rl_unbind_key(key, map = rl_get_keymap())
 # by readline-2.2.
 
 int
-_rl_unbind_function_in_map(function, map = rl_get_keymap())
+_rl_unbind_function(function, map = rl_get_keymap())
 	Function *function
 	Keymap map
 	PROTOTYPE: $;$
@@ -1018,7 +1018,7 @@ _rl_unbind_function_in_map(function, map = rl_get_keymap())
 	RETVAL
 
 int
-_rl_unbind_command_in_map(command, map = rl_get_keymap())
+_rl_unbind_command(command, map = rl_get_keymap())
 	char *command
 	Keymap map
 	PROTOTYPE: $;$
@@ -1318,60 +1318,62 @@ ding()
 #if (RLMAJORVER >= 4)
 
 void
-_rl_display_match_list(...)
+rl_display_match_list(...)
 	PROTOTYPE: @
 	CODE:
 	{
-	  int n, len, max, l, i;
+	  int len, max, l, i;
 	  char **matches;
-	  AV* av_matches;
-	  SV* pv;
+	  AV *av_matches;
+	  SV *pv, **pvp;
 
 	  if (items == 0)
 	    return;
 	  else if (SvROK(ST(0))) {
 	    /*
 	     * If the first argument is a reference of an array, use it as
-	     * matches.  Ignore rest arguments, if there are.
+	     * matches.  If there are some other arguments, ignore them.
 	     */
 	    if (SvTYPE(SvRV(ST(0))) != SVt_PVAV) {
 	      warn("Gnu.xs:_rl_display_match_list: arguments must be an array or a reference of an array\n");
 	      return;
 	    }
 	    av_matches = (AV *)SvRV(ST(0));
-	    if ((n = av_len(av_matches) + 1) == 0)
+	    /* index zero contains possible match and is ignored */
+	    if ((len = av_len(av_matches) + 1 - 1) == 0)
 	      return;
-	    matches = (char **)xmalloc (sizeof(char *) * (n + 1));
-	    max = 0; len = 0;
-	    for (i = 0; i < n; i++) {
-	      pv = av_pop(av_matches);
-	      if (SvPOKp(pv)) {
-		matches[len++] = dupstr(SvPV(pv, l));
+	    matches = (char **)xmalloc (sizeof(char *) * (len + 2));
+	    max = 0;
+	    for (i = 1; i <= len; i++) {
+	      pvp = av_fetch(av_matches, i, 0);
+	      if (SvPOKp(*pvp)) {
+		matches[i] = dupstr(SvPV(*pvp, l));
 		if (l > max)
 		  max = l;
 	      }
 	    }
-	    matches[n] = NULL;
+	    matches[len + 1] = NULL;
 	  } else {
 	    /*
 	     * Assume arguments are array of strings.
 	     */
-	    n = items;
-	    matches = (char **)xmalloc (sizeof(char *) * (n + 1));
-	    max = 0; len = 0;
-	    for (i = 0; i < n; i++) {
+	    /* index zero contains possible match and is ignored */
+	    len = items - 1;
+	    matches = (char **)xmalloc (sizeof(char *) * (len + 2));
+	    max = 0;
+	    for (i = 1 ; i <= len; i++) {
 	      pv = ST(i);
 	      if (SvPOKp(pv)) {
-		matches[len++] = dupstr(SvPV(pv, l));
+		matches[i] = dupstr(SvPV(pv, l));
 		if (l > max)
 		  max = l;
 	      }
 	    }
-	    matches[n] = NULL;
+	    matches[len + 1] = NULL;
 	  }
 	  rl_display_match_list(matches, len, max);
 
-	  for (i = 0; i < len; i++)
+	  for (i = 1; i <= len; i++)
 	    xfree(matches[i]);
 	  xfree(matches);
 	}
