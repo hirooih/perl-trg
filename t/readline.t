@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.31 1999-04-03 08:58:01 hayashi Exp $
+#	$Id: readline.t,v 1.32 1999-04-03 17:06:45 hayashi Exp $
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -589,9 +589,7 @@ $a->{filename_quoting_function} = sub {
 $a->{filename_dequoting_function} = sub {
     my ($text, $quote_char) = @_;
     $quote_char = chr $quote_char;
-    print "($text)\n";
     $text =~ s/\\//g;
-    print "($text)\n";
     return $text;
 };
 
@@ -642,7 +640,11 @@ $a->{startup_hook} = undef;
 $a->{pre_input_hook} = sub { $a->{point} = 10; };
 $INSTR = "insert\cM";
 $line = $t->readline("rl_pre_input_hook test>", "cursor is, <- here");
-$res = $line eq 'cursor is,insert <- here'; ok('pre_input_hook', $line);
+if ($version > 4.0 - 0.1) {
+    $res = $line eq 'cursor is,insert <- here'; ok('pre_input_hook', $line);
+} else {
+    print "ok $n # skipped\n"; $n++;
+}
 $a->{pre_input_hook} = undef;
 
 #########################################################################
