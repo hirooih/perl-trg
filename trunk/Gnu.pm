@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- GNU Readline wrapper module
 #
-#	$Id: Gnu.pm,v 1.7 1996-11-24 13:54:48 hayashi Exp $
+#	$Id: Gnu.pm,v 1.8 1996-11-24 14:34:27 hayashi Exp $
 #
 #	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
 #
@@ -35,15 +35,14 @@ Texinfo Manual.
 =cut
 
 use strict;
-use vars qw($VERSION @ISA
-	    $rl_basic_word_break_characters);
+use vars qw($VERSION @ISA);
 use Carp;
 
 require Exporter;
 require DynaLoader;
 
 @ISA = qw(Term::ReadLine::Stub Exporter DynaLoader);
-$VERSION = '0.02';
+$VERSION = '0.03';
 
 bootstrap Term::ReadLine::Gnu $VERSION;
 
