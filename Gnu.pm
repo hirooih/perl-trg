@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.30 1997-01-21 17:04:33 hayashi Exp $
+#	$Id: Gnu.pm,v 1.31 1997-01-22 15:25:45 hayashi Exp $
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
 #
@@ -99,8 +99,7 @@ my @miscfn = qw( rl_begin_undo_group	rl_end_undo_group	rl_add_undo
 		 $rl_done		$rl_pending_input	$rl_prompt
 		 $rl_instream		$rl_outstream
 		 $rl_startup_hook	$rl_event_hook
-		 $rl_getc_function	$rl_redisplay_function
-		 );
+		 $rl_getc_function	$rl_redisplay_function );
 
 my @cbfn   = qw( rl_callback_handler_install
 		 rl_callback_read_char
@@ -149,17 +148,15 @@ my @histfn = qw( using_history		remove_history
 		 $history_comment_char
 		 $history_quotes_inhibit_expansion );
 
-%EXPORT_TAGS = (
-		base_function		=> \@basefn,
+%EXPORT_TAGS = ( base_function		=> \@basefn,
 
-		keybind_function	=> \@bindfn,
-		misc_function		=> \@miscfn,
-		callback_function	=> \@cbfn,
-		completion_function	=> \@cmplfn,
-		history_function	=> \@histfn,
-		all			=> [ @basefn, @bindfn, @miscfn,
-					     @cbfn, @cmplfn, @histfn ]
-	       );
+		 keybind_function	=> \@bindfn,
+		 misc_function		=> \@miscfn,
+		 callback_function	=> \@cbfn,
+		 completion_function	=> \@cmplfn,
+		 history_function	=> \@histfn,
+		 all			=> [ @basefn, @bindfn, @miscfn,
+					     @cbfn, @cmplfn, @histfn ] );
 
 Exporter::export_ok_tags(qw(base_function	keybind_function
 			    misc_function	callback_function
@@ -213,7 +210,7 @@ sub new {
 	rl_store_var('rl_instream', shift);
 	rl_store_var('rl_outstream', shift);
     }
-    $Operate_Index = $Next_Operate_Index = undef; # for F_OperateAndGetNext()
+    $Operate_Index = $Next_Operate_Index = undef; # for operate_and_get_next()
 
     # The following is here since it is mostly used for perl input:
 #    $rl_basic_word_break_characters .= '-:+/*,[])}';
@@ -222,7 +219,6 @@ sub new {
 		AppName		=> $name,
 		MinLength	=> 1,
 		DoExpand	=> 0,
-		MaxHist		=> undef,
 		CompletionWordList	=> \@Completion_Word_List,
 	       };
     bless $self, $class;
@@ -246,7 +242,7 @@ sub readline {			# should be ReadLine
     my $self = shift;
     my ($prompt, $preput) = @_;
 
-    # cf. F_OperateAndGetNext()
+    # cf. operate_and_get_next()
     if (defined $Operate_Index) {
 	$Next_Operate_Index = $Operate_Index + 1;
 	my $next_line = history_get($Next_Operate_Index);
@@ -258,9 +254,11 @@ sub readline {			# should be ReadLine
     my $line;
     if (defined $preput) {
 	$_Preput = $preput;
+	my $save_hook = rl_fetch_var('rl_startup_hook');
+	#!!! add_hook
 	rl_store_var('rl_startup_hook', sub { rl_insert_text($_Preput) });
 	$line = rl_readline($prompt);
-	rl_store_var('rl_startup_hook', undef);
+	rl_store_var('rl_startup_hook', $save_hook);
     } else {
 	$line = rl_readline($prompt);
     }
@@ -302,6 +300,21 @@ sub addhistory {		# Why not AddHistory ?
     }
 }
 
+=item C<MinLine([MAX])>
+
+If argument C<MAX> is specified, it is an advice on minimal size of
+line to be included into history.  C<undef> means do not include
+anything into history.  Returns the old value.
+
+=cut
+
+sub MinLine {
+    my $self = shift;
+    my $old_minlength = $self->{MinLength};
+    $self->{MinLength} = shift;
+    $old_minlength;
+}
+
 =item C<StifleHistory(MAX)>
 
 stifles the history list, remembering only the last C<MAX> entries.
@@ -311,7 +324,7 @@ If MAX is undef,  remembers all entries.
 
 sub StifleHistory {
     my $self = shift;
-    stifle_history($self->{MaxHist} = shift);
+    stifle_history(shift);
 }
 
 =item C<SetHistory(LINE1, LINE2, ...)>
@@ -337,7 +350,6 @@ returns the history of input as a list, if actual C<readline> is present.
 =cut
 
 sub GetHistory {
-#    _rl_GetHistory();
     my ($i, $history_base, $history_length, @d);
     $history_base   = rl_fetch_var('history_base');
     $history_length = rl_fetch_var('history_length');
@@ -360,7 +372,7 @@ successful, or false if not.
 
 sub ReadHistory {
     shift;
-    ! read_history_range(@_);
+    ! &read_history_range;
 }
 
 =item C<WriteHistory(FILENAME)>
@@ -373,22 +385,7 @@ F<~/.history>.  Returns true if successful, or false if not.
 
 sub WriteHistory {
     shift;
-    ! write_history($_[0]);
-}
-
-=item C<MinLine([MAX])>
-
-If argument C<MAX> is specified, it is an advice on minimal size of
-line to be included into history.  C<undef> means do not include
-anything into history.  Returns the old value.
-
-=cut
-
-sub MinLine {
-    my $self = shift;
-    my $old_minlength = $self->{MinLength};
-    $self->{MinLength} = shift;
-    $old_minlength;
+    ! &write_history;
 }
 
 =item C<AddDefun(NAME, FUNC [,KEY])>
@@ -546,11 +543,6 @@ my %_rl_vars
        rl_binding_keymap			=> ['K', 1],
       );
 
-sub FetchVar {
-    my $self = shift;
-    rl_fetch_var(@_);
-}
-
 sub rl_fetch_var ( $ ) {
     my $name = shift;
     if (! defined $_rl_vars{$name}) {
@@ -577,9 +569,9 @@ sub rl_fetch_var ( $ ) {
     }
 }
 
-sub StoreVar {
+sub FetchVar {
     my $self = shift;
-    rl_store_var(@_);
+    rl_fetch_var;
 }
 
 sub rl_store_var ( $$ ) {
@@ -619,6 +611,11 @@ sub rl_store_var ( $$ ) {
 	carp "Term::ReadLine::Gnu::StoreVar: Illegal type `$type'\n";
 	return undef;
     }
+}
+
+sub StoreVar {
+    my $self = shift;
+    rl_store_var;
 }
 
 #
@@ -791,6 +788,7 @@ sub operate_and_get_next {
     $Operate_Index = rl_fetch_var('history_base') + where_history();
 }
 
+# bind this function to name and key
 rl_add_defun('operate-and-get-next', \&operate_and_get_next, ord "\co");
 
 1;
@@ -825,58 +823,58 @@ Examples:
 
 =item base_function
 
-	rl_library_version (read only)
-	rl_terminal_name
-	rl_readline_name
+	str rl_library_version (read only)
+	str rl_terminal_name
+	str rl_readline_name
 
 =item keybind_function
 
-	rl_executing_keymap (read only)
-	rl_binding_keymap (read only)
+	Keymap rl_executing_keymap (read only)
+	Keymap rl_binding_keymap (read only)
 
 =item misc_function
 
-	rl_line_buffer
-	rl_point
-	rl_end
-	rl_mark
-	rl_done		
-	rl_pending_input
-	rl_prompt
-	rl_instream
-	rl_outstream
-	rl_startup_hook
-	rl_event_hook
-	rl_getc_function
-	rl_redisplay_function
+	str rl_line_buffer
+	int rl_point
+	int rl_end
+	int rl_mark
+	int rl_done		
+	int rl_pending_input
+	str rl_prompt (read only)
+	filehandle rl_instream
+	filehandle rl_outstream
+	pfunc rl_startup_hook
+	pfunc rl_event_hook
+	pfunc rl_getc_function
+	pfunc rl_redisplay_function
 
 =item completion_function
 
-	rl_completion_entry_function
-	rl_attempted_completion_function
-	rl_completion_query_items
-	rl_basic_word_break_characters
-	rl_basic_quote_characters
-	rl_completer_word_break_characters
-	rl_completer_quote_characters
-	rl_filename_quote_characters
-	rl_special_prefixes
-	rl_completion_append_character
-	rl_ignore_completion_duplicates
-	rl_filename_completion_desired
-	rl_filename_quoting_desired
-	rl_inhibit_completion
+	pfunc rl_completion_entry_function
+	pfunc rl_attempted_completion_function
+	int rl_completion_query_items
+	str rl_basic_word_break_characters
+	str rl_basic_quote_characters
+	str rl_completer_word_break_characters
+	str rl_completer_quote_characters
+	str rl_filename_quote_characters
+	str rl_special_prefixes
+	int rl_completion_append_character
+	int rl_ignore_completion_duplicates
+	int rl_filename_completion_desired
+	int rl_filename_quoting_desired
+	int rl_inhibit_completion
 
 =item history_function
 
-	history_no_expand_chars
-	history_search_delimiter_chars
-	history_base
-	history_length
-	history_expansion_char
-	history_subst_char
-	history_comment_char
-	history_quotes_inhibit_expansion
+	int history_base
+	int history_length
+	char history_expansion_char
+	char history_subst_char
+	char history_comment_char
+	str history_no_expand_chars
+	str history_search_delimiter_chars
+	int history_quotes_inhibit_expansion
 
 =back
 
@@ -898,95 +896,110 @@ Examples:
 
 =item base_function
 
-	rl_fetch_var(name)
-	rl_store_var(name, val)
-	rl_readline([prompt])
-	add_history(string)
-	history_expand(line)
+	any	rl_fetch_var(str name)
+	any	rl_store_var(str name, any val)
+	string	rl_readline(prompt = '')
+	void	add_history(str string)
+	(int result, str expansion)
+		history_expand(str line)
 
 =item keybind_function
 
-	rl_add_defun(name, perl_fn [,key])
-	rl_make_bare_keymap()
-	rl_copy_keymap(map)
-	rl_make_keymap()
-	rl_discard_keymap(map)
-	rl_get_keymap()
-	rl_set_keymap(map)
-	rl_get_keymap_by_name(name)
-	rl_get_keymap_name(map)
-	rl_bind_key(key [,function [,map]])
-	rl_unbind_key(key [,map])
-	rl_generic_bind(type, keyseq, data [,map])
-	rl_parse_and_bind(line)
-	rl_read_init_file([filename])
-	rl_call_function(function [,count [,key]])
-	rl_named_function(name)
-	rl_get_function_name(function)
-	rl_function_of_keyseq(keyseq [,map])
-	rl_invoking_keyseqs(function [,map])
-	rl_function_dumper([readable])
-	rl_list_funmap_names()
+	FunctionPtr
+		rl_add_defun(str name, pfunc perl_fn, int key = -1)
+	Keymap	rl_make_bare_keymap()
+	Keymap	rl_copy_keymap(Keymap|str map)
+	Keymap	rl_make_keymap()
+	Keymap	rl_discard_keymap(Keymap|str map)
+	Keymap	rl_get_keymap()
+	Keymap	rl_set_keymap(Keymap|str map)
+	Keymap	rl_get_keymap_by_name(str name)
+	str	rl_get_keymap_name(Keymap map)
+	int	rl_bind_key(int key, FunctionPtr|str function,
+			    Keymap|str map = rl_get_keymap())
+	int	rl_unbind_key(int key, Keymap|str map = rl_get_keymap())
+	int	rl_generic_bind(int type, str keyseq,
+				FunctionPtr|Keymap|str data,
+				Keymap|str map = rl_get_keymap())
+	void	rl_parse_and_bind(str line)
+	int	rl_read_init_file(str filename = '~/.inputrc')
+	int	rl_call_function(FunctionPtr|str function, count = 1, key = -1)
+	FunctionPtr
+		rl_named_function(str name)
+	str	rl_get_function_name(FunctionPtr function)
+	(FunctionPtr|Keymap|str data, int type)
+		rl_function_of_keyseq(str keyseq,
+				      Keymap|str map = rl_get_keymap())
+	(@str)	rl_invoking_keyseqs(FuntionPtr|str function,
+				    Keymap|str map = rl_get_keymap())
+	void	rl_function_dumper(int readable = 0)
+	void	rl_list_funmap_names()
 
 =item misc_function
 
-	rl_begin_undo_group()
-	rl_end_undo_group()
-	rl_add_undo(what, start, end, text)
-	free_undo_list()
-	rl_do_undo()
-	rl_modifying([start [,end]])
-	rl_redisplay()
-	rl_forced_update_display()
-	rl_on_new_line()
-	rl_reset_line_state()
-	rl_message(text)
-	rl_clear_message()
-	rl_insert_text(text)
-	rl_delete_text([start [,end]])
-	rl_copy_text([start [,end]])
-	rl_kill_text ([start [,end]])
-	rl_read_key()
-	rl_stuff_char(c)
-	rl_initialize()
-	rl_reset_terminal([terminal_name])
-	ding()
+	int	rl_begin_undo_group()
+	int	rl_end_undo_group()
+	int	rl_add_undo(int what, int start, int end, str text)
+	void	free_undo_list()
+	int	rl_do_undo()
+	int	rl_modifying(int start = 0, int end = rl_end)
+
+	void	rl_redisplay()
+	int	rl_forced_update_display()
+	int	rl_on_new_line()
+	int	rl_reset_line_state()
+	int	rl_message(str fmt, ...)
+	int	rl_clear_message()
+
+	int	rl_insert_text(str text)
+	int	rl_delete_text(start = 0, end = rl_end)
+	str	rl_copy_text(start = 0, end = rl_end)
+	int	rl_kill_text(start = 0, end = rl_end)
+	int	rl_read_key()
+	int	rl_stuff_char(int c)
+	int	rl_initialize()
+	int	rl_reset_terminal(str terminal_name = getenv($TERM))
+	int	ding()
 
 =item callback_function
 
-	rl_callback_handler_install(prompt, lhandler)
-	rl_callback_read_char()
-	rl_callback_handler_remove()
+	void	rl_callback_handler_install(str prompt, pfunc lhandler)
+	void	rl_callback_read_char()
+	void	rl_callback_handler_remove()
 
 =item completion_function
 
-	rl_complete_internal([what_to_do])
-	completion_matches(text [,fn])
-	filename_completion_function(text, state)
-	username_completion_function(text, state)
-	list_completion_function(text, state)
+	int	rl_complete_internal(int what_to_do = TAB)
+	(@str)	completion_matches(str text,
+				   pfunc fn = filename_completion_function)
+	str	filename_completion_function(str text, int state)
+	str	username_completion_function(str text, int state)
+	str	list_completion_function(str text, int state)
 
 =item history_function
 
-	using_history()
-	remove_history(which)
-	replace_history_entry(which, line [,data])
-	clear_history()
-	stifle_history(i)
-	history_is_stifled()
-	where_history()
-	current_history()
-	history_get(offset)
-	history_total_bytes()
-	history_set_pos(pos)
-	previous_history()
-	next_history()
-	history_search(string [,direction [,pos]])
-	history_search_prefix(string [,direction])
-	read_history_range([filename [,from [,to]]])
-	write_history([filename])
-	append_history(nelements [,filename])
-	history_trancate_file([filename [,nlines]])
+	void	using_history()
+	str	remove_history(int which)
+	str	replace_history_entry(int which, str line)
+	void	clear_history()
+	int	stifle_history(int max|undef)
+	int	history_is_stifled()
+	int	where_history()
+	str	current_history()
+	str	history_get(offset)
+	int	history_total_bytes()
+	int	history_set_pos(int pos)
+	str	previous_history()
+	str	next_history()
+	int	history_search(str string,
+			       int direction = -1, int pos = where_hisotry())
+	int	history_search_prefix(str string, int direction = -1)
+	int	read_history_range(str filename = '~/.history',
+				   int from = 0, int to = -1)
+	int	write_history(str filename = '~/.history')
+	int	append_history(int nelements, str filename = '~/.history')
+	int	history_trancate_file(str filename = '~/.history',
+				      int nlines = 0)
 
 =back
 
