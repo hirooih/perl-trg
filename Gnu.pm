@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.57 1998-09-27 15:52:19 hayashi Exp $
+#	$Id: Gnu.pm,v 1.58 1999-02-22 15:48:47 hayashi Exp $
 #
 #	Copyright (c) 1996,1997,1998 Hiroo Hayashi.  All rights reserved.
 #
@@ -150,18 +150,19 @@ sub new {
 	       };
     bless $self, $class;
 
+    # set rl_readline_name before .inputrc is read in rl_initialize()
+    $Attribs{readline_name} = $name;
+
     # initialize the GNU Readline Library and termcap library
     $self->initialize();
 
-    # ornaments on to be compatible with perl5.004_05(?)
+    # enable ornaments to be compatible with perl5.004_05(?)
     unless ($ENV{PERL_RL} and $ENV{PERL_RL} =~ /\bo\w*=0/) {
-	local $^W = 0;		# Term::ReadLine is not waring flag free
+	local $^W = 0;		# Term::ReadLine is not warning flag free
 	# 'ue' (underline end) does not work on some terminal 
 	#$self->ornaments(1);
 	$self->ornaments('us,me,,');
     }
-
-    $Attribs{readline_name} = $name;
 
     if (!@_) {
 	my ($IN,$OUT) = $self->findConsole();
