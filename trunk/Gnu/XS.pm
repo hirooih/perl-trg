@@ -2,7 +2,7 @@
 #
 #	XS.pm : perl function definition for Term::ReadLine::Gnu
 #
-#	$Id: XS.pm,v 1.7 1999-04-10 15:17:57 hayashi Exp $
+#	$Id: XS.pm,v 1.8 1999-05-04 17:48:24 hayashi Exp $
 #
 #	Copyright (c) 1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -56,7 +56,11 @@ my @_matches;
 
 1;
 
-__END__
+# Uncomment the following line to enable AutoSplit.  If you are using
+# AutoLoader.pm distributed with Perl 5.004 or earlier, you must
+# update AutoLoader.pm due to its bug.
+
+#__END__
 
 
 #
@@ -404,3 +408,7 @@ sub _trp_completion_function ( $$ ) {
     }
     return undef;
 }
+
+1;
+
+__END__
