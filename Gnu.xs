@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.56 1998-03-26 15:29:49 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.57 1998-03-27 18:00:39 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -31,13 +31,36 @@ extern int rl_ignore_completion_duplicates;
 #ifdef __STDC__
 /* from GNU Readline:xmalloc.c */
 extern char *xmalloc (int);
-extern char *xfree (char *);
 void rl_extend_line_buffer (int);
 #else
 extern char *xmalloc ();
-extern char *xfree ();
 void rl_extend_line_buffer ();
 #endif /* __STDC__ */
+
+/*
+ * Using xfree() in GNU Readline Library causes problem with Solaris
+ * 2.5.  It seems that the DLL mechanism of Solaris 2.5 links another
+ * xfree() that does not do NULL argument check.
+ * I choose this as default since some others OSs may have same problem.
+ * usemymalloc=n is required.
+ */
+#ifdef OS2_USEDLL
+#ifdef __STDC__
+/* from GNU Readline:xmalloc.c */
+extern char *xfree (char *);
+#else
+extern char *xfree ();
+#endif /* __STDC__ */
+
+#else /* !OS2_USEDLL */
+static void
+xfree (string)
+     char *string;
+{
+  if (string)
+    free (string);
+}
+#endif /* !OS2_USEDLL */
 
 static char *
 dupstr(s)			/* duplicate string */
@@ -918,8 +941,9 @@ rl_callback_handler_install(prompt, lhandler)
 	  int len = strlen(prompt) + 1;
 
 	  /* The value of prompt may be used after return from this routine. */
-	  if (cb_prompt)
+	  if (cb_prompt) {
 	    Safefree(cb_prompt);
+	  }
 	  New(0, cb_prompt, len, char);
 	  Copy(prompt, cb_prompt, len, char);
 
@@ -1073,11 +1097,14 @@ remove_history(which)
 	  HIST_ENTRY *entry;
 	  entry = remove_history(which);
 	  ST(0) = sv_newmortal();
-	  if (entry && entry->line)
-	    sv_setpv(ST(0), entry->line);
-	  xfree(entry->line);
-	  xfree(entry->data);
-	  xfree((char *)entry);
+	  if (entry) {
+	    if (entry->line) {
+	      sv_setpv(ST(0), entry->line);
+	    }
+	    xfree(entry->line);
+	    xfree(entry->data);
+	    xfree((char *)entry);
+	  }
 	}
 
 void
@@ -1090,11 +1117,14 @@ replace_history_entry(which, line)
 	  HIST_ENTRY *entry;
 	  entry = replace_history_entry(which, line, (char *)NULL);
 	  ST(0) = sv_newmortal();
-	  if (entry && entry->line)
-	    sv_setpv(ST(0), entry->line);
-	  xfree(entry->line);
-	  xfree(entry->data);
-	  xfree((char *)entry);
+	  if (entry) {
+	    if (entry->line) {
+	      sv_setpv(ST(0), entry->line);
+	    }
+	    xfree(entry->line);
+	    xfree(entry->data);
+	    xfree((char *)entry);
+	  }
 	}
 
 void
@@ -1578,6 +1608,7 @@ _rl_fetch_function(id)
 	  if (id < 0 || id >= sizeof(fn_tbl)/sizeof(struct fn_vars)) {
 	    warn("Gnu.xs:_rl_fetch_function: Illegal `id' value: `%d'", id);
 	    /* return undef */
-	  } else if (fn_tbl[id].callback && SvTRUE(fn_tbl[id].callback))
+	  } else if (fn_tbl[id].callback && SvTRUE(fn_tbl[id].callback)) {
 	    sv_setsv(ST(0), fn_tbl[id].callback);
+	  }
 	}
