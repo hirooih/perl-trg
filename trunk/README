@@ -1,8 +1,8 @@
-$Id: README,v 1.1 1996-11-13 15:38:37 hayashi Exp $
+$Id: README,v 1.2 1997-01-12 16:51:12 hayashi Exp $
 
-Term::ReadLine::Gnu --- GNU Readline Library wrapper module
+Term::ReadLine::Gnu --- GNU Readline Library Wrapper Module
 
-	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
+	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
 
 	This program is free software; you can redistribute it and/or
 	modify it under the same terms as Perl itself.
@@ -11,22 +11,33 @@ Description:
 
 	This is an implementation of the interface to the GNU Readline
 	Library.  This module gives you input line editing facility,
-	input history management ficility, word completion facility,
-	etc.  It uses the real GNU Readline Library which is very
-	strong and used by many people over the World, so it works
-	just like using the GNU Readline Library :-)
+	input history management facility, word completion facility,
+	etc.  It uses the real GNU Readline Library.  And this module
+	has the interface with the almost all variables and functions
+	which are documented in the GNU Readline/History Library.  So
+	you can program your custom editing function, your custom
+	completion function, and so on with Perl.  This may be useful
+	for prototyping before programming with C.
 
 	Ilya Zakharevich distributes his implementation, which bases
-	on Jeffrey Friedl's readline.pl.  This works very good, and is
-	easy to install.  But unfortunately this package is not 8 bit
-	clean.  We Japanese usually use 8 bit characters, so this is
-	bad feature for me.  Because I had interest with C interface
-	facility and dynamic loading facility and it was a good chance
-	for me to study them, I made this module instead of fixing his
+	on Jeffrey Friedl's readline.pl.  This module works very well,
+	and is easy to install because it is written by only Perl.
+	I am trying to make my module compatible with his.  He gives
+	useful advises for me.
+
+	Unfortunately readline.pl simulates old GNU Readline library.
+	For example it is not 8 bit clean and it warns to the
+	variables in ~/.inputrc which it does not know yet.  We
+	Japanese usually use 8 bit characters, so this is bad feature
+	for me.  And I had interest with C interface facility and
+	dynamic loading facility so I thought it was a good chance for
+	me to study them.  I made this module instead of fixing his
 	module.
 
 Prerequisites:
-	You must make GNU Readline Library.  See INSTALL.
+	You must make GNU Readline Library Version 2.1 which is
+	distributed as standalone package and distributed with bash
+	version 2.0 and later.  See INSTALL.
 
 How to build/install:
 	See INSTALL.
@@ -34,9 +45,9 @@ How to build/install:
 Bugs:
 	The GNU Readline Library is very stable.  But this is my first
 	XS programming, my first module programming and, my first
-	object oriented programming, ...  Yes, there must be many bugs
-	in both programs and documents.  Comments and bug reports are
-	very welcome.
+	object oriented programming, and...  There must be many bugs
+	in both programs and documents (especially in English
+	grammar).  Comments and bug reports are very welcome.
 
 Author:
 	Hiroo Hayashi <hayashi@pdcd.ilab.toshiba.co.jp>
