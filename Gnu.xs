@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.79 1999-04-24 02:13:23 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.80 1999-05-04 17:14:00 hayashi Exp $
  *
  *	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
  *
@@ -399,8 +399,16 @@ completion_entry_function_wrapper(text, state)
   XPUSHs(sv_2mortal(newSViv(state)));
   PUTBACK;
 
+  /* PL_stack_base, PL_stack_max, and PL_stack_sp change here !!! */
+  /*
+  printf("stack_base=%p,stack_max=%p,stack_sp=%p,sp=%p\n",
+	 PL_stack_base, PL_stack_max, PL_stack_sp, sp);
+  */
   count = perl_call_sv(fn_tbl[CMP_ENT].callback, G_SCALAR);
-
+  /*
+  printf("stack_base=%p,stack_max=%p,stack_sp=%p,sp=%p\n",
+	 PL_stack_base, PL_stack_max, PL_stack_sp, sp);
+  */
   SPAGAIN;
 
   if (count != 1)
@@ -962,6 +970,8 @@ rl_readline(prompt = NULL)
 	CODE:
 	{
 	  char *line_read = readline(prompt);
+
+	  SPAGAIN;		/*!!!*/
 
 	  ST(0) = sv_newmortal(); /* default return value is 'undef' */
 	  if (line_read) {
@@ -1560,6 +1570,7 @@ completion_matches(text, fn = NULL)
 	PPCODE:
 	{
 	  char **matches;
+	  SV *n, *m;
 
 	  if (SvTRUE(fn)) {
 	    /* use completion_entry_function temporarily */
@@ -1567,8 +1578,12 @@ completion_matches(text, fn = NULL)
 	    SV *callback_save = fn_tbl[CMP_ENT].callback;
 	    fn_tbl[CMP_ENT].callback = newSVsv(fn);
 
+	    printf("stack_base=%p,stack_max=%p,stack_sp=%p,sp=%p\n",
+		   PL_stack_base, PL_stack_max, PL_stack_sp, sp);
 	    matches = completion_matches(text,
 					 completion_entry_function_wrapper);
+	    printf("stack_base=%p,stack_max=%p,stack_sp=%p,sp=%p\n",
+		   PL_stack_base, PL_stack_max, PL_stack_sp, sp);
 
 	    SvREFCNT_dec(fn_tbl[CMP_ENT].callback);
 	    fn_tbl[CMP_ENT].callback = callback_save;
@@ -1576,6 +1591,8 @@ completion_matches(text, fn = NULL)
 	  } else
 	    matches = completion_matches(text, NULL);
 
+	  SPAGAIN; sp -= 2;	/* !!! */
+	  
 	  if (matches) {
 	    int i, count;
 
@@ -1583,9 +1600,26 @@ completion_matches(text, fn = NULL)
 	    for (count = 0; matches[count]; count++)
 	      ;
 
+	    printf("stack_base=%p,stack_max=%p,stack_sp=%p,sp=%p\n",
+		   PL_stack_base, PL_stack_max, PL_stack_sp, sp);
 	    EXTEND(sp, count);
+	    printf("stack_base=%p,stack_max=%p,stack_sp=%p,sp=%p\n",
+		   PL_stack_base, PL_stack_max, PL_stack_sp, sp);
+
 	    for (i = 0; i < count; i++) {
-	      PUSHs(sv_2mortal(newSVpv(matches[i], 0)));
+	      /*PUSHs(sv_2mortal(newSVpv(matches[i], 0)));*/
+	      n = newSVpv(matches[i], 0);
+	      m = sv_2mortal(n);
+	      PUSHs(m);
+	      /*
+	      if (i > 225 && i < 230) {
+		printf("%d,%p,%p,%p,%p,%p,%d\n", i,
+		       m, n, matches[i], sp,
+		       &((PL_curstackinfo->si_cxstack)[PL_curstackinfo->si_cxix].cx_u.cx_blk.blku_oldscopesp),
+		       (PL_curstackinfo->si_cxstack)[PL_curstackinfo->si_cxix].cx_u.cx_blk.blku_oldscopesp
+		       );
+	      }
+	      */
 	      xfree(matches[i]);
 	    }
 	    xfree((char *)matches);
