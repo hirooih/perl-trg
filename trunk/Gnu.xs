@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.46 1997-02-01 17:44:52 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.47 1997-02-04 16:26:27 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -149,24 +149,28 @@ enum void_arg_func_type { STARTUP_HOOK, EVENT_HOOK, GETC_FN, REDISPLAY_FN,
 
 static struct fn_vars {
   Function **rlfuncp;		/* Readline Library variable */
+  Function *defaultfn;		/* default function */
   Function *wrapper;		/* wrapper function */
   SV *callback;			/* Perl function */
 } fn_tbl[] = {
-  { &rl_startup_hook,		startup_hook_wrapper,	NULL },	/* 0 */
-  { &rl_event_hook,		event_hook_wrapper,	NULL },	/* 1 */
-  { &rl_getc_function,		getc_function_wrapper,	NULL },	/* 2 */
+  { &rl_startup_hook,	NULL,	startup_hook_wrapper,	NULL },	/* 0 */
+  { &rl_event_hook,	NULL,	event_hook_wrapper,	NULL },	/* 1 */
+  { &rl_getc_function,	rl_getc, getc_function_wrapper,	NULL },	/* 2 */
   {								
     (Function **)&rl_redisplay_function,			/* 3 */
+    (Function *)rl_redisplay,
     (Function *)redisplay_function_wrapper,
     NULL
   },
   {
     (Function **)&rl_completion_entry_function,			/* 4 */
+    NULL,
     (Function *)completion_entry_function_wrapper,		
     NULL
   },
   {
     (Function **)&rl_attempted_completion_function,		 /* 5 */
+    NULL,
     (Function *)attempted_completion_function_wrapper,
     NULL
   }
@@ -191,7 +195,10 @@ static int
 getc_function_wrapper(fp)
      FILE *fp;
 {
-  /* 'FILE *fp' is ignored.  Use rl_instream instead in the getc_function. */
+  /*
+   * 'FILE *fp' is ignored.  Use rl_instream instead in the getc_function.
+   * How can I pass 'FILE *fp'?
+   */
   return void_arg_func_wrapper(GETC_FN);
 }
 
@@ -205,6 +212,9 @@ void_arg_func_wrapper(type)
   dSP;
   int count;
   int ret;
+
+  ENTER;
+  SAVETMPS;
 
   PUSHMARK(sp);
   count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
@@ -1395,7 +1405,7 @@ _rl_store_function(fn, id)
 	    }
 	    *(fn_tbl[id].rlfuncp) = fn_tbl[id].wrapper;
 	  } else
-	    *(fn_tbl[id].rlfuncp) = NULL;
+	    *(fn_tbl[id].rlfuncp) = fn_tbl[id].defaultfn;
 
 	  /* return variable value */
 	  sv_setsv(ST(0), fn);
