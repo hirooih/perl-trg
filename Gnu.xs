@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.45 1997-01-27 15:52:34 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.46 1997-02-01 17:44:52 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -46,7 +46,7 @@ dupstr(s)			/* duplicate string */
    * Readline Library routine.
    * Don't make a macro.  Because 's' is evaluated twice.
    */
-  strcpy (xmalloc (strlen (s) + 1), s);
+  return strcpy (xmalloc (strlen (s) + 1), s);
 }
 
 /*
@@ -77,21 +77,21 @@ static struct str_vars {
 } str_tbl[] = {
   /* When you change length of rl_line_buffer, change
      rl_line_buffer_len also. */
-  &rl_line_buffer,				0, 0,	/* 0 */
-  &rl_prompt,					0, 1,	/* 1 */
-  &rl_library_version,				0, 1,	/* 2 */
-  &rl_terminal_name,				0, 0,	/* 3 */
-  &rl_readline_name,				0, 0,	/* 4 */
+  { &rl_line_buffer,				0, 0 },	/* 0 */
+  { &rl_prompt,					0, 1 },	/* 1 */
+  { &rl_library_version,			0, 1 },	/* 2 */
+  { &rl_terminal_name,				0, 0 },	/* 3 */
+  { &rl_readline_name,				0, 0 },	/* 4 */
   
-  &rl_basic_word_break_characters,		0, 0,	/* 5 */
-  &rl_basic_quote_characters,			0, 0,	/* 6 */
-  &rl_completer_word_break_characters,		0, 0,	/* 7 */
-  &rl_completer_quote_characters,		0, 0,	/* 8 */
-  &rl_filename_quote_characters,		0, 0,	/* 9 */
-  &rl_special_prefixes,				0, 0,	/* 10 */
+  { &rl_basic_word_break_characters,		0, 0 },	/* 5 */
+  { &rl_basic_quote_characters,			0, 0 },	/* 6 */
+  { &rl_completer_word_break_characters,	0, 0 },	/* 7 */
+  { &rl_completer_quote_characters,		0, 0 },	/* 8 */
+  { &rl_filename_quote_characters,		0, 0 },	/* 9 */
+  { &rl_special_prefixes,			0, 0 },	/* 10 */
   
-  &history_no_expand_chars,			0, 0,	/* 11 */
-  &history_search_delimiter_chars,		0, 0	/* 12 */
+  { &history_no_expand_chars,			0, 0 },	/* 11 */
+  { &history_search_delimiter_chars,		0, 0 }	/* 12 */
 };
 
 /*
@@ -102,25 +102,25 @@ static struct int_vars {
   int *var;
   int charp;
 } int_tbl[] = {
-  &rl_point,					0,	/* 0 */
-  &rl_end,					0,	/* 1 */
-  &rl_mark,					0,	/* 2 */
-  &rl_done,					0,	/* 3 */
-  &rl_pending_input,				0,	/* 4 */
+  { &rl_point,					0 },	/* 0 */
+  { &rl_end,					0 },	/* 1 */
+  { &rl_mark,					0 },	/* 2 */
+  { &rl_done,					0 },	/* 3 */
+  { &rl_pending_input,				0 },	/* 4 */
 
-  &rl_completion_query_items,			0,	/* 5 */
-  &rl_completion_append_character,		0,	/* 6 */
-  &rl_ignore_completion_duplicates,		0,	/* 7 */
-  &rl_filename_completion_desired,		0,	/* 8 */
-  &rl_filename_quoting_desired,			0,	/* 9 */
-  &rl_inhibit_completion,			0,	/* 10 */
+  { &rl_completion_query_items,			0 },	/* 5 */
+  { &rl_completion_append_character,		0 },	/* 6 */
+  { &rl_ignore_completion_duplicates,		0 },	/* 7 */
+  { &rl_filename_completion_desired,		0 },	/* 8 */
+  { &rl_filename_quoting_desired,		0 },	/* 9 */
+  { &rl_inhibit_completion,			0 },	/* 10 */
 
-  &history_base,				0,	/* 11 */
-  &history_length,				0,	/* 12 */
-  (int *)&history_expansion_char,		1,	/* 13 */
-  (int *)&history_subst_char,			1,	/* 14 */
-  (int *)&history_comment_char,			1,	/* 15 */
-  &history_quotes_inhibit_expansion,		0	/* 16 */
+  { &history_base,				0 },	/* 11 */
+  { &history_length,				0 },	/* 12 */
+  { (int *)&history_expansion_char,		1 },	/* 13 */
+  { (int *)&history_subst_char,			1 },	/* 14 */
+  { (int *)&history_comment_char,		1 },	/* 15 */
+  { &history_quotes_inhibit_expansion,		0 }	/* 16 */
 };
 
 /*
@@ -183,16 +183,16 @@ static int void_arg_func_wrapper();
 #endif
 
 static int
-startup_hook_wrapper()		{ void_arg_func_wrapper(STARTUP_HOOK); }
+startup_hook_wrapper()		{ return void_arg_func_wrapper(STARTUP_HOOK); }
 static int
-event_hook_wrapper()		{ void_arg_func_wrapper(EVENT_HOOK); }
+event_hook_wrapper()		{ return void_arg_func_wrapper(EVENT_HOOK); }
 
 static int
 getc_function_wrapper(fp)
      FILE *fp;
 {
   /* 'FILE *fp' is ignored.  Use rl_instream instead in the getc_function. */
-  void_arg_func_wrapper(GETC_FN);
+  return void_arg_func_wrapper(GETC_FN);
 }
 
 static void
@@ -320,78 +320,94 @@ attempted_completion_function_wrapper(text, start, end)
 
 #ifdef __STDC__
 static int function_wrapper(int count, int key, int id);
-static int function_wrapper_00(int c, int k) { function_wrapper(c, k,  0); }
-static int function_wrapper_01(int c, int k) { function_wrapper(c, k,  1); }
-static int function_wrapper_02(int c, int k) { function_wrapper(c, k,  2); }
-static int function_wrapper_03(int c, int k) { function_wrapper(c, k,  3); }
-static int function_wrapper_04(int c, int k) { function_wrapper(c, k,  4); }
-static int function_wrapper_05(int c, int k) { function_wrapper(c, k,  5); }
-static int function_wrapper_06(int c, int k) { function_wrapper(c, k,  6); }
-static int function_wrapper_07(int c, int k) { function_wrapper(c, k,  7); }
-static int function_wrapper_08(int c, int k) { function_wrapper(c, k,  8); }
-static int function_wrapper_09(int c, int k) { function_wrapper(c, k,  9); }
-static int function_wrapper_10(int c, int k) { function_wrapper(c, k, 10); }
-static int function_wrapper_11(int c, int k) { function_wrapper(c, k, 11); }
-static int function_wrapper_12(int c, int k) { function_wrapper(c, k, 12); }
-static int function_wrapper_13(int c, int k) { function_wrapper(c, k, 13); }
-static int function_wrapper_14(int c, int k) { function_wrapper(c, k, 14); }
-static int function_wrapper_15(int c, int k) { function_wrapper(c, k, 15); }
+static int
+function_wrapper_00(int c, int k) { return function_wrapper(c, k,  0); }
+static int
+function_wrapper_01(int c, int k) { return function_wrapper(c, k,  1); }
+static int
+function_wrapper_02(int c, int k) { return function_wrapper(c, k,  2); }
+static int
+function_wrapper_03(int c, int k) { return function_wrapper(c, k,  3); }
+static int
+function_wrapper_04(int c, int k) { return function_wrapper(c, k,  4); }
+static int
+function_wrapper_05(int c, int k) { return function_wrapper(c, k,  5); }
+static int
+function_wrapper_06(int c, int k) { return function_wrapper(c, k,  6); }
+static int
+function_wrapper_07(int c, int k) { return function_wrapper(c, k,  7); }
+static int
+function_wrapper_08(int c, int k) { return function_wrapper(c, k,  8); }
+static int
+function_wrapper_09(int c, int k) { return function_wrapper(c, k,  9); }
+static int
+function_wrapper_10(int c, int k) { return function_wrapper(c, k, 10); }
+static int
+function_wrapper_11(int c, int k) { return function_wrapper(c, k, 11); }
+static int
+function_wrapper_12(int c, int k) { return function_wrapper(c, k, 12); }
+static int
+function_wrapper_13(int c, int k) { return function_wrapper(c, k, 13); }
+static int
+function_wrapper_14(int c, int k) { return function_wrapper(c, k, 14); }
+static int
+function_wrapper_15(int c, int k) { return function_wrapper(c, k, 15); }
 #else
 static int function_wrapper();
-static int function_wrapper_00(c, k)
-     int c; int k; { function_wrapper(c, k,  0); }
-static int function_wrapper_01(c, k)
-     int c; int k; { function_wrapper(c, k,  1); }
-static int function_wrapper_02(c, k)
-     int c; int k; { function_wrapper(c, k,  2); }
-static int function_wrapper_03(c, k)
-     int c; int k; { function_wrapper(c, k,  3); }
-static int function_wrapper_04(c, k)
-     int c; int k; { function_wrapper(c, k,  4); }
-static int function_wrapper_05(c, k)
-     int c; int k; { function_wrapper(c, k,  5); }
-static int function_wrapper_06(c, k)
-     int c; int k; { function_wrapper(c, k,  6); }
-static int function_wrapper_07(c, k)
-     int c; int k; { function_wrapper(c, k,  7); }
-static int function_wrapper_08(c, k)
-     int c; int k; { function_wrapper(c, k,  8); }
-static int function_wrapper_09(c, k)
-     int c; int k; { function_wrapper(c, k,  9); }
-static int function_wrapper_10(c, k)
-     int c; int k; { function_wrapper(c, k, 10); }
-static int function_wrapper_11(c, k)
-     int c; int k; { function_wrapper(c, k, 11); }
-static int function_wrapper_12(c, k)
-     int c; int k; { function_wrapper(c, k, 12); }
-static int function_wrapper_13(c, k)
-     int c; int k; { function_wrapper(c, k, 13); }
-static int function_wrapper_14(c, k)
-     int c; int k; { function_wrapper(c, k, 14); }
-static int function_wrapper_15(c, k)
-     int c; int k; { function_wrapper(c, k, 15); }
+static int
+function_wrapper_00(c, k) int c; int k; { return function_wrapper(c, k,  0); }
+static int
+function_wrapper_01(c, k) int c; int k; { return function_wrapper(c, k,  1); }
+static int
+function_wrapper_02(c, k) int c; int k; { return function_wrapper(c, k,  2); }
+static int
+function_wrapper_03(c, k) int c; int k; { return function_wrapper(c, k,  3); }
+static int
+function_wrapper_04(c, k) int c; int k; { return function_wrapper(c, k,  4); }
+static int
+function_wrapper_05(c, k) int c; int k; { return function_wrapper(c, k,  5); }
+static int
+function_wrapper_06(c, k) int c; int k; { return function_wrapper(c, k,  6); }
+static int
+function_wrapper_07(c, k) int c; int k; { return function_wrapper(c, k,  7); }
+static int
+function_wrapper_08(c, k) int c; int k; { return function_wrapper(c, k,  8); }
+static int
+function_wrapper_09(c, k) int c; int k; { return function_wrapper(c, k,  9); }
+static int
+function_wrapper_10(c, k) int c; int k; { return function_wrapper(c, k, 10); }
+static int
+function_wrapper_11(c, k) int c; int k; { return function_wrapper(c, k, 11); }
+static int
+function_wrapper_12(c, k) int c; int k; { return function_wrapper(c, k, 12); }
+static int
+function_wrapper_13(c, k) int c; int k; { return function_wrapper(c, k, 13); }
+static int
+function_wrapper_14(c, k) int c; int k; { return function_wrapper(c, k, 14); }
+static int
+function_wrapper_15(c, k) int c; int k; { return function_wrapper(c, k, 15); }
 #endif /* __STDC__ */
 
 static struct fnnode {
   Function *wrapper;		/* C wrapper function */
   SV *pfn;			/* Perl function */
 } fntbl[] = {
-  function_wrapper_00,	NULL,
-  function_wrapper_01,	NULL,
-  function_wrapper_02,	NULL,
-  function_wrapper_03,	NULL,
-  function_wrapper_04,	NULL,
-  function_wrapper_05,	NULL,
-  function_wrapper_06,	NULL,
-  function_wrapper_07,	NULL,
-  function_wrapper_08,	NULL,
-  function_wrapper_09,	NULL,
-  function_wrapper_10,	NULL,
-  function_wrapper_11,	NULL,
-  function_wrapper_12,	NULL,
-  function_wrapper_13,	NULL,
-  function_wrapper_14,	NULL,
-  function_wrapper_15,	NULL,
+  { function_wrapper_00,	NULL },
+  { function_wrapper_01,	NULL },
+  { function_wrapper_02,	NULL },
+  { function_wrapper_03,	NULL },
+  { function_wrapper_04,	NULL },
+  { function_wrapper_05,	NULL },
+  { function_wrapper_06,	NULL },
+  { function_wrapper_07,	NULL },
+  { function_wrapper_08,	NULL },
+  { function_wrapper_09,	NULL },
+  { function_wrapper_10,	NULL },
+  { function_wrapper_11,	NULL },
+  { function_wrapper_12,	NULL },
+  { function_wrapper_13,	NULL },
+  { function_wrapper_14,	NULL },
+  { function_wrapper_15,	NULL }
 };
 
 static int
@@ -409,7 +425,7 @@ function_wrapper(count, key, id)
 
   perl_call_sv(fntbl[id].pfn, G_DISCARD);
 
-  return;
+  return 0;
 }
 
 static SV* callback_handler_callback = NULL;
@@ -419,8 +435,6 @@ callback_handler_wrapper(line)
      char *line;
 {
   dSP;
-  int count;
-  int ret;
 
   PUSHMARK(sp);
   XPUSHs(sv_2mortal(newSVpv(line, 0)));
@@ -473,6 +487,7 @@ rl_add_defun(name, fn, key = -1)
 	  int i;
 	  int nentry = sizeof(fntbl)/sizeof(struct fnnode);
 
+	  /* search an empty slot */
 	  for (i = 0; i < nentry; i++)
 	    if (! fntbl[i].pfn)
 	      break;
@@ -664,7 +679,6 @@ rl_function_of_keyseq(keyseq, map = rl_get_keymap())
 	{
 	  int type;
 	  Function *p = rl_function_of_keyseq(keyseq, map, &type);
-	  char *data;
 	  SV *sv;
 
 	  if (p) {
@@ -679,7 +693,7 @@ rl_function_of_keyseq(keyseq, map = rl_get_keymap())
 	    case ISMACR:
 	      sv_setpv(sv, (char *)p);
 	      break;
-	    defaults:
+	    default:
 	      warn("Gnu.xs:rl_function_of_keyseq: illegal type `%d'\n", type);
 	      XSRETURN_EMPTY;	/* return NULL list */
 	    }
@@ -867,10 +881,13 @@ rl_callback_handler_install(prompt, lhandler)
 	CODE:
 	{
 	  static char *cb_prompt = NULL;
+	  int len = strlen(prompt);
 
-	  /* The value of prompt may be use afterward. */
-	  xfree(cb_prompt);
-	  cb_prompt = dupstr(prompt);
+	  /* The value of prompt may be used after return from this routine. */
+	  if (cb_prompt)
+	    Safefree(cb_prompt);
+	  New(0, cb_prompt, len, char);
+	  Copy(prompt, cb_prompt, len, char);
 
 	  /*
 	   * Don't remove braces. The definition of SvSetSV() of
@@ -1211,11 +1228,15 @@ _rl_store_str(pstr, id)
 	  }
 
 	  /*
-	   * Use xmalloc() instead of New(),
-	   * because this block may be reallocated by readline library.
+	   * Use xmalloc() and xfree() instead of New() and Safefree(),
+	   * because this block may be reallocated by the Readline Library.
 	   */
 	  if (str_tbl[id].accessed && *str_tbl[id].var) {
-	    xfree(*str_tbl[id].var); /* don't free static area */
+	    /*
+	     * First time a variable is used by this routine,
+	     * it may be a static area.  So it cannot be freed.
+	     */
+	    xfree(*str_tbl[id].var);
 	    *str_tbl[id].var = NULL;
 	  }
 	  str_tbl[id].accessed = 1;
@@ -1249,8 +1270,6 @@ _rl_store_int(pint, id)
 	PROTOTYPE: $$
 	CODE:
 	{
-	  size_t len;
-
 	  ST(0) = sv_newmortal();
 	  if (id < 0 || id >= sizeof(int_tbl)/sizeof(struct int_vars)) {
 	    warn("Gnu.xs:_rl_store_int: Illegal `id' value: `%d'", id);
@@ -1364,17 +1383,19 @@ _rl_store_function(fn, id)
 	    XSRETURN_UNDEF;
 	  }
 	  
-	  /*
-	   * Don't remove braces. The definition of SvSetSV() of
-	   * Perl 5.003 has a problem.
-	   */
-	  if (fn_tbl[id].callback) {
-	    SvSetSV(fn_tbl[id].callback, fn);
-	  } else {
-	    fn_tbl[id].callback = newSVsv(fn);
-	  }
-
-	  *(fn_tbl[id].rlfuncp) = SvTRUE(fn) ? fn_tbl[id].wrapper : NULL;
+	  if (SvTRUE(fn)) {
+	    /*
+	     * Don't remove braces. The definition of SvSetSV() of
+	     * Perl 5.003 has a problem.
+	     */
+	    if (fn_tbl[id].callback) {
+	      SvSetSV(fn_tbl[id].callback, fn);
+	    } else {
+	      fn_tbl[id].callback = newSVsv(fn);
+	    }
+	    *(fn_tbl[id].rlfuncp) = fn_tbl[id].wrapper;
+	  } else
+	    *(fn_tbl[id].rlfuncp) = NULL;
 
 	  /* return variable value */
 	  sv_setsv(ST(0), fn);
@@ -1390,8 +1411,6 @@ _rl_fetch_function(id)
 	  if (id < 0 || id >= sizeof(fn_tbl)/sizeof(struct fn_vars)) {
 	    warn("Gnu.xs:_rl_fetch_function: Illegal `id' value: `%d'", id);
 	    /* return undef */
-	  } else {
-	    if (fn_tbl[id].callback)
-	      sv_setsv(ST(0), fn_tbl[id].callback);
-	  }
+	  } else if (fn_tbl[id].rlfuncp)
+	    sv_setsv(ST(0), fn_tbl[id].callback);
 	}
