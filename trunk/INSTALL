@@ -1,6 +1,9 @@
-#	$Id: INSTALL,v 1.16 1999-04-04 15:14:23 hayashi Exp $
+#	$Id: INSTALL,v 1.17 1999-06-23 12:51:43 hayashi Exp $
 
 1. How to Install Term::ReadLine::Gnu
+
+	See the section `3. Tips for Cygwin Environment' for Windows
+	98 and Windows NT.
 
 1.1 Install GNU Readline library 2.1 or later and their header files.
 
@@ -32,30 +35,40 @@
 
 2. How to Install GNU Readline Library
 
-	Now this module supports only GNU Readline Library 2.1, 2.2.1 and
-	4.0. (readline-2.[12].tar.gz, readline-4.0.tar.gz or libraries
-	which are included in the GNU Bash version 2.0 or later) Executing
-	`perl Makefile.PL` detects which version of the GNU Readline
-	Library is already installed and warns you if you have the
-	unsupported version.
+	Now this module supports only GNU Readline Library 2.1, 2.2.1
+	and 4.0. (readline-2.[12].tar.gz, readline-4.0.tar.gz or
+	libraries which are included in the GNU Bash version 2.0 or
+	later) Executing `perl Makefile.PL` detects which version of
+	the GNU Readline Library is already installed and warns you if
+	you have the unsupported version.
 
-	Note that some free Unix distribution and Cygwin32-b19 include
-	the GNU Readline Library 2.0 which is not supported by this
-	module.  (I can make readline-2.2 by ordinary configure and
-	make process even on Window 95 with Cygwin32 environment.  But
-	my perl for Windows 95/NT does not work with it.  Your
-	suggestion will be welcome.)
+	Note that some free Unix distribution and Cygwin32-b19 and b20
+	include the GNU Readline Library 2.0 which is not supported by
+	this module.
 
 	In the following example, the install prefix directory is
 	`/usr/local/gnu'.  If you install the library and header files
 	in another directory, you must edit `LIBS' and/or `INC'
 	section in Makefile.PL.
 
-	You DON'T have to build the library as shared library.  If you
-	want, you can do.  If you want to build it, use readline-4.0 (and
-	later).  Type `make shared' instead of `make' to build shared
-	library.
-	
+	You HAVE TO build the library as shared library on the
+	following OSs;
+		HPUX
+
+	You DON'T HAVE TO and may build the library as shared library
+	on the following OSs;
+		GNU/Linux 2.x
+		SunOS 4.x, 5.x
+		AIX 4.1.x
+		Cygwin 20.x
+
+	# Please let me know on your experience on others OSs.
+
+	If you want to build it as shared library, use readline-4.0
+	(or later).  Type `make shared' instead of `make' to build
+	shared library.
+
+
 	Since the GNU Readline Library is 8 bit clean, I use Japanese
 	characters without any patch.  But I have to hit Backspace key
 	twice to erase a Japanese character.  If you want to handle
@@ -111,7 +124,7 @@
 
 2.3. libreadline.a in bash-2.0.tar.gz
 
-# I reported this patch to Chet Ramey, the bash maintener, but he
+# I reported this patch to Chet Ramey, the bash maintainer, but he
 # fixed Makefile.in as follows;
 #
 # $ grep -A2 ^install: bash-2.02/lib/readline/Makefile.in 
@@ -180,5 +193,62 @@
 		% make
 	7. install
 		% make install
+
+
+3. Tips for Cygwin Environment
+
+	I could install Term::ReadLine::Gnu successfully on my kids'
+	game launcher called Windows 98 with the following procedure.
+
+3.1 Install Cygwin b20.1
+
+	Get full.exe from http://sourceware.cygnus.com/cygwin/ and
+	execute it.
+
+3.2 Install Perl
+
+	Download dynamically-linked version perl from the following URL;
+
+		http://cygutils.netpedia.net/
+
+	I downloaded the patch from this site and build perl by
+	myself.  If you have fast access to the Internet, it should be
+	easier to download binary distribution.
+
+	There is older static distribution on the site.  Once I tried
+	it but it required some hack.  I recommend you to use the
+	dynamically-linked version.
+
+3.3 Install GNU Readline Library.
+
+	readline-4.0.tar.gz has a bug on the Cygwin environment in
+	history file access routine.  Apply the following patch.
+
+	All other tasks are same as installation on UNIX.
+
+--- histfile.c-dist	Wed Sep 16 02:01:56 1998
++++ histfile.c	Mon May 17 00:59:10 1999
+@@ -158,7 +158,7 @@
+ #if 0
+   if (read (file, buffer, file_size) != file_size)
+ #else
+-  if (read (file, buffer, file_size) < 0)
++  if ((file_size = read (file, buffer, file_size)) < 0)
+ #endif
+     {
+   error_and_exit:
+@@ -279,7 +279,7 @@
+      truncate to. */
+   if (i && ((file = open (filename, O_WRONLY|O_TRUNC|O_BINARY, 0600)) != -1))
+     {
+-      write (file, buffer + i, file_size - i);
++      write (file, buffer + i, chars_read - i);
+ 
+ #if defined (__BEOS__)
+       /* BeOS ignores O_TRUNC. */
+
+3.4 Install Term::Readline::Gnu
+
+	See section 1.
 
 EOF
