@@ -1,4 +1,4 @@
-$Id: README,v 1.11 1998-05-12 16:38:47 hayashi Exp $
+$Id: README,v 1.12 1998-09-27 16:09:18 hayashi Exp $
 
 Term::ReadLine::Gnu --- GNU Readline Library Wrapper Module
 
@@ -57,6 +57,20 @@ Author:
 
 
 Revision History:
+
+1.03  1998-09-27
+	- fix a bug when prompt string includes non-printing
+	  characters and an input line is longer than terminal width.
+	  Constants, RL_PROMPT_START_IGNORE and RL_PROMPT_END_IGNORE,
+	  are incorporated from the GNU Readline Library to support
+	  this feature.
+	- now works on a system which does not have /etc/termcap and
+	  has termcap compatible library, libncurses or libcurses.
+
+1.02  1998-08-14
+	- fix a bug in Makefile.PL, which quoted a variable, $increadlinedir,
+	  with a pair of single quotes
+	- this is an internal revision
 
 1.01  1998-05-13
 	- support readline-2.2
