@@ -2,9 +2,9 @@
 #
 #	XS.pm : perl function definition for Term::ReadLine::Gnu
 #
-#	$Id: XS.pm,v 1.9 2000-04-01 14:39:59 hayashi Exp $
+#	$Id: XS.pm,v 1.10 2000-04-02 15:58:32 hayashi Exp $
 #
-#	Copyright (c) 1999 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
