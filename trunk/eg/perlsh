@@ -1,8 +1,8 @@
 #! /usr/local/bin/perl
 #
-#	$Id: perlsh,v 1.20 1999-04-03 17:26:59 hayashi Exp $	
+#	$Id: perlsh,v 1.21 1999-04-08 16:37:56 hayashi Exp $	
 #
-#	Copyright (c) 1996-1999 Hiroo Hayashi. All Rights Reserved.
+#	Copyright (c) 1999 Hiroo Hayashi. All Rights Reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -25,7 +25,7 @@ very strong calculator which has whole perl functions.
 
 This is a sample program Term::ReadLine::Gnu module.  When you input a
 line, the line editing function of GNU Readline Library is available.
-The variable name completion function is also available.
+Perl symbol name completion function is also available.
 
 =cut
 
@@ -137,7 +137,7 @@ sub prompt {
     # if reference to a subroutine return the return value of it
     return &$_ if (ref($_) eq 'CODE');
 
-    # \h: hostname, \u: username, \!: history number
+    # \h: hostname, \u: username, \w: package name, \!: history number
     s/\\h/$HOSTNAME/g;
     s/\\u/$LOGNAME/g;
     s/\\w/$CWP/g;
@@ -393,11 +393,19 @@ variables in F<~/.perlshrc>;
 
 =item C<$PerlSh::PS1>
 
-The primary prompt string.  The default value is "$ ".
+The primary prompt string.  The following backslash-escaped special
+characters can be used.
+
+	\h: host name
+	\u: user name
+	\w: package name
+	\!: history number
+
+The default value is `C<\w[\!]$ >'.
 
 =item C<$PerlSh::PS2>
 
-The secondary prompt string.  The default value is "> ".
+The secondary prompt string.  The default value is `C<E<gt> >'.
 
 =item C<$PerlSh::HISTFILE>
 
@@ -422,9 +430,32 @@ page.  The default value is 0;
 
 =item F<~/.perlshrc>
 
+This file is eval-ed at initialization.  If a subroutine C<afterinit>
+is defined in this file, it will be eval-ed after initialization.
+Here is a sample.
+
+	# -*- mode: perl -*-
+	# decimal to hexa
+	sub h { map { sprintf("0x%x", $_ ) } @_;}
+
+	sub tk {
+	    $t->tkRunning(1);
+	    use Tk;
+	    $mw = MainWindow->new();
+	}
+
+	# for debugging Term::ReadLine::Gnu
+	sub afterinit {
+	    *t = \$PerlSh::term;
+	    *a = \$PerlSh::attribs;
+	}
+
 =item F<~/.perlsh_history>
 
 =item F<~/.inputrc>
+
+A initialization file for the GNU Readline Library.  Refer its manual
+for details.
 
 =back
 
@@ -437,11 +468,5 @@ GNU Readline Library Manual
 =head1 AUTHOR
 
 Hiroo Hayashi <hiroo.hayashi@computer.org>
-
-=head1 TODO
-
-completion of key name for hash and hash reference
-
-completion of method name
 
 =cut
