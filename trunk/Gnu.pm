@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.26 1997-01-18 16:08:32 hayashi Exp $
+#	$Id: Gnu.pm,v 1.27 1997-01-18 16:28:27 hayashi Exp $
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
 #
@@ -86,8 +86,8 @@ my @miscfn = qw( rl_begin_undo_group	rl_end_undo_group	rl_add_undo
 		 rl_clear_message	rl_insert_text		rl_delete_text
 		 rl_copy_text		rl_kill_text 
 
-		 rl_read_key		rl_stuff_char		rl_initialize
-		 rl_reset_terminal	ding
+		 rl_read_key		rl_getc			rl_stuff_char
+		 rl_initialize		rl_reset_terminal	ding
 
 		 $rl_line_buffer	$rl_buffer_len
 		 $rl_point		$rl_end			$rl_mark
@@ -513,24 +513,23 @@ my %_rl_vars
        history_no_expand_chars			=> ['S', 11],
        history_search_delimiter_chars		=> ['S', 12],
        
-       rl_line_buffer_len			=> ['I', 0],
-       rl_point					=> ['I', 1],
-       rl_end					=> ['I', 2],
-       rl_mark					=> ['I', 3],
-       rl_done					=> ['I', 4],
-       rl_pending_input				=> ['I', 5],
-       rl_completion_query_items		=> ['I', 6],
-       rl_completion_append_character		=> ['C', 7],
-       rl_ignore_completion_duplicates		=> ['I', 8],
-       rl_filename_completion_desired		=> ['I', 9],
-       rl_filename_quoting_desired		=> ['I', 10],
-       rl_inhibit_completion			=> ['I', 11],
-       history_base				=> ['I', 12],
-       history_length				=> ['I', 13],
-       history_expansion_char			=> ['C', 14],
-       history_subst_char			=> ['C', 15],
-       history_comment_char			=> ['C', 16],
-       history_quotes_inhibit_expansion		=> ['I', 17],
+       rl_point					=> ['I', 0],
+       rl_end					=> ['I', 1],
+       rl_mark					=> ['I', 2],
+       rl_done					=> ['I', 3],
+       rl_pending_input				=> ['I', 4],
+       rl_completion_query_items		=> ['I', 5],
+       rl_completion_append_character		=> ['C', 6],
+       rl_ignore_completion_duplicates		=> ['I', 7],
+       rl_filename_completion_desired		=> ['I', 8],
+       rl_filename_quoting_desired		=> ['I', 9],
+       rl_inhibit_completion			=> ['I', 10],
+       history_base				=> ['I', 11],
+       history_length				=> ['I', 12],
+       history_expansion_char			=> ['C', 13],
+       history_subst_char			=> ['C', 14],
+       history_comment_char			=> ['C', 15],
+       history_quotes_inhibit_expansion		=> ['I', 16],
 
        rl_startup_hook				=> ['F', 0],
        rl_event_hook				=> ['F', 1],
@@ -751,7 +750,6 @@ Examples:
 =item misc_function
 
 	rl_line_buffer
-	rl_line_buffer_len
 	rl_point
 	rl_end
 	rl_mark
