@@ -1,9 +1,9 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.63 1999-02-27 07:36:31 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.64 1999-03-01 15:17:40 hayashi Exp $
  *
- *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
+ *	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
  *
  *	This program is free software; you can redistribute it and/or
  *	modify it under the same terms as Perl itself.
@@ -101,6 +101,29 @@ rl_get_function_name (function)
   return NULL;
 }
 
+/*
+ * from readline-4.0:complete.c
+ * Redefine here since the function defined as static in complete.c.
+ * This function is used for default vaule for rl_filename_quoting_function.
+ */
+static char * rl_quote_filename __P((char *s, int rtype, char *qcp));
+
+static char *
+rl_quote_filename (s, rtype, qcp)
+     char *s;
+     int rtype;
+     char *qcp;
+{
+  char *r;
+
+  r = xmalloc (strlen (s) + 2);
+  *r = *rl_completer_quote_characters;
+  strcpy (r + 1, s);
+  if (qcp)
+    *qcp = *rl_completer_quote_characters;
+  return r;
+}
+
 #if (RLMAJORVER < 4)
 /*
  * Before GNU Readline Library Version 4.0, rl_save_prompt() was
@@ -167,9 +190,9 @@ static struct int_vars {
   { (int *)&history_expansion_char,		1, 0 },	/* 14 */
   { (int *)&history_subst_char,			1, 0 },	/* 15 */
   { (int *)&history_comment_char,		1, 0 },	/* 16 */
-#if (RLMAJORVER < 4)
   { &history_quotes_inhibit_expansion,		0, 0 }	/* 17 */
-#else
+#if (RLMAJORVER >= 4)
+  ,
   { &history_quotes_inhibit_expansion,		0, 0 },	/* 17 */
   { &rl_erase_empty_line,			0, 0 },	/* 18 */
   { &rl_catch_signals,				0, 0 },	/* 19 */
@@ -188,12 +211,28 @@ static int getc_function_wrapper __P((FILE *));
 static void redisplay_function_wrapper __P((void));
 static char *completion_entry_function_wrapper __P((char *, int));
 static char **attempted_completion_function_wrapper __P((char *, int, int));
+static char *filename_quoting_function_wrapper __P((char *text, int match_type,
+						    char *quote_pointer));
+static char *filename_dequoting_function_wrapper __P((char *text,
+						      int quote_char));
+static int char_is_quoted_p_wrapper __P((char *text, int index));
+static void ignore_some_completions_function_wrapper __P((char **matches));
+static int directory_completion_hook_wrapper __P((char **textp));
+static int history_inhibit_expansion_function_wrapper __P((char *str, int i));
 #if (RLMAJORVER >= 4)
 static int pre_input_hook_wrapper __P((void));
+static void completion_display_matches_hook_wrapper __P((char **matches,
+							 int len, int max));
 #endif /* (RLMAJORVER < 4) */
 
 enum void_arg_func_type { STARTUP_HOOK, EVENT_HOOK, GETC_FN, REDISPLAY_FN,
-			  CMP_ENT, ATMPT_COMP, PRE_INPUT_HOOK };
+			  CMP_ENT, ATMPT_COMP,
+			  FN_QUOTE, FN_DEQUOTE, CHAR_IS_QUOTEDP,
+			  IGNORE_COMP, DIR_COMP, HIST_INHIBIT_EXP
+#if (RLMAJORVER >= 4)
+			  , PRE_INPUT_HOOK, COMP_DISP_HOOK
+#endif /* (RLMAJORVER < 4) */
+			};
 
 static struct fn_vars {
   Function **rlfuncp;		/* GNU Readline Library variable */
@@ -221,10 +260,52 @@ static struct fn_vars {
     NULL,
     (Function *)attempted_completion_function_wrapper,
     NULL
+  },
+  {
+    (Function **)&rl_filename_quoting_function,			/* 6 */
+    (Function *)rl_quote_filename,
+    (Function *)filename_quoting_function_wrapper,
+    NULL
+  },
+  {
+    (Function **)&rl_filename_dequoting_function,		/* 7 */
+    NULL,
+    (Function *)filename_dequoting_function_wrapper,
+    NULL
+  },
+  {
+    (Function **)&rl_char_is_quoted_p,				/* 8 */
+    NULL,
+    (Function *)char_is_quoted_p_wrapper,
+    NULL
+  },
+  {
+    (Function **)&rl_ignore_some_completions_function,		/* 9 */
+    NULL,
+    (Function *)ignore_some_completions_function_wrapper,
+    NULL
+  },
+  {
+    (Function **)&rl_directory_completion_hook,			/* 10 */
+    NULL,
+    (Function *)directory_completion_hook_wrapper,
+    NULL
+  },
+  {
+    (Function **)&history_inhibit_expansion_function,		/* 11 */
+    NULL,
+    (Function *)history_inhibit_expansion_function_wrapper,
+    NULL
   }
 #if (RLMAJORVER >= 4)
   ,
-  { &rl_pre_input_hook,	NULL,	pre_input_hook_wrapper,	NULL }	/* 6 */
+  { &rl_pre_input_hook,	NULL,	pre_input_hook_wrapper,	NULL },	/* 12 */
+  {
+    (Function **)&rl_completion_display_matches_hook,		/* 13 */
+    NULL,
+    (Function *)completion_display_matches_hook_wrapper,
+    NULL
+  }
 #endif /* (RLMAJORVER < 4) */
 };
 
@@ -252,6 +333,11 @@ getc_function_wrapper(fp)
 
 static void
 redisplay_function_wrapper()	{ void_arg_func_wrapper(REDISPLAY_FN); }
+
+#if (RLMAJORVER >= 4)
+static int
+pre_input_hook_wrapper() { return void_arg_func_wrapper(PRE_INPUT_HOOK); }
+#endif /* (RLMAJORVER < 4) */
 
 static int
 void_arg_func_wrapper(type)
@@ -379,9 +465,303 @@ attempted_completion_function_wrapper(text, start, end)
   return matches;
 }
 
-#if (RLMAJORVER >= 4)
+/*
+ * call a perl function as rl_filename_quoting_function
+ */
+
+static char *
+filename_quoting_function_wrapper(text, match_type, quote_pointer)
+     char *text;
+     int match_type;
+     char *quote_pointer;
+{
+  dSP;
+  int count;
+  SV *replacement;
+  char *str;
+  
+  ENTER;
+  SAVETMPS;
+
+  PUSHMARK(sp);
+  if (text) {
+    XPUSHs(sv_2mortal(newSVpv(text, 0)));
+  } else {
+    XPUSHs(&sv_undef);
+  }
+  XPUSHs(sv_2mortal(newSViv(match_type)));
+  if (quote_pointer) {
+    XPUSHs(sv_2mortal(newSVpv(quote_pointer, 0)));
+  } else {
+    XPUSHs(&sv_undef);
+  }
+  PUTBACK;
+
+  count = perl_call_sv(fn_tbl[FN_QUOTE].callback, G_SCALAR);
+
+  SPAGAIN;
+
+  if (count != 1)
+    croak("Gnu.xs:filename_quoting_function_wrapper: Internal error\n");
+
+  replacement = POPs;
+  str = SvOK(replacement) ? dupstr(SvPV(replacement, na)) : NULL;
+
+  PUTBACK;
+  FREETMPS;
+  LEAVE;
+  return str;
+}
+
+/*
+ * call a perl function as rl_filename_dequoting_function
+ */
+
+static char *
+filename_dequoting_function_wrapper(text, quote_char)
+     char *text;
+     int quote_char;
+{
+  dSP;
+  int count;
+  SV *replacement;
+  char *str;
+  
+  ENTER;
+  SAVETMPS;
+
+  PUSHMARK(sp);
+  if (text) {
+    XPUSHs(sv_2mortal(newSVpv(text, 0)));
+  } else {
+    XPUSHs(&sv_undef);
+  }
+  XPUSHs(sv_2mortal(newSViv(quote_char)));
+  PUTBACK;
+
+  count = perl_call_sv(fn_tbl[FN_DEQUOTE].callback, G_SCALAR);
+
+  SPAGAIN;
+
+  if (count != 1)
+    croak("Gnu.xs:filename_dequoting_function_wrapper: Internal error\n");
+
+  replacement = POPs;
+  str = SvOK(replacement) ? dupstr(SvPV(replacement, na)) : NULL;
+
+  PUTBACK;
+  FREETMPS;
+  LEAVE;
+  return str;
+}
+
+/*
+ * call a perl function as rl_char_is_quoted_p
+ */
+
 static int
-pre_input_hook_wrapper() { return void_arg_func_wrapper(PRE_INPUT_HOOK); }
+char_is_quoted_p_wrapper(text, index)
+     char *text;
+     int index;
+{
+  dSP;
+  int count;
+  int ret;
+  
+  ENTER;
+  SAVETMPS;
+
+  PUSHMARK(sp);
+  if (text) {
+    XPUSHs(sv_2mortal(newSVpv(text, 0)));
+  } else {
+    XPUSHs(&sv_undef);
+  }
+  XPUSHs(sv_2mortal(newSViv(index)));
+  PUTBACK;
+
+  count = perl_call_sv(fn_tbl[CHAR_IS_QUOTEDP].callback, G_SCALAR);
+
+  SPAGAIN;
+
+  if (count != 1)
+    croak("Gnu.xs:char_is_quoted_p_wrapper: Internal error\n");
+
+  ret = POPi;
+  PUTBACK;
+  FREETMPS;
+  LEAVE;
+  return ret;
+}
+
+/*
+ * call a perl function as rl_ignore_some_completions_function
+ */
+
+static void
+ignore_some_completions_function_wrapper(matches)
+     char **matches;
+{
+  dSP;
+  int i, l;
+  AV *av_matches;
+  
+  /* copy C matches[] array into perl array */
+  av_matches = newAV();
+
+  /* matches[0] is the maximal matching substring.  So it may NULL, even rest
+   * of matches[] has values. */
+  if (matches[0]) {
+    av_push(av_matches, sv_2mortal(newSVpv(matches[0], 0)));
+    xfree(matches[0]);
+  } else {
+    av_push(av_matches, &sv_undef);
+  }
+
+  for (i = 1; matches[i]; i++)
+    if (matches[i]) {
+      av_push(av_matches, sv_2mortal(newSVpv(matches[i], 0)));
+      xfree(matches[i]);
+    } else {
+      av_push(av_matches, &sv_undef);
+    }
+
+  PUSHMARK(sp);
+  XPUSHs(newRV((SV *)av_matches)); /* push reference of array */
+  PUTBACK;
+
+  perl_call_sv(fn_tbl[IGNORE_COMP].callback, G_DISCARD);
+
+  /* rebuild matches[] */
+  l = av_len(av_matches) + 1;
+  if (i < l)
+    croak("Gnu.xs:ignore_some_completions_function_wrapper: matches array becomes longer.\n");
+
+  for (i = 0; i < l; i++)
+    matches[i] = dupstr(SvPV(av_shift(av_matches), na));
+}
+
+/*
+ * call a perl function as rl_directory_completion_hook
+ */
+
+static int
+directory_completion_hook_wrapper(textp)
+     char **textp;
+{
+  dSP;
+  int count;
+  char *ret;
+  
+  ENTER;
+  SAVETMPS;
+
+  PUSHMARK(sp);
+  if (textp && *textp) {
+    XPUSHs(sv_2mortal(newSVpv(*textp, 0)));
+  } else {
+    XPUSHs(&sv_undef);
+  }
+  PUTBACK;
+
+  count = perl_call_sv(fn_tbl[DIR_COMP].callback, G_SCALAR);
+
+  SPAGAIN;
+
+  if (count != 1)
+    croak("Gnu.xs:directory_completion_hook_wrapper: Internal error\n");
+
+  ret = POPp;
+  PUTBACK;
+  FREETMPS;
+  LEAVE;
+
+  if (strcmp(*textp, ret) != 0) {
+    xfree(*textp);
+    *textp = dupstr(ret);
+  }
+}
+
+/*
+ * call a perl function as history_inhibit_expansion_function
+ */
+
+static int
+history_inhibit_expansion_function_wrapper(text, index)
+     char *text;
+     int index;
+{
+  dSP;
+  int count;
+  int ret;
+  
+  ENTER;
+  SAVETMPS;
+
+  PUSHMARK(sp);
+  if (text) {
+    XPUSHs(sv_2mortal(newSVpv(text, 0)));
+  } else {
+    XPUSHs(&sv_undef);
+  }
+  XPUSHs(sv_2mortal(newSViv(index)));
+  PUTBACK;
+
+  count = perl_call_sv(fn_tbl[HIST_INHIBIT_EXP].callback, G_SCALAR);
+
+  SPAGAIN;
+
+  if (count != 1)
+    croak("Gnu.xs:history_inhibit_expansion_function_wrapper: Internal error\n");
+
+  ret = POPi;
+  PUTBACK;
+  FREETMPS;
+  LEAVE;
+  return ret;
+}
+
+#if (RLMAJORVER >= 4)
+/*
+ * call a perl function as rl_completion_display_matches_hook
+ */
+
+static void
+completion_display_matches_hook_wrapper(matches, len, max)
+     char **matches;
+     int len;
+     int max;
+{
+  dSP;
+  int i, l;
+  AV *av_matches;
+  
+  /* copy C matches[] array into perl array */
+  av_matches = newAV();
+
+  /* matches[0] is the maximal matching substring.  So it may NULL, even rest
+   * of matches[] has values. */
+  if (matches[0]) {
+    av_push(av_matches, sv_2mortal(newSVpv(matches[0], 0)));
+  } else {
+    av_push(av_matches, &sv_undef);
+  }
+
+  for (i = 1; matches[i]; i++)
+    if (matches[i]) {
+      av_push(av_matches, sv_2mortal(newSVpv(matches[i], 0)));
+    } else {
+      av_push(av_matches, &sv_undef);
+    }
+
+  PUSHMARK(sp);
+  XPUSHs(sv_2mortal(newRV((SV *)av_matches))); /* push reference of array */
+  XPUSHs(sv_2mortal(newSViv(len)));
+  XPUSHs(sv_2mortal(newSViv(max)));
+  PUTBACK;
+
+  perl_call_sv(fn_tbl[COMP_DISP_HOOK].callback, G_DISCARD);
+}
 #endif /* (RLMAJORVER < 4) */
 
 /*
@@ -964,7 +1344,7 @@ _rl_display_match_list(...)
 	    av_matches = (AV *)SvRV(ST(0));
 	    if ((n = av_len(av_matches) + 1) == 0)
 	      return;
-	    matches = (char **)xmalloc (sizeof(char *) * n);
+	    matches = (char **)xmalloc (sizeof(char *) * (n + 1));
 	    max = 0; len = 0;
 	    for (i = 0; i < n; i++) {
 	      pv = av_pop(av_matches);
@@ -974,12 +1354,13 @@ _rl_display_match_list(...)
 		  max = l;
 	      }
 	    }
+	    matches[n] = NULL;
 	  } else {
 	    /*
 	     * Assume arguments are array of strings.
 	     */
 	    n = items;
-	    matches = (char **)xmalloc (sizeof(char *) * n);
+	    matches = (char **)xmalloc (sizeof(char *) * (n + 1));
 	    max = 0; len = 0;
 	    for (i = 0; i < n; i++) {
 	      pv = ST(i);
@@ -989,6 +1370,7 @@ _rl_display_match_list(...)
 		  max = l;
 	      }
 	    }
+	    matches[n] = NULL;
 	  }
 	  rl_display_match_list(matches, len, max);
 
