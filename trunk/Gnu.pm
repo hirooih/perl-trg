@@ -1,9 +1,9 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.21 1997-01-12 15:24:29 hayashi Exp $
+#	$Id: Gnu.pm,v 1.22 1997-01-12 16:51:42 hayashi Exp $
 #
-#	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -962,7 +962,7 @@ matches.
 If the value of ENTRY_FUNC is undef, built-in
 C<filename_completion_function> is used.
 
-C<completion_matches> is a Perl lapper function of an internal
+C<completion_matches> is a Perl wrapper function of an internal
 function C<completion_matches()>.  See also
 C<$rl_completion_entry_function>.
 
