@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.83 2000-04-01 08:52:22 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.84 2000-04-01 14:48:25 hayashi Exp $
  *
  *	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
  *
@@ -15,6 +15,7 @@ extern "C" {
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
+#include "ppport.h"
 #ifdef __cplusplus
 }
 #endif
@@ -402,7 +403,7 @@ completion_entry_function_wrapper(text, state)
   if (text) {
     XPUSHs(sv_2mortal(newSVpv(text, 0)));
   } else {
-    XPUSHs(&sv_undef);
+    XPUSHs(&PL_sv_undef);
   }
   XPUSHs(sv_2mortal(newSViv(state)));
   PUTBACK;
@@ -415,7 +416,7 @@ completion_entry_function_wrapper(text, state)
     croak("Gnu.xs:completion_entry_function_wrapper: Internal error\n");
 
   match = POPs;
-  str = SvOK(match) ? dupstr(SvPV(match, na)) : NULL;
+  str = SvOK(match) ? dupstr(SvPV(match, PL_na)) : NULL;
 
   PUTBACK;
   FREETMPS;
@@ -444,12 +445,12 @@ attempted_completion_function_wrapper(text, start, end)
   if (text) {
     XPUSHs(sv_2mortal(newSVpv(text, 0)));
   } else {
-    XPUSHs(&sv_undef);
+    XPUSHs(&PL_sv_undef);
   }
   if (rl_line_buffer) {
     XPUSHs(sv_2mortal(newSVpv(rl_line_buffer, 0)));
   } else {
-    XPUSHs(&sv_undef);
+    XPUSHs(&PL_sv_undef);
   }
   XPUSHs(sv_2mortal(newSViv(start)));
   XPUSHs(sv_2mortal(newSViv(end)));
@@ -473,7 +474,7 @@ attempted_completion_function_wrapper(text, start, end)
     for (i = count - 1; i >= 0; i--) {
       SV *v = POPs;
       if (SvOK(v)) {
-	matches[i] = dupstr(SvPV(v, na));
+	matches[i] = dupstr(SvPV(v, PL_na));
       } else {
 	matches[i] = NULL;
 	if (i != 0)
@@ -530,13 +531,13 @@ filename_quoting_function_wrapper(text, match_type, quote_pointer)
   if (text) {
     XPUSHs(sv_2mortal(newSVpv(text, 0)));
   } else {
-    XPUSHs(&sv_undef);
+    XPUSHs(&PL_sv_undef);
   }
   XPUSHs(sv_2mortal(newSViv(match_type)));
   if (quote_pointer) {
     XPUSHs(sv_2mortal(newSVpv(quote_pointer, 0)));
   } else {
-    XPUSHs(&sv_undef);
+    XPUSHs(&PL_sv_undef);
   }
   PUTBACK;
 
@@ -548,7 +549,7 @@ filename_quoting_function_wrapper(text, match_type, quote_pointer)
     croak("Gnu.xs:filename_quoting_function_wrapper: Internal error\n");
 
   replacement = POPs;
-  str = SvOK(replacement) ? dupstr(SvPV(replacement, na)) : NULL;
+  str = SvOK(replacement) ? dupstr(SvPV(replacement, PL_na)) : NULL;
 
   PUTBACK;
   FREETMPS;
@@ -577,7 +578,7 @@ filename_dequoting_function_wrapper(text, quote_char)
   if (text) {
     XPUSHs(sv_2mortal(newSVpv(text, 0)));
   } else {
-    XPUSHs(&sv_undef);
+    XPUSHs(&PL_sv_undef);
   }
   XPUSHs(sv_2mortal(newSViv(quote_char)));
   PUTBACK;
@@ -590,7 +591,7 @@ filename_dequoting_function_wrapper(text, quote_char)
     croak("Gnu.xs:filename_dequoting_function_wrapper: Internal error\n");
 
   replacement = POPs;
-  str = SvOK(replacement) ? dupstr(SvPV(replacement, na)) : NULL;
+  str = SvOK(replacement) ? dupstr(SvPV(replacement, PL_na)) : NULL;
 
   PUTBACK;
   FREETMPS;
@@ -618,7 +619,7 @@ char_is_quoted_p_wrapper(text, index)
   if (text) {
     XPUSHs(sv_2mortal(newSVpv(text, 0)));
   } else {
-    XPUSHs(&sv_undef);
+    XPUSHs(&PL_sv_undef);
   }
   XPUSHs(sv_2mortal(newSViv(index)));
   PUTBACK;
@@ -661,7 +662,7 @@ ignore_some_completions_function_wrapper(matches)
     XPUSHs(sv_2mortal(newSVpv(matches[0], 0)));
     /* xfree(matches[0]);*/
   } else {
-    XPUSHs(&sv_undef);
+    XPUSHs(&PL_sv_undef);
   }
   for (i = 1; matches[i]; i++) {
       XPUSHs(sv_2mortal(newSVpv(matches[i], 0)));
@@ -691,7 +692,7 @@ ignore_some_completions_function_wrapper(matches)
     for (i = count - 1; i > 0; i--) { /* don't pop matches[0] */
       SV *v = POPs;
       if (SvOK(v)) {
-	matches[i] = dupstr(SvPV(v, na));
+	matches[i] = dupstr(SvPV(v, PL_na));
       } else {
 	matches[i] = NULL;
 	dopack = i;		/* lowest index of undef */
@@ -744,7 +745,7 @@ directory_completion_hook_wrapper(textp)
   if (textp && *textp) {
     sv = sv_2mortal(newSVpv(*textp, 0));
   } else {
-    sv = &sv_undef;
+    sv = &PL_sv_undef;
   }
 
   PUSHMARK(sp);
@@ -760,7 +761,7 @@ directory_completion_hook_wrapper(textp)
 
   ret = POPi;
 
-  rstr = SvPV(sv, na);
+  rstr = SvPV(sv, PL_na);
   if (strcmp(*textp, rstr) != 0) {
     xfree(*textp);
     *textp = dupstr(rstr);
@@ -793,7 +794,7 @@ history_inhibit_expansion_function_wrapper(text, index)
   if (text) {
     XPUSHs(sv_2mortal(newSVpv(text, 0)));
   } else {
-    XPUSHs(&sv_undef);
+    XPUSHs(&PL_sv_undef);
   }
   XPUSHs(sv_2mortal(newSViv(index)));
   PUTBACK;
@@ -835,18 +836,18 @@ completion_display_matches_hook_wrapper(matches, len, max)
   if (matches[0]) {
     av_push(av_matches, sv_2mortal(newSVpv(matches[0], 0)));
   } else {
-    av_push(av_matches, &sv_undef);
+    av_push(av_matches, &PL_sv_undef);
   }
 
   for (i = 1; matches[i]; i++)
     if (matches[i]) {
       av_push(av_matches, sv_2mortal(newSVpv(matches[i], 0)));
     } else {
-      av_push(av_matches, &sv_undef);
+      av_push(av_matches, &PL_sv_undef);
     }
 
   PUSHMARK(sp);
-  XPUSHs(sv_2mortal(newRV((SV *)av_matches))); /* push reference of array */
+  XPUSHs(sv_2mortal(newRV_inc((SV *)av_matches))); /* push reference of array */
   XPUSHs(sv_2mortal(newSViv(len)));
   XPUSHs(sv_2mortal(newSViv(max)));
   PUTBACK;
@@ -940,7 +941,7 @@ callback_handler_wrapper(line)
   if (line) {
     XPUSHs(sv_2mortal(newSVpv(line, 0)));
   } else {
-    XPUSHs(&sv_undef);
+    XPUSHs(&PL_sv_undef);
   }
   PUTBACK;
 
@@ -1928,7 +1929,7 @@ _get_history_event(string, cindex, qchar = 0)
 	  if (text) {		/* don't free `text' */
 	    PUSHs(sv_2mortal(newSVpv(text, 0)));
 	  } else {
-	    PUSHs(&sv_undef);
+	    PUSHs(&PL_sv_undef);
 	  }
 	  PUSHs(sv_2mortal(newSViv(cindex)));
 	}
@@ -2206,7 +2207,7 @@ _rl_store_function(fn, id)
 	    *(fn_tbl[id].rlfuncp) = fn_tbl[id].wrapper;
 	  } else {
 	    if (fn_tbl[id].callback) {
-	      SvSetSV(fn_tbl[id].callback, &sv_undef);
+	      SvSetSV(fn_tbl[id].callback, &PL_sv_undef);
 	    }
 	    *(fn_tbl[id].rlfuncp) = fn_tbl[id].defaultfn;
 	  }
