@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.34 1997-01-12 17:38:40 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.35 1997-01-17 17:40:13 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -944,9 +944,15 @@ rl_reset_line_state()
 	PROTOTYPE:
 
 int
-rl_message(text)
+_rl_message(text)
 	char *text
 	PROTOTYPE: $
+	CODE:
+	{
+	  RETVAL = rl_message(text);
+	}
+	OUTPUT:
+	RETVAL
 
 int
 rl_clear_message()
@@ -1433,6 +1439,51 @@ _rl_fetch_int(id)
 	  }
 	}
 
+FILE *
+_rl_store_iostream(stream, id)
+	FILE *stream
+	int id
+	PROTOTYPE: $$
+	CODE:
+	{
+	  switch (id) {
+	  case 0:
+	    RETVAL = rl_instream = stream;
+	    break;
+	  case 1:
+	    RETVAL = rl_outstream = stream;
+	    break;
+	  default:
+	    warn("Gnu.xs:_rl_store_iostream: Illegal `id' value: `%d'", id);
+	    XSRETURN_UNDEF;
+	    break;
+	  }
+	}
+	OUTPUT:
+	RETVAL
+
+FILE *
+_rl_fetch_iostream(id)
+	int id
+	PROTOTYPE: $
+	CODE:
+	{
+	  switch (id) {
+	  case 0:
+	    RETVAL = rl_instream;
+	    break;
+	  case 1:
+	    RETVAL = rl_outstream;
+	    break;
+	  default:
+	    warn("Gnu.xs:_rl_store_iostream: Illegal `id' value: `%d'", id);
+	    XSRETURN_UNDEF;
+	    break;
+	  }
+	}
+	OUTPUT:
+	RETVAL
+
 void
 _rl_store_function(fn, id)
 	SV *	fn
@@ -1476,30 +1527,4 @@ _rl_fetch_function(id)
 	    if (fn_tbl[id].callback)
 	      sv_setsv(ST(0), fn_tbl[id].callback);
 	  }
-	}
-
-void
-_rl_set_instream(fildes)
-	int	fildes
-	PROTOTYPE: $
-	CODE:
-	{
-	  FILE *fd;
-	  if ((fd = fdopen(fildes, "r")) != NULL)
-	    rl_instream = fd;
-	  else
-	    warn("Gnu.xs:rl_set_instream: cannot fdopen");
-	}
-
-void
-_rl_set_outstream(fildes)
-	int	fildes
-	PROTOTYPE: $
-	CODE:
-	{
-	  FILE *fd;
-	  if ((fd = fdopen(fildes, "w")) != NULL)
-	    rl_outstream = fd;
-	  else
-	    warn("Gnu.xs:rl_set_outstream: cannot fdopen");
 	}
