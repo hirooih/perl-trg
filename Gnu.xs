@@ -1,9 +1,9 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.107 2004-10-17 16:47:14 hiroo Exp $
+ *	$Id: Gnu.xs,v 1.108 2004-10-17 17:37:53 hiroo Exp $
  *
- *	Copyright (c) 2003 Hiroo Hayashi.  All rights reserved.
+ *	Copyright (c) 2004 Hiroo Hayashi.  All rights reserved.
  *
  *	This program is free software; you can redistribute it and/or
  *	modify it under the same terms as Perl itself.
@@ -168,16 +168,17 @@ static int rl_readline_version = RL_READLINE_VERSION;
 extern char *rl_get_termcap PARAMS((const char *));
 
 /* features introduced by GNU Readline 4.3 */
-static int rl_completion_suppress_append;
-static int rl_completion_mark_symlink_dirs;
+static int rl_completion_suppress_append = 0;
+static int rl_completion_mark_symlink_dirs = 0;
 #endif /* (RL_READLINE_VERSION < 0x0403) */
 
 #if (RL_VERSION_MAJOR < 5)
 /* features introduced by GNU Readline 5.0 */
-static int history_write_timestamps;
-static int rl_completion_quote_character;
-static int rl_completion_suppress_quote;
-static int rl_completion_found_quote;
+static int history_write_timestamps = 0;
+static int rl_completion_quote_character = 0;
+static int rl_completion_suppress_quote = 0;
+static int rl_completion_found_quote = 0;
+static Function *rl_completion_word_break_hook = NULL;
 #endif /* (RL_VERSION_MAJOR < 5) */
 
 /*
