@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.44 1997-01-24 15:00:48 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.45 1997-01-27 15:52:34 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -28,17 +28,33 @@ extern char *rl_prompt;
 extern int rl_completion_query_items;
 extern int rl_ignore_completion_duplicates;
 
+#ifdef __STDC__
 /* from GNU Readline:xmalloc.c */
 extern char *xmalloc (int);
 extern char *xfree (char *);
+#else
+extern char *xmalloc ();
+extern char *xfree ();
+#endif /* __STDC__ */
 
-static char *dupstr (char *);	/* duplicate string */
+static char *
+dupstr(s)			/* duplicate string */
+     char *s;
+{
+  /*
+   * Use xmalloc(), because allocated block will be freed in GNU
+   * Readline Library routine.
+   * Don't make a macro.  Because 's' is evaluated twice.
+   */
+  strcpy (xmalloc (strlen (s) + 1), s);
+}
 
 /*
  * should be defined readline/bind.c ?
  */
 static char *
-rl_get_function_name (Function *function)
+rl_get_function_name (function)
+     Function *function;
 {
   register int i;
 
@@ -112,12 +128,21 @@ static struct int_vars {
  *	_rl_fetch_funtion()
  */
 
+#ifdef __STDC__
 static int startup_hook_wrapper(void);
 static int event_hook_wrapper(void);
 static int getc_function_wrapper(FILE *);
 static void redisplay_function_wrapper(void);
 static char *completion_entry_function_wrapper(char *, int);
 static char **attempted_completion_function_wrapper(char *, int, int);
+#else
+static int startup_hook_wrapper();
+static int event_hook_wrapper();
+static int getc_function_wrapper();
+static void redisplay_function_wrapper();
+static char *completion_entry_function_wrapper();
+static char **attempted_completion_function_wrapper();
+#endif /* __STDC__ */
 
 enum void_arg_func_type { STARTUP_HOOK, EVENT_HOOK, GETC_FN, REDISPLAY_FN,
 			  CMP_ENT, ATMPT_COMP };
@@ -151,7 +176,11 @@ static struct fn_vars {
  * Perl function wrappers
  */
 
+#ifdef __STDC__
 static int void_arg_func_wrapper(int);
+#else
+static int void_arg_func_wrapper();
+#endif
 
 static int
 startup_hook_wrapper()		{ void_arg_func_wrapper(STARTUP_HOOK); }
@@ -159,7 +188,9 @@ static int
 event_hook_wrapper()		{ void_arg_func_wrapper(EVENT_HOOK); }
 
 static int
-getc_function_wrapper(FILE *fp)	{
+getc_function_wrapper(fp)
+     FILE *fp;
+{
   /* 'FILE *fp' is ignored.  Use rl_instream instead in the getc_function. */
   void_arg_func_wrapper(GETC_FN);
 }
@@ -168,7 +199,8 @@ static void
 redisplay_function_wrapper()	{ void_arg_func_wrapper(REDISPLAY_FN); }
 
 static int
-void_arg_func_wrapper(int type)
+void_arg_func_wrapper(type)
+     int type;
 {
   dSP;
   int count;
@@ -193,7 +225,9 @@ void_arg_func_wrapper(int type)
  */
 
 static char *
-completion_entry_function_wrapper(char *text, int state)
+completion_entry_function_wrapper(text, state)
+     char *text;
+     int state;
 {
   dSP;
   int count;
@@ -229,7 +263,10 @@ completion_entry_function_wrapper(char *text, int state)
  */
 
 static char **
-attempted_completion_function_wrapper(char *text, int start, int end)
+attempted_completion_function_wrapper(text, start, end)
+     char *text;
+     int start;
+     int end;
 {
   dSP;
   int count;
@@ -281,6 +318,7 @@ attempted_completion_function_wrapper(char *text, int start, int end)
  *	and add entry on fntbl[].
  */
 
+#ifdef __STDC__
 static int function_wrapper(int count, int key, int id);
 static int function_wrapper_00(int c, int k) { function_wrapper(c, k,  0); }
 static int function_wrapper_01(int c, int k) { function_wrapper(c, k,  1); }
@@ -298,6 +336,41 @@ static int function_wrapper_12(int c, int k) { function_wrapper(c, k, 12); }
 static int function_wrapper_13(int c, int k) { function_wrapper(c, k, 13); }
 static int function_wrapper_14(int c, int k) { function_wrapper(c, k, 14); }
 static int function_wrapper_15(int c, int k) { function_wrapper(c, k, 15); }
+#else
+static int function_wrapper();
+static int function_wrapper_00(c, k)
+     int c; int k; { function_wrapper(c, k,  0); }
+static int function_wrapper_01(c, k)
+     int c; int k; { function_wrapper(c, k,  1); }
+static int function_wrapper_02(c, k)
+     int c; int k; { function_wrapper(c, k,  2); }
+static int function_wrapper_03(c, k)
+     int c; int k; { function_wrapper(c, k,  3); }
+static int function_wrapper_04(c, k)
+     int c; int k; { function_wrapper(c, k,  4); }
+static int function_wrapper_05(c, k)
+     int c; int k; { function_wrapper(c, k,  5); }
+static int function_wrapper_06(c, k)
+     int c; int k; { function_wrapper(c, k,  6); }
+static int function_wrapper_07(c, k)
+     int c; int k; { function_wrapper(c, k,  7); }
+static int function_wrapper_08(c, k)
+     int c; int k; { function_wrapper(c, k,  8); }
+static int function_wrapper_09(c, k)
+     int c; int k; { function_wrapper(c, k,  9); }
+static int function_wrapper_10(c, k)
+     int c; int k; { function_wrapper(c, k, 10); }
+static int function_wrapper_11(c, k)
+     int c; int k; { function_wrapper(c, k, 11); }
+static int function_wrapper_12(c, k)
+     int c; int k; { function_wrapper(c, k, 12); }
+static int function_wrapper_13(c, k)
+     int c; int k; { function_wrapper(c, k, 13); }
+static int function_wrapper_14(c, k)
+     int c; int k; { function_wrapper(c, k, 14); }
+static int function_wrapper_15(c, k)
+     int c; int k; { function_wrapper(c, k, 15); }
+#endif /* __STDC__ */
 
 static struct fnnode {
   Function *wrapper;		/* C wrapper function */
@@ -322,7 +395,10 @@ static struct fnnode {
 };
 
 static int
-function_wrapper(int count, int key, int id)
+function_wrapper(count, key, id)
+     int count;
+     int key;
+     int id;
 {
   dSP;
 
@@ -339,7 +415,8 @@ function_wrapper(int count, int key, int id)
 static SV* callback_handler_callback = NULL;
 
 static void
-callback_handler_wrapper(char *line)
+callback_handler_wrapper(line)
+     char *line;
 {
   dSP;
   int count;
@@ -350,22 +427,6 @@ callback_handler_wrapper(char *line)
   PUTBACK;
 
   perl_call_sv(callback_handler_callback, G_DISCARD);
-}
-
-/*
- *	Misc.
- */
-
-static char *
-dupstr(s)			/* duplicate string */
-     char *s;
-{
-  /*
-   * Use xmalloc(), because allocated block will be freed in GNU
-   * Readline Library routine.
-   * Don't make a macro.  Because 's' is evaluated twice.
-   */
-  strcpy (xmalloc (strlen (s) + 1), s);
 }
 
 MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu
