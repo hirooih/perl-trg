@@ -1,0 +1,257 @@
+#! /usr/local/bin/perl
+#
+#	$Id: pftp,v 1.1 1997-03-22 15:32:46 hayashi Exp $
+#
+#	Copyright (c) 1996,1997 Hiroo Hayashi. All Rights Reserved.
+#
+#	This program is free software; you can redistribute it and/or
+#	modify it under the same terms as Perl itself.
+
+use strict;
+use Term::ReadLine;
+use Net::FTP;			# libnet-1.03 or later is recommended
+use Net::Domain qw(hostdomain);
+use Net::Config;
+use File::Listing;		# for parse_dir
+use Getopt::Std;
+
+use vars qw($HISTFILE $HISTSIZE $AUTOLOAD
+	   $opt_d $opt_v);
+
+sub usage {
+    print STDERR <<"EOM";
+usage :	$0 [-d] [-n] [-w] [-M] [-h] site_name
+	-v : verbose mode
+	-d : debug mode
+	-M : show manual page
+	-h : show this message
+EOM
+    exit 0;
+}
+getopts('dv') or &usage;
+&usage unless @ARGV == 1;
+
+$HISTFILE = ($ENV{HOME} || ((getpwuid($<))[7])) . "/.pftp_history";
+$HISTSIZE = 256;
+my %rdir;
+my $host = $ARGV[0];
+
+my $ftp = Net::FTP->new($host,
+			Debug => $opt_d);
+
+#my $login = 'anonymous';
+#my $password = (getpwuid($<))[0] . '@' . hostdomain;
+#$ftp->login($login, $password);
+
+$ftp->login;
+$ftp->binary;			# default binary
+my $pwd = $ftp->pwd;
+
+my $term = Term::ReadLine->new('PFTP');
+my $attribs = $term->Attribs;
+
+$term->StifleHistory($HISTSIZE);
+if (-f $HISTFILE) {
+    $term->ReadHistory($HISTFILE)
+	or warn "perlsh: cannot read history file: $!\n";
+}
+
+my @ftp_cmd_list = qw(ls dir get put pwd cwd);
+
+$attribs->{attempted_completion_function} = sub {
+    my ($text, $line, $start, $end) = @_;
+    # If first word then username completion, else filename completion
+    if (substr($line, 0, $start) =~ /^\s*$/) {
+	$attribs->{completion_word} = \@ftp_cmd_list;
+	return $term->completion_matches($text,
+					 $attribs->{'list_completion_function'});
+    } elsif ($line =~ /^\s*(get|cd|cwd)\s/) {
+	$rdir{$pwd} = $ftp->ls() unless $rdir{$pwd};
+	$attribs->{completion_word} = $rdir{$pwd};
+	return $term->completion_matches($text,
+					 $attribs->{'list_completion_function'});
+    } else {
+	return ();
+    }
+};
+
+BEGIN {
+    my ($i, $file, $dir);
+
+    sub ftp_filename_completion_function ( $$ ) {
+	my($text, $state) = @_;
+	my $entry;
+
+	unless ($state) {
+	    $i = 0;		# clear counter at the first call
+	    ($dir, $file) = ($text =~ m|(.*/)(.*)$|);
+	    $dir = "$pwd/$dir" unless $dir =~ m|^/|; # full path name
+	    unless $rdir{$dir} {
+		my $newdirs = $ftp->ls($dir);
+		if ($newdirs) {
+		    $rdir{$dir} = $newdirs;
+		} else {
+		    return undef;
+		}
+	    }
+	} else {
+	    $i++;
+	}
+	my $cw = $rdir{$dir};
+	for (; $i <= $#{$cw}; $i++) {
+	    return $entry
+		if (($entry = $cw->[$i]) =~ /^$file/);
+	}
+	return undef;
+    }
+}
+
+no strict 'refs';
+while (defined($_ = $term->readline('pftp> '))) {
+    next if /^\s*$/;
+    my ($cmd, @args) = split(' ', $_);
+    if ($cmd eq 'quit' || $cmd eq 'bye') {
+	last;
+    }
+    my $func = "cmd_" . $cmd;
+    &$func(@args);
+    print STDERR $ftp->message if $opt_v;
+}
+use strict 'refs';
+$ftp->quit;
+
+$term->WriteHistory($HISTFILE)
+    or warn "perlsh: cannot write history file: $!\n";
+exit (0);
+
+sub AUTOLOAD {
+    $AUTOLOAD =~ s/.*::cmd_//;
+    warn "command \`$AUTOLOAD\' is not defined or not implemented.\n";
+}
+
+########################################################################
+
+sub cmd_cwd {
+    if ($ftp->cwd(@_)) {
+	$pwd = $ftp->pwd();
+    } else {
+	print STDERR "cwd: cannot chdir to \`$_\'\n"
+    }
+}
+
+# Why this does not work?
+#*cmd_cd = \&cmd_cwd;
+
+sub cmd_cd {
+    &cmd_cwd;
+}
+
+sub cmd_pwd {
+    $pwd = $ftp->pwd();
+    if ($pwd) {
+	print STDERR "$pwd\n";
+    } else {
+	print STDERR "pwd failed.\n";
+    }
+}
+
+sub cmd_ls {
+    my $dir = $ftp->ls(@_);
+    if ($dir) {
+	foreach (sort @{$dir}) {
+	    print STDERR "$_\n";
+	}
+	$rdir{$pwd} = $dir;
+    } else {
+	print STDERR "ls failed\n";
+    }
+}
+
+sub cmd_dir {
+    my $dir = $ftp->dir(@_);
+    my @dir;
+    if ($dir) {
+	foreach (@{$dir}) {
+	    print STDERR "$_\n";
+	    my $info = (parse_dir($_, '+0000'))[0]; # GMT
+	    next unless $info;	# ignore if parse_dir() can not phase.
+	    push(@dir, $$info[0])
+		unless $$info[0] =~ /^\.\.?$/; # ignore '.' and '..'
+	}
+	$rdir{$pwd} = \@dir;
+    } else {
+	print STDERR "dir failed\n";
+    }
+}
+    
+__END__
+
+my %cmds = (account	=> \&account,
+	    append	=> \&append,
+	    ascii	=> \&ascii,
+	    bell	=> \&bell,
+	    binary	=> \&binary,
+	    bye		=> \&bye,
+	    case	=> \&case,
+	    cd		=> \&cd,
+	    cdup	=> \&cdup,
+	    chmod	=> \&chmod,
+	    close	=> \&close,
+	    cr		=> \&cr,
+	    delete	=> \&delete,
+	    debug	=> \&debug,
+	    dir		=> \&dir,
+	    disconnet	=> \&close,
+	    form	=> \&form,
+	    get		=> \&get,
+	    glob	=> \&glob,
+	    hash	=> \&hash,
+	    help	=> \&help,
+	    idle	=> \&idle,
+	    lcd		=> \&lcd,
+	    ls		=> \&ls,
+	    macdef	=> \&macdef,
+	    mdelete	=> \&mdelete,
+	    mdir	=> \&mdir,
+	    mget	=> \&mget,
+	    mkdir	=> \&mkdir,
+	    mls		=> \&mls,
+	    mode	=> \&mode,
+	    modtime	=> \&modtime,
+	    mput	=> \&mput,
+	    newer	=> \&newer,
+	    nlist	=> \&nlist,
+	    nmap	=> \&nmap,
+	    ntrans	=> \&ntrans,
+	    open	=> \&open,
+	    prompt	=> \&prompt,
+	    proxy	=> \&proxy,
+	    put		=> \&put,
+	    pwd		=> \&pwd,
+	    quit	=> \&quit,
+	    quote	=> \&quote,
+	    recv	=> \&get,
+	    reget	=> \&reget,
+	    remotehlep	=> \&remotehlep,
+	    remotestatus=> \&remotestatus,
+	    rename	=> \&rename,
+	    reset	=> \&reset,
+	    restart	=> \&restart,
+	    rmdir	=> \&rmdir,
+	    runique	=> \&runique,
+	    send	=> \&put,
+	    sendport	=> \&sendport,
+	    site	=> \&site,
+	    size	=> \&size,
+	    status	=> \&status,
+	    struct	=> \&struct,
+	    sunique	=> \&sunique,
+	    system	=> \&system,
+	    tenex	=> \&tenex,
+	    trace	=> \&trace,
+	    type	=> \&type,
+	    umask	=> \&umask,
+	    user	=> \&user,
+	    verbose	=> \&verbose,
+	    ?		=> \&help);
+
