@@ -1,4 +1,4 @@
-$Id: README,v 1.2 1997-01-12 16:51:12 hayashi Exp $
+$Id: README,v 1.3 1997-02-01 18:00:34 hayashi Exp $
 
 Term::ReadLine::Gnu --- GNU Readline Library Wrapper Module
 
@@ -35,9 +35,10 @@ Description:
 	module.
 
 Prerequisites:
-	You must make GNU Readline Library Version 2.1 which is
-	distributed as standalone package and distributed with bash
-	version 2.0 and later.  See INSTALL.
+	You must have GNU Readline Library Version 2.1 which is
+	included in the GNU Bash version 2.0 distribution.  And there
+	is a plan to make standalone package in the near future.
+	See INSTALL.
 
 How to build/install:
 	See INSTALL.

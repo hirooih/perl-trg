@@ -1,4 +1,4 @@
-#	$Id: INSTALL,v 1.4 1997-01-12 16:38:15 hayashi Exp $
+#	$Id: INSTALL,v 1.5 1997-02-01 18:00:40 hayashi Exp $
 
 1. How to Install Term::ReadLine::Gnu
 
@@ -21,9 +21,9 @@
 
 2. How to Install GNU Readline Library
 
-Now this module supports only GNU Readline Library 2.1.  It is
-distributed as standalone package and distributed with bash version
-2.0 and later.
+Now this module supports only GNU Readline Library 2.1 which is
+included in the GNU Bash version 2.0 distribution.  And there is a
+plan to make standalone package in the near future.
 
 In following example, the install prefix directory is
 `/usr/local/gnu'.  If you install the library and header files in
@@ -39,7 +39,8 @@ Makefile.PL.
 	1. get and extract bash-2.0.tar.gz
 	2. add following patch
 	  (I reported this patch to bug-bash@prep.ai.mit.edu, so I
-	   hope this patch will not be required by future releases.)
+	   hope this patch will not be required by the future
+	   releases.)
 
 ========================================================================
 *** lib/readline/Makefile.in.orig	Tue Nov 26 02:40:21 1996
@@ -92,7 +93,7 @@ a	4. change directory to the Readline Library directory
 	7. install
 		$ make install
 
-2.2. readline-2.1.tar.gz
+2.2. readline-2.1.tar.gz (not released yet)
 
 	1. get and extract readline-2.1.tar.gz
 
