@@ -2,7 +2,7 @@
 #
 #	XS.pm : perl function definition for Term::ReadLine::Gnu
 #
-#	$Id: XS.pm,v 1.1 1999-03-15 14:31:43 hayashi Exp $
+#	$Id: XS.pm,v 1.2 1999-03-15 15:08:15 hayashi Exp $
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -76,6 +76,13 @@ sub Tk_getc {
     return rl_getc($FILE);
 }
 
+# alias for 8 characters limitation imposed by AutoSplit
+*rl_unbind_key = \*unbind_key;
+*rl_unbind_function = \*unbind_function;
+*rl_unbind_command = \*unbind_command;
+*history_list = \*hist_list;
+*history_arg_extract = \*hist_arg_extract;
+
 1;
 
 __END__
@@ -109,7 +116,8 @@ sub rl_bind_key ($$;$) {
     }
 }
 
-sub rl_unbind_key ($;$) {
+# rl_unbind_key
+sub unbind_key ($;$) {
     if (defined $_[1]) {
 	return _rl_unbind_key($_[0], _str2map($_[1]));
     } else {
@@ -117,7 +125,8 @@ sub rl_unbind_key ($;$) {
     }
 }
 
-sub rl_unbind_function ($;$) {
+# rl_unbind_function
+sub unbind_function ($;$) {
     # libreadline.* in Debian GNU/Linux 2.0 tells wrong value as '2.1-bash'
     my ($version) = $Attribs{library_version}
 	=~ /(\d+\.\d+)/;
@@ -132,7 +141,8 @@ sub rl_unbind_function ($;$) {
     }
 }
 
-sub rl_unbind_command ($;$) {
+# rl_unbind_command
+sub unbind_command ($;$) {
     my ($version) = $Attribs{library_version}
 	=~ /(\d+\.\d+)/;
     if ($version < 2.2) {
@@ -205,7 +215,8 @@ sub rl_filename_list {
 #
 #	History Library function wrappers
 #
-sub history_list () {
+# history_list
+sub hist_list () {
     my ($i, $history_base, $history_length, @d);
     $history_base   = $Attribs{history_base};
     $history_length = $Attribs{history_length};
@@ -215,7 +226,8 @@ sub history_list () {
     @d;
 }
 
-sub history_arg_extract ( ;$$$ ) {
+# history_arg_extract
+sub hist_arg_extract ( ;$$$ ) {
     my ($line, $first, $last) = @_;
     $line  = $_      unless defined $line;
     $first = 0       unless defined $first;
