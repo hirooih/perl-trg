@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.84 2001-02-12 13:52:46 hayashi Exp $
+#	$Id: Gnu.pm,v 1.85 2001-02-14 15:17:20 hayashi Exp $
 #
 #	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
 #
@@ -500,7 +500,7 @@ use vars qw(%_rl_vars);
        rl_explicit_arg				=> ['I', 26], # GPL 4.2
        rl_numeric_arg				=> ['I', 27], # GPL 4.2
        rl_editing_mode				=> ['I', 28], # GPL 4.2
-       rl_attemped_completion_over		=> ['I', 29], # GPL 4.2
+       rl_attempted_completion_over		=> ['I', 29], # GPL 4.2
        rl_completion_type			=> ['I', 30], # GPL 4.2
 
        rl_startup_hook				=> ['F', 0],
@@ -1357,7 +1357,7 @@ Examples:
 	int rl_ignore_completion_duplicates
 	int rl_filename_completion_desired
 	int rl_filename_quoting_desired
-	int rl_attemped_completion_over (GRL 4.2)
+	int rl_attempted_completion_over (GRL 4.2)
 	int rl_completion_type (GRL 4.2)
 	int rl_inhibit_completion
 	pfunc rl_ignore_some_completion_function
