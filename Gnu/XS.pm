@@ -2,7 +2,7 @@
 #
 #	XS.pm : perl function definition for Term::ReadLine::Gnu
 #
-#	$Id: XS.pm,v 1.3 1999-03-16 16:07:22 hayashi Exp $
+#	$Id: XS.pm,v 1.4 1999-03-17 16:10:33 hayashi Exp $
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -10,22 +10,48 @@
 #	modify it under the same terms as Perl itself.
 
 package Term::ReadLine::Gnu::XS;
+
 use Carp;
 use strict;
 use AutoLoader 'AUTOLOAD';
 
+# make aliases
 use vars qw(%Attribs);
 *Attribs = \%Term::ReadLine::Gnu::Attribs;
 
+use vars qw(*read_history);
+*read_history = \&read_history_range;
+
+# alias for 8 characters limitation imposed by AutoSplit
+use vars qw(*rl_unbind_key *rl_unbind_function *rl_unbind_command
+	    *history_list *history_arg_extract);
+*rl_unbind_key = \&unbind_key;
+*rl_unbind_function = \&unbind_function;
+*rl_unbind_command = \&unbind_command;
+*history_list = \&hist_list;
+*history_arg_extract = \&hist_arg_extract;
+
 # For backward compatibility.  Using these name (*_in_map) is deprecated.
 use vars qw(*rl_unbind_function_in_map *rl_unbind_command_in_map);
-*rl_unbind_function_in_map = \&rl_unbind_function;
-*rl_unbind_command_in_map  = \&rl_unbind_command;
+*rl_unbind_function_in_map = \&unbind_function;
+*rl_unbind_command_in_map  = \&unbind_command;
+
+# bind operate-and-get-next to \C-o by default for the compatibility
+# with bash and Term::ReadLine::Perl
+rl_add_defun('operate-and-get-next',	 \&operate_and_get_next, ord "\co");
+rl_add_defun('display-readline-version', \&display_readline_version);
+rl_add_defun('change-ornaments',	 \&change_ornaments);
+
+# for ornaments()
+
+# Prompt-start, prompt-end, command-line-start, command-line-end
+#     -- zero-width beautifies to emit around prompt and the command line.
+# string encoded:
+my $rl_term_set = ',,,';
 
 #
 #	List Completion Function
 #
-
 {
     my $i;
 
@@ -41,69 +67,8 @@ use vars qw(*rl_unbind_function_in_map *rl_unbind_command_in_map);
     }
 }
 
-#
-#	a sample custom function
-#
-
-# The equivalent of the Korn shell C-o operate-and-get-next-history-line
-# editing command. 
-
-# This routine was borrowed from bash.
-sub operate_and_get_next {
-    my ($count, $key) = @_;
-
-    my $saved_history_line_to_use = -1;
-    my $old_rl_startup_hook;
-
-    # Accept the current line.
-    rl_call_function('accept-line', 1, $key);
-
-    # Find the current line, and find the next line to use. */
-    my $where = where_history();
-    if ((history_is_stifled()
-	 && ($Attribs{history_length} >= $Attribs{max_input_history}))
-	|| ($where >= $Attribs{history_length} - 1)) {
-	$saved_history_line_to_use = $where;
-    } else {
-	$saved_history_line_to_use = $where + 1;
-    }
-    $old_rl_startup_hook = $Attribs{startup_hook};
-    $Attribs{startup_hook} = sub {
-	if ($saved_history_line_to_use >= 0) {
-	    rl_call_function('previous-history',
-			     $Attribs{history_length}
-			     - $saved_history_line_to_use,
-			     0);
-	    $Attribs{startup_hook} = $old_rl_startup_hook;
-	    $saved_history_line_to_use = -1;
-	}
-    };
-}
-
-# bind by default for the compatibility with bash and Term::ReadLine::Perl
-rl_add_defun('operate-and-get-next', \&operate_and_get_next, ord "\co");
-
-use vars qw(*read_history);
-*read_history = \&read_history_range;
-
-#
-#	for tkRunning
-#
-sub Tk_getc {
-    &Term::ReadLine::Tk::Tk_loop
-	if $Term::ReadLine::toloop && defined &Tk::DoOneEvent;
-    my $FILE = $Attribs{instream};
-    return rl_getc($FILE);
-}
-
-# alias for 8 characters limitation imposed by AutoSplit
-*rl_unbind_key = \*unbind_key;
-*rl_unbind_function = \*unbind_function;
-*rl_unbind_command = \*unbind_command;
-*history_list = \*hist_list;
-*history_arg_extract = \*hist_arg_extract;
-
 1;
+
 __END__
 
 
@@ -259,4 +224,128 @@ sub hist_arg_extract ( ;$$$ ) {
 
 sub get_history_event ( $$;$ ) {
     _get_history_event($_[0], $_[1], defined $_[2] ? ord $_[2] : 0);
+}
+
+#
+#	Ornaments
+#
+
+# This routine originates in Term::ReadLine.pm.
+
+# Debian GNU/Linux discourages users from using /etc/termcap.  A
+# subroutine ornaments() defined in Term::ReadLine.pm uses
+# Term::Caps.pm which requires /etc/termcap.
+
+# This module calls termcap (or its compatible) library, which the GNU
+# Readline Library already uses, instead of Term::Caps.pm.
+
+
+sub ornaments {
+    return $rl_term_set unless @_;
+    $rl_term_set = shift;
+    $rl_term_set ||= ',,,';
+    $rl_term_set = 'us,me,,' if $rl_term_set eq '1';
+    my @ts = split /,/, $rl_term_set, 4;
+    my @rl_term_set
+	= map {$_ ? tgetstr($_) || '' : ''} @ts;
+    $Attribs{term_set} = \@rl_term_set;
+    return $rl_term_set;
+}
+
+#
+#	a sample custom function
+#
+
+# The equivalent of the Korn shell C-o operate-and-get-next-history-line
+# editing command. 
+
+# This routine was borrowed from bash.
+sub operate_and_get_next {
+    my ($count, $key) = @_;
+
+    my $saved_history_line_to_use = -1;
+    my $old_rl_startup_hook;
+
+    # Accept the current line.
+    rl_call_function('accept-line', 1, $key);
+
+    # Find the current line, and find the next line to use. */
+    my $where = where_history();
+    if ((history_is_stifled()
+	 && ($Attribs{history_length} >= $Attribs{max_input_history}))
+	|| ($where >= $Attribs{history_length} - 1)) {
+	$saved_history_line_to_use = $where;
+    } else {
+	$saved_history_line_to_use = $where + 1;
+    }
+    $old_rl_startup_hook = $Attribs{startup_hook};
+    $Attribs{startup_hook} = sub {
+	if ($saved_history_line_to_use >= 0) {
+	    rl_call_function('previous-history',
+			     $Attribs{history_length}
+			     - $saved_history_line_to_use,
+			     0);
+	    $Attribs{startup_hook} = $old_rl_startup_hook;
+	    $saved_history_line_to_use = -1;
+	}
+    };
+}
+
+sub display_readline_version {	# show version
+    my($count, $key) = @_;	# ignored in this function
+    my $OUT = $Attribs{outstream};
+    print $OUT
+	("\nTerm::ReadLine::Gnu version: $Term::ReadLine::Gnu::VERSION");
+    print $OUT
+	("\nGNU Readline Library version: $Attribs{library_version}\n");
+    rl_on_new_line();
+}
+
+# sample function of rl_message()
+sub change_ornaments {
+    my($count, $key) = @_;	# ignored in this function
+    rl_save_prompt;
+    rl_message("[S]tandout, [U]nderlining, [B]old, [R]everse, [V]isible bell: ");
+    my $c = chr rl_read_key;
+    if ($c =~ /s/i) {
+	ornaments('so,me,,');
+    } elsif ($c =~ /u/i) {
+	ornaments('us,me,,');
+    } elsif ($c =~ /b/i) {
+	ornaments('md,me,,');
+    } elsif ($c =~ /r/i) {
+	ornaments('mr,me,,');
+    } elsif ($c =~ /v/i) {
+	ornaments('vb,,,');
+    } else {
+	ding;
+    }
+    rl_restore_prompt;
+    rl_clear_message;
+}
+
+#
+#	for tkRunning
+#
+sub Tk_getc {
+    &Term::ReadLine::Tk::Tk_loop
+	if $Term::ReadLine::toloop && defined &Tk::DoOneEvent;
+    my $FILE = $Attribs{instream};
+    return rl_getc($FILE);
+}
+
+# redisplay function for secret input like password
+# usage:
+#	$a->{redisplay_function} = $a->{shadow_redisplay};
+#	$line = $t->readline("password> ");
+sub shadow_redisplay {
+    my $OUT = $Attribs{outstream};
+    my $oldfh = select($OUT); $| = 1; select($oldfh);
+    print $OUT (tgetstr('cr'), # carriage return
+		tgetstr('ce'), # clear to EOL
+		$Attribs{prompt}, '*' x length($Attribs{line_buffer}));
+    print $OUT (tgetstr('le') # cursor left
+		x (length($Attribs{line_buffer}) - $Attribs{point}));
+    $oldfh = select($OUT); $| = 0; select($oldfh);
+    1;				# warn me without this.  Why?
 }
