@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.10 1997-01-22 15:53:28 hayashi Exp $
+#	$Id: readline.t,v 1.11 1997-01-24 15:02:03 hayashi Exp $
 #
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl t/readline.t'
@@ -12,11 +12,14 @@ END {print "not ok 1\n" unless $loaded;}
 $^W = 1;			# perl -w
 use strict;
 use vars qw($loaded);
+use lib qw(./blib/arch ./blib/lib);
 use Term::ReadLine;
 use Term::ReadLine::Gnu qw(:all);
 
 $loaded = 1;
 print "ok 1\n";
+
+#goto end_of_test;
 
 ########################################################################
 sub cmp_list {
