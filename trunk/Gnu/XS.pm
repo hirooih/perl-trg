@@ -2,7 +2,7 @@
 #
 #	XS.pm : perl function definition for Term::ReadLine::Gnu
 #
-#	$Id: XS.pm,v 1.6 1999-04-10 05:18:47 hayashi Exp $
+#	$Id: XS.pm,v 1.7 1999-04-10 15:17:57 hayashi Exp $
 #
 #	Copyright (c) 1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -49,54 +49,10 @@ rl_add_defun('change-ornaments',	 \&change_ornaments);
 # string encoded:
 my $rl_term_set = ',,,';
 
-#
-#	List Completion Function
-#
-{
-    my $i;
-
-    sub list_completion_function ( $$ ) {
-	my($text, $state) = @_;
-
-	$i = $state ? $i + 1 : 0; # clear counter at the first call
-	my $cw = $Attribs{completion_word};
-	for (; $i <= $#{$cw}; $i++) {
-	    return $cw->[$i] if ($cw->[$i] =~ /^\Q$text/);
-	}
-	return undef;
-    }
-}
-
-#
-#	wrapper completion function of 'completion_function'
-#	for compatibility with Term::ReadLine::Perl
-#
-{
-    my $i;
-    my @matches;
-
-    sub _trp_completion_function ( $$ ) {
-	my($text, $state) = @_;
-
-	my $cf;
-	return undef unless defined ($cf = $Attribs{completion_function});
-
-	if ($state) {
-	    $i++;
-	} else {
-	    # the first call
-	    $i = 0;		# clear index
-	    @matches = &$cf($text,
-			    $Attribs{line_buffer},
-			    $Attribs{point} - length($text));
-	}
-
-	for (; $i <= $#matches; $i++) {
-	    return $matches[$i] if ($matches[$i] =~ /^\Q$text/);
-	}
-	return undef;
-    }
-}
+# These variables are used by completion functions.  Don't use for
+# other purpose.
+my $_i;
+my @_matches;
 
 1;
 
@@ -407,4 +363,44 @@ sub _ch_wrapper {
 		&& length($line) >= $Attribs{MinLength});
     }
     &{$Attribs{_callback_handler}}($line);
+}
+
+#
+#	List Completion Function
+#
+sub list_completion_function ( $$ ) {
+    my($text, $state) = @_;
+    
+    $_i = $state ? $_i + 1 : 0;	# clear counter at the first call
+    my $cw = $Attribs{completion_word};
+    for (; $_i <= $#{$cw}; $_i++) {
+	return $cw->[$_i] if ($cw->[$_i] =~ /^\Q$text/);
+    }
+    return undef;
+}
+
+#
+#	wrapper completion function of 'completion_function'
+#	for compatibility with Term::ReadLine::Perl
+#
+sub _trp_completion_function ( $$ ) {
+    my($text, $state) = @_;
+    
+    my $cf;
+    return undef unless defined ($cf = $Attribs{completion_function});
+    
+    if ($state) {
+	$_i++;
+    } else {
+	# the first call
+	$_i = 0;		# clear index
+	@_matches = &$cf($text,
+			$Attribs{line_buffer},
+			$Attribs{point} - length($text));
+    }
+    
+    for (; $_i <= $#_matches; $_i++) {
+	return $_matches[$_i] if ($_matches[$_i] =~ /^\Q$text/);
+    }
+    return undef;
 }
