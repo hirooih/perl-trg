@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.81 2000-11-27 17:02:40 hayashi Exp $
+#	$Id: Gnu.pm,v 1.82 2000-12-05 15:26:49 hayashi Exp $
 #
 #	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
 #
@@ -73,7 +73,17 @@ use Carp;
     @EXPORT_OK = qw(RL_PROMPT_START_IGNORE RL_PROMPT_END_IGNORE
 		    NO_MATCH SINGLE_MATCH MULT_MATCH
 		    ISFUNC ISKMAP ISMACR
-		    UNDO_DELETE UNDO_INSERT UNDO_BEGIN UNDO_END);
+		    UNDO_DELETE UNDO_INSERT UNDO_BEGIN UNDO_END
+		    RL_STATE_NONE RL_STATE_INITIALIZING
+		    RL_STATE_INITIALIZED RL_STATE_TERMPREPPED
+		    RL_STATE_READCMD RL_STATE_METANEXT
+		    RL_STATE_DISPATCHING RL_STATE_MOREINPUT
+		    RL_STATE_ISEARCH RL_STATE_NSEARCH
+		    RL_STATE_SEARCH RL_STATE_NUMERICARG
+		    RL_STATE_MACROINPUT RL_STATE_MACRODEF
+		    RL_STATE_OVERWRITE RL_STATE_COMPLETING
+		    RL_STATE_SIGHANDLER RL_STATE_UNDOING
+		    RL_STATE_DONE);
 
     bootstrap Term::ReadLine::Gnu $VERSION; # DynaLoader
 }
@@ -125,6 +135,27 @@ sub UNDO_DELETE	{ 0; }
 sub UNDO_INSERT	{ 1; }
 sub UNDO_BEGIN	{ 2; }
 sub UNDO_END	{ 3; }
+
+# for rl_readline_state
+sub RL_STATE_NONE		{ 0x00000; } # no state; before first call
+sub RL_STATE_INITIALIZING	{ 0x00001; } # initializing
+sub RL_STATE_INITIALIZED	{ 0x00002; } # initialization done
+sub RL_STATE_TERMPREPPED	{ 0x00004; } # terminal is prepped
+sub RL_STATE_READCMD		{ 0x00008; } # reading a command key
+sub RL_STATE_METANEXT		{ 0x00010; } # reading input after ESC
+sub RL_STATE_DISPATCHING	{ 0x00020; } # dispatching to a command
+sub RL_STATE_MOREINPUT		{ 0x00040; } # reading more input in a command function
+sub RL_STATE_ISEARCH		{ 0x00080; } # doing incremental search
+sub RL_STATE_NSEARCH		{ 0x00100; } # doing non-inc search
+sub RL_STATE_SEARCH		{ 0x00200; } # doing a history search
+sub RL_STATE_NUMERICARG		{ 0x00400; } # reading numeric argument
+sub RL_STATE_MACROINPUT		{ 0x00800; } # getting input from a macro
+sub RL_STATE_MACRODEF		{ 0x01000; } # defining keyboard macro
+sub RL_STATE_OVERWRITE		{ 0x02000; } # overwrite mode
+sub RL_STATE_COMPLETING		{ 0x04000; } # doing completion
+sub RL_STATE_SIGHANDLER		{ 0x08000; } # in readline sighandler
+sub RL_STATE_UNDOING		{ 0x10000; } # doing an undo
+sub RL_STATE_DONE		{ 0x80000; } # done; accepted line
 
 #
 #	Methods Definition
@@ -787,7 +818,7 @@ detail see 'GNU Readline Library Manual'.
 
 	(@str)	rl_funmap_names()
 
-=item C<add_funmap_entry(NAME, FUNCTION)
+=item C<add_funmap_entry(NAME, FUNCTION)>
 
 	int	rl_add_funmap_entry(char *name, FunctionPtr|str function)
 
