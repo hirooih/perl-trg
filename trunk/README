@@ -1,4 +1,4 @@
-$Id: README,v 1.14 1999-04-04 04:26:30 hayashi Exp $
+$Id: README,v 1.15 1999-05-04 17:56:58 hayashi Exp $
 
 Term::ReadLine::Gnu --- GNU Readline Library Wrapper Module
 
@@ -38,6 +38,9 @@ Prerequisites:
 	You must have GNU Readline Library Version 2.1 or later.  See
 	INSTALL for more detail.
 
+	By a report GNU Readline Library may not work with perl with
+	sfio.  Since I do not have sfio library, I am not sure.
+
 How to build/install:
 	See INSTALL.
 
@@ -53,6 +56,16 @@ Author:
 
 
 Revision History:
+
+1.06  1999-05-05
+	- fix a bug which causes segmentation fault when
+	  completion_matches() returns long list.
+	- fix a bug which causes segmentation fault when
+	  perl subroutine returns a list of undef in
+	  attempted_completion_function_wrapper().
+	- disable Autosplit for AutoLoad.pm bug distributed with Perl
+	  5.004 or earlier.
+	- add check if perl is configured with sfio to Makefile.PL.
 
 1.05  1999-04-04
 	- bug fix
