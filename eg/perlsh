@@ -1,6 +1,6 @@
 #! /usr/local/bin/perl
 #
-#	$Id: perlsh,v 1.15 1999-03-22 05:34:57 hayashi Exp $	
+#	$Id: perlsh,v 1.16 1999-03-23 16:07:18 hayashi Exp $	
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi. All Rights Reserved.
 #
@@ -156,9 +156,16 @@ sub prompt {
 #
 #	perl symbol name completion
 #
+
+sub perl_symbol_display_match_list ($$$) {
+    my($matches, $num_matches, $max_length) = @_;
+    map { $_ =~ s/^((\$#|[\@\$%&])?).*::(.+)/\3/; }(@{$matches});
+    $term->display_match_list($matches);
+    $term->forced_update_display;
+}
+
 {
-    my $i;
-    use vars qw(@symbol_list);
+    my ($i, $prefix, @sym_list, %type, @keyword);
 
     sub perl_symbol_completion_function ($$) {
 	my($text, $state) = @_;
@@ -168,137 +175,127 @@ sub prompt {
 	} else {
 	    # the first call
 	    $i = 0;		# clear index
-	    my ($pkg, $pre, $pcmp);
+	    no strict qw(refs);
+	    my ($pre, $pkg, $sym);
 	    if ($text =~ m/^((\$#|[\@\$%&])?(.*::))/) {
+		$prefix = $1;
+		$pre = $2;
 		$pkg = $3;
-		$pre = $1;
-		$pcmp = 0;
+		@sym_list = grep /::$/, keys %$pkg;
 	    } else {
-		if ($CWP eq 'main') {
-		    $pkg =  '::';
-		    $pcmp = 0;
-		} else {
-		    $pkg = $CWP . '::';
-		    $pcmp = 1;	# do pacakge name completion from `main'
-		}
-		$pre = ($text =~ m/^(\$#|[\@\$%&])/)[0];
+		$prefix = $pre = ($text =~ m/^(\$#|[\@\$%&])/)[0];
+		$pkg = $CWP eq 'main' ? '::' : $CWP . '::';
+		@sym_list = (@keyword,
+			     grep /::$/, keys %::);
 	    }
-#print "[$text,$pkg,$pre,$pcmp]\n";
-	    if ($text =~ /^(\$|\*)/) {
-		@symbol_list = get_symbol($pkg, 'SCALAR', $pre, $pcmp);
-	    } elsif ($text =~ /^(\@|\$\#)/) {
-		@symbol_list = get_symbol($pkg, 'ARRAY', $pre, $pcmp);
-	    } elsif ($text =~ /^(\%)/) {
-		@symbol_list = get_symbol($pkg, 'HASH', $pre, $pcmp);
-	    } elsif ($text =~ /^(\&)/) {
-		@symbol_list = get_symbol($pkg, 'CODE', $pre, $pcmp);
-	    } else {
-		@symbol_list = get_symbol($pkg, 'CODE', $pre, $pcmp);
-# the following line causes segmention fault?
-#@symbol_list = (@symbol_list, get_symbol($pkg, 'FILEHANDLE', $pre, $pcmp));
-	    }
-#	    @symbol_list = sort @symbol_list;
-#	    print "\n<<<@symbol_list>>>\n";
-	}
 
+	    if ($pre) {
+		@sym_list = (@sym_list,
+			     grep (/^\w+$/
+				   && ($sym = $pkg . $_,
+				       defined *$sym{$type{$pre}}),
+				   keys %$pkg));
+	    } else {
+		@sym_list = (@sym_list,
+			     grep (/^\w+$/
+				   && ($sym = $pkg . $_,
+				       defined *$sym{CODE}
+				       || defined *$sym{FILEHANDLE}
+				      ),
+				   keys %$pkg));
+	    }
+	}
 	my $entry;
-	for (; $i <= $#symbol_list; $i++) {
-	    $entry = $symbol_list[$i];
+	for (; $i <= $#sym_list; $i++) {
+	    $entry = $prefix . $sym_list[$i];
 	    return $entry if ($entry =~ /^\Q$text/);
 	}
 	return undef;
     }
-}
 
-sub get_symbol ($$$$) {
-    my ($pkg, $type, $pre, $pcmp) = @_;
-    my ($key, $ref, @list);
-    no strict qw(vars refs);
-#    no strict qw(refs);
+    BEGIN {
+	%type = ('$' => 'SCALAR', '*' => 'SCALAR',
+		 '@' => 'ARRAY', '$#' => 'ARRAY',
+		 '%' => 'HASH',
+		 '&' => 'CODE'); # '
 
-    @list = ();
-    foreach $key (keys %${pkg}) {
-	next if ($key =~ /^_</
-		 || $key =~ m/^::/
-		 || $key eq '$' || $key eq '"' || $key eq "\@");
-#print "\n[$pkg,$key,$type]\n";
-	my $pk = ${pkg} . ${key};
-	$ref = *$pk{$type};
-	if (!$pcmp && $key =~ /::$/) {	# package name
-	    push (@list, "${pre}${key}");
-	} elsif ($type eq 'SCALAR' && defined $ref) {
-	    push (@list, "${pre}${key}");
-	} elsif ($type eq 'ARRAY' && defined $ref) {
-	    push (@list, $pre . $key);
-	} elsif ($type eq 'HASH' && defined $ref) {
-	    push (@list, $pre . $key);
-	} elsif ($type eq 'CODE' && defined $ref) {
-	    push (@list, $pre . $key);
-	} elsif ($type eq 'FILEHANDLE' && defined $ref) {
-	    push (@list, $pre . $key);
-	}
+	# from perl5.004_02 perlfunc
+	@keyword = qw(
+		    chomp chop chr crypt hex index lc lcfirst
+		    length oct ord pack q qq
+		    reverse rindex sprintf substr tr uc ucfirst
+		    y
+		    
+		    m pos quotemeta s split study qr
+
+		    abs atan2 cos exp hex int log oct rand sin
+		    sqrt srand
+
+		    pop push shift splice unshift
+
+		    grep join map qw reverse sort unpack
+		    
+		    delete each exists keys values
+		    
+		    binmode close closedir dbmclose dbmopen die
+		    eof fileno flock format getc print printf
+		    read readdir rewinddir seek seekdir select
+		    syscall sysread sysseek syswrite tell telldir
+		    truncate warn write
+		    
+		    pack read syscall sysread syswrite unpack vec
+		    
+		    chdir chmod chown chroot fcntl glob ioctl
+		    link lstat mkdir open opendir readlink rename
+		    rmdir stat symlink umask unlink utime
+		    
+		    caller continue die do dump eval exit goto
+		    last next redo return sub wantarray
+		    
+		    caller import local my package use
+		    
+		    defined dump eval formline local my reset
+		    scalar undef wantarray
+		    
+		    alarm exec fork getpgrp getppid getpriority
+		    kill pipe qx setpgrp setpriority sleep
+		    system times wait waitpid
+		    
+		    do import no package require use
+		    
+		    bless dbmclose dbmopen package ref tie tied
+		    untie use
+		    
+		    accept bind connect getpeername getsockname
+		    getsockopt listen recv send setsockopt shutdown
+		    socket socketpair
+		    
+		    msgctl msgget msgrcv msgsnd semctl semget
+		    semop shmctl shmget shmread shmwrite
+		    
+		    endgrent endhostent endnetent endpwent getgrent
+		    getgrgid getgrnam getlogin getpwent getpwnam
+		    getpwuid setgrent setpwent
+		    
+		    endprotoent endservent gethostbyaddr
+		    gethostbyname gethostent getnetbyaddr
+		    getnetbyname getnetent getprotobyname
+		    getprotobynumber getprotoent getservbyname
+		    getservbyport getservent sethostent setnetent
+		    setprotoent setservent
+		    
+		    gmtime localtime time times
+		    
+		    abs bless chomp chr exists formline glob
+		    import lc lcfirst map my no prototype qx qw
+		    readline readpipe ref sub sysopen tie tied
+		    uc ucfirst untie use
+		    
+		    dbmclose dbmopen
+		   );
     }
-
-    if ($pcmp) {
-	foreach $key (keys %::) {
-	    push (@list, $pre . $key) if ($key =~ /::$/); # package name
-	}
-    }
-	    
-    return @list;
 }
 
-sub perl_symbol_display_match_list {
-    my($matches, $num_matches, $max_length) = @_;
-    map { $_ =~ s/^((\$#|[\@\$%&])?).*::(.+)/\3/; }(@{$matches});
-    $term->display_match_list($matches);
-    $term->forced_update_display;
-}
-
-# return scalar variable name list
-sub symbol_scalar ($) {
-    my ($pre) = @_;
-    my ($key, $val, @list);
-    no strict 'vars';
-    local(*stab) = eval("*main::");
-    while (($key,$val) = each(%stab)) {
-	next if $key =~ /^_</;
-	local(*entry) = $val;
-	# How can I distinguish a variable which is not defined
-	#	from one which has undefined value?
-	push (@list, $pre . $key)
-	    if (defined $entry or ! defined @entry && ! defined %entry);
-    }
-    return @list;
-}
-
-# return array variable name list
-sub symbol_array ($;$) {
-    my ($pre, $pos) = @_;
-    my ($key, $val, @list);
-    no strict 'vars';
-    local(*stab) = eval("*main::");
-    while (($key,$val) = each(%stab)) {
-	local(*entry) = $val;
-	push (@list, $pre . $key . $pos)
-	    if (defined @entry or ! defined %entry && ! defined $entry);
-    }
-    return @list;
-}
-
-# return hash variable name list
-sub symbol_hash ($;$) {
-    my ($pre, $pos) = @_;
-    my ($key, $val, @list);
-    local(*stab) = eval("*main::");
-    no strict 'vars';
-    while (($key,$val) = each(%stab)) {
-	local(*entry) = $val;
-	push (@list, $pre . $key . $pos)
-	    if (defined %entry or ! defined $entry && ! defined @entry);
-    }
-    return @list;
-}
 __END__
 
 =pod
