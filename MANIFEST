@@ -1,12 +1,13 @@
-Changes				Differences from previous version
-Gnu.pm				The GNU Readline extension Perl module
-Gnu.xs				The GNU Readline extension external subroutines
-INSTALL				Installtion instructions
-MANIFEST			This list of files
-Makefile.PL			The GNU Readline extension makefile writer
-README				The Instructions
-eg/perlsh			A powerful calculator
-eg/pftp				An ftp client with the GNU Readline support
-eg/ptksh+			Simple perl/Tk shell which demonstrates the callback functions
-t/readline.t			See if the GNU Readline extension makefile writer
-typemap				The GNU Readline extension interface types
+Changes		Differences from previous version
+Gnu.pm		The GNU Readline extension Perl module
+Gnu.xs		The GNU Readline extension external subroutines
+INSTALL		Installtion instructions
+MANIFEST	This list of files
+Makefile.PL	The GNU Readline extension makefile writer
+README		The Instructions
+eg/perlsh	A powerful calculator
+eg/fileman	A short completion example
+eg/pftp		An ftp client with the GNU Readline support
+eg/ptksh+	Simple perl/Tk shell which demonstrates the callback functions
+t/readline.t	See if the GNU Readline extension makefile writer
+typemap		The GNU Readline extension interface types
