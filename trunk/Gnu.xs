@@ -1,9 +1,9 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.104 2003-03-17 01:25:27 hiroo Exp $
+ *	$Id: Gnu.xs,v 1.105 2003-10-01 02:19:32 hiroo Exp $
  *
- *	Copyright (c) 2002 Hiroo Hayashi.  All rights reserved.
+ *	Copyright (c) 2003 Hiroo Hayashi.  All rights reserved.
  *
  *	This program is free software; you can redistribute it and/or
  *	modify it under the same terms as Perl itself.
@@ -171,6 +171,11 @@ static int rl_completion_suppress_append;
 static int rl_completion_mark_symlink_dirs;
 #endif /* (RL_READLINE_VERSION < 0x0403) */
 
+#if (RL_VERSION_MAJOR < 5)
+/* features introduced by GNU Readline 5.0 */
+static int history_write_timestamps;
+#endif /* (RL_VERSION_MAJOR < 5) */
+
 /*
  * utility/dummy functions
  */                                                                                
@@ -328,26 +333,27 @@ static struct int_vars {
 #else /* (RL_READLINE_VERSION < 0x0402) */
   { &max_input_history,				0, 1 },	/* 13 */
 #endif /* (RL_READLINE_VERSION < 0x0402) */
-  { (int *)&history_expansion_char,		1, 0 },	/* 14 */
-  { (int *)&history_subst_char,			1, 0 },	/* 15 */
-  { (int *)&history_comment_char,		1, 0 },	/* 16 */
-  { &history_quotes_inhibit_expansion,		0, 0 },	/* 17 */
-  { &rl_erase_empty_line,			0, 0 },	/* 18 */
-  { &rl_catch_signals,				0, 0 },	/* 19 */
-  { &rl_catch_sigwinch,				0, 0 },	/* 20 */
-  { &rl_already_prompted,			0, 0 },	/* 21 */
-  { &rl_num_chars_to_read,			0, 0 },	/* 22 */
-  { &rl_dispatching,				0, 0 },	/* 23 */
-  { &rl_gnu_readline_p,				0, 1 },	/* 24 */
-  { &rl_readline_state,				0, 0 },	/* 25 */
-  { &rl_explicit_arg,				0, 0 },	/* 26 */
-  { &rl_numeric_arg,				0, 0 },	/* 27 */
-  { &rl_editing_mode,				0, 0 },	/* 28 */
-  { &rl_attempted_completion_over,		0, 0 },	/* 29 */
-  { &rl_completion_type,			0, 0 },	/* 30 */
-  { &rl_readline_version,			0, 1 },	/* 31 */
-  { &rl_completion_suppress_append,		0, 0 },	/* 32 */
-  { &rl_completion_mark_symlink_dirs,		0, 0 }	/* 33 */
+  { &history_write_timestamps,			0, 0 },	/* 14 */
+  { (int *)&history_expansion_char,		1, 0 },	/* 15 */
+  { (int *)&history_subst_char,			1, 0 },	/* 16 */
+  { (int *)&history_comment_char,		1, 0 },	/* 17 */
+  { &history_quotes_inhibit_expansion,		0, 0 },	/* 18 */
+  { &rl_erase_empty_line,			0, 0 },	/* 19 */
+  { &rl_catch_signals,				0, 0 },	/* 20 */
+  { &rl_catch_sigwinch,				0, 0 },	/* 21 */
+  { &rl_already_prompted,			0, 0 },	/* 22 */
+  { &rl_num_chars_to_read,			0, 0 },	/* 23 */
+  { &rl_dispatching,				0, 0 },	/* 24 */
+  { &rl_gnu_readline_p,				0, 1 },	/* 25 */
+  { &rl_readline_state,				0, 0 },	/* 26 */
+  { &rl_explicit_arg,				0, 0 },	/* 27 */
+  { &rl_numeric_arg,				0, 0 },	/* 28 */
+  { &rl_editing_mode,				0, 0 },	/* 29 */
+  { &rl_attempted_completion_over,		0, 0 },	/* 30 */
+  { &rl_completion_type,			0, 0 },	/* 31 */
+  { &rl_readline_version,			0, 1 },	/* 32 */
+  { &rl_completion_suppress_append,		0, 0 },	/* 33 */
+  { &rl_completion_mark_symlink_dirs,		0, 0 }	/* 34 */
 };
 
 /*
@@ -1282,6 +1288,20 @@ _rl_bind_key(key, function, map = rl_get_keymap())
     OUTPUT:
 	RETVAL
 
+#if (RL_VERSION_MAJOR >= 5)
+int
+_rl_bind_key_if_unbound(key, function, map = rl_get_keymap())
+	int key
+	rl_command_func_t *	function
+	Keymap map
+    PROTOTYPE: $$;$
+    CODE:
+	RETVAL = rl_bind_key_if_unbound_in_map(key, function, map);
+    OUTPUT:
+	RETVAL
+
+#endif /* (RL_VERSION_MAJOR >= 5) */
+
 int
 _rl_unbind_key(key, map = rl_get_keymap())
 	int key
@@ -1319,6 +1339,20 @@ _rl_unbind_command(command, map = rl_get_keymap())
 
 #endif /* (RL_READLINE_VERSION >= 0x0202) */
 
+#if (RL_VERSION_MAJOR >= 5)
+int
+_rl_bind_keyseq(keyseq, function, map = rl_get_keymap())
+	const char *keyseq
+	rl_command_func_t *	function
+	Keymap map
+    PROTOTYPE: $$;$
+    CODE:
+	RETVAL = rl_bind_keyseq_in_map(keyseq, function, map);
+    OUTPUT:
+	RETVAL
+
+#endif /* (RL_VERSION_MAJOR >= 5) */
+
 #if (RL_READLINE_VERSION >= 0x0402)
  # rl_set_key() is introduced by readline-4.2 and equivalent with
  # rl_generic_bind(ISFUNC, keyseq, (char *)function, map).
@@ -1334,6 +1368,20 @@ _rl_set_key(keyseq, function, map = rl_get_keymap())
 	RETVAL
 
 #endif /* (RL_READLINE_VERSION >= 0x0402) */
+
+#if (RL_VERSION_MAJOR >= 5)
+int
+_rl_bind_keyseq_if_unbound(keyseq, function, map = rl_get_keymap())
+	const char *keyseq
+	rl_command_func_t *	function
+	Keymap map
+    PROTOTYPE: $$;$
+    CODE:
+	RETVAL = rl_bind_keyseq_if_unbound_in_map(keyseq, function, map);
+    OUTPUT:
+	RETVAL
+
+#endif /* (RL_VERSION_MAJOR >= 5) */
 
 int
 _rl_generic_bind_function(keyseq, function, map = rl_get_keymap())
@@ -1743,6 +1791,16 @@ _rl_tty_set_default_bindings(kmap = rl_get_keymap())
 
 #endif /* (RL_VERSION_MAJOR >= 4) */
 
+#if (RL_VERSION_MAJOR >= 5)
+void
+_rl_tty_unset_default_bindings(kmap = rl_get_keymap())
+	Keymap kmap
+    PROTOTYPE: ;$
+    CODE:
+	rl_tty_unset_default_bindings(kmap);
+
+#endif /* (RL_VERSION_MAJOR >= 5) */
+
 int
 rl_reset_terminal(terminal_name = NULL)
 	CONST char *	terminal_name
@@ -2101,6 +2159,14 @@ add_history(string)
 	CONST char *	string
     PROTOTYPE: $
 
+#if (RL_VERSION_MAJOR >= 5)
+void
+add_history_time(string)
+	CONST char *	string
+    PROTOTYPE: $
+
+#endif /* (RL_VERSION_MAJOR >= 5) */
+
 HIST_ENTRY *
 remove_history(which)
 	int which
@@ -2110,10 +2176,18 @@ remove_history(which)
     CLEANUP:
 	if (RETVAL) {
 	  xfree(RETVAL->line);
+#if (RL_VERSION_MAJOR >= 5)
+	  xfree(RETVAL->timestamp);
+#endif /* (RL_VERSION_MAJOR >= 5) */
 	  xfree(RETVAL->data);
 	  xfree((char *)RETVAL);
 	}
 
+ # free_history_entry() is introduced by GNU Readline Library 5.0.
+ # Since Term::ReadLine::Gnu does not support the member 'data' of HIST_ENTRY
+ # structure, remove_history() covers it.
+
+ # The 3rd parameter (histdata_t) is not supported. Does anyone use it?
 HIST_ENTRY *
 replace_history_entry(which, line)
 	int which
@@ -2126,6 +2200,9 @@ replace_history_entry(which, line)
     CLEANUP:
 	if (RETVAL) {
 	  xfree(RETVAL->line);
+#if (RL_VERSION_MAJOR >= 5)
+	  xfree(RETVAL->timestamp);
+#endif /* (RL_VERSION_MAJOR >= 5) */
 	  xfree(RETVAL->data);
 	  xfree((char *)RETVAL);
 	}
@@ -2177,6 +2254,26 @@ HIST_ENTRY *
 history_get(offset)
 	int offset
     PROTOTYPE: $
+
+#if (RL_VERSION_MAJOR >= 5)
+ # To keep compatibility, I cannot make a function whose argument
+ # is "HIST_ENTRY *".
+time_t
+history_get_time(offset)
+	int offset
+    PROTOTYPE: $
+    CODE:
+	{
+	  HIST_ENTRY *he = history_get(offset);
+	  if (he)
+	    RETVAL = history_get_time(he);
+	  else
+	    RETVAL = 0;
+	}
+    OUTPUT:
+	RETVAL
+
+#endif /* (RL_VERSION_MAJOR >= 5) */
 
 int
 history_total_bytes()
