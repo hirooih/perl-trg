@@ -2,9 +2,9 @@
 #
 #	XS.pm : perl function definition for Term::ReadLine::Gnu
 #
-#	$Id: XS.pm,v 1.20 2002-07-28 03:39:49 hiroo Exp $
+#	$Id: XS.pm,v 1.21 2003-10-01 02:21:57 hiroo Exp $
 #
-#	Copyright (c) 2002 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 2003 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -87,11 +87,27 @@ sub rl_copy_keymap ($)    { return _rl_copy_keymap(_str2map($_[0])); }
 sub rl_discard_keymap ($) { return _rl_discard_keymap(_str2map($_[0])); }
 sub rl_set_keymap ($)     { return _rl_set_keymap(_str2map($_[0])); }
 
+# rl_bind_key
 sub rl_bind_key ($$;$) {
     if (defined $_[2]) {
 	return _rl_bind_key($_[0], _str2fn($_[1]), _str2map($_[2]));
     } else {
 	return _rl_bind_key($_[0], _str2fn($_[1]));
+    }
+}
+
+# rl_bind_key_if_unbound
+sub rl_bind_key_if_unbound ($$;$) {
+    my ($version) = $Attribs{library_version}
+	=~ /(\d+\.\d+)/;
+    if ($version < 5.0) {
+	carp "rl_bind_key_if_unbound() is not supported.  Ignored\n";
+	return;
+    }
+    if (defined $_[2]) {
+	return _rl_bind_key_if_unbound($_[0], _str2fn($_[1]), _str2map($_[2]));
+    } else {
+	return _rl_bind_key_if_unbound($_[0], _str2fn($_[1]));
     }
 }
 
@@ -135,6 +151,21 @@ sub unbind_command ($;$) {
     }
 }
 
+# rl_bind_keyseq
+sub rl_bind_keyseq ($$;$) {
+    my ($version) = $Attribs{library_version}
+	=~ /(\d+\.\d+)/;
+    if ($version < 5.0) {
+	carp "rl_bind_keyseq() is not supported.  Ignored\n";
+	return;
+    }
+    if (defined $_[2]) {
+	return _rl_bind_keyseq($_[0], _str2fn($_[1]), _str2map($_[2]));
+    } else {
+	return _rl_bind_keyseq($_[0], _str2fn($_[1]));
+    }
+}
+
 sub rl_set_key ($$;$) {
     my ($version) = $Attribs{library_version}
 	=~ /(\d+\.\d+)/;
@@ -146,6 +177,21 @@ sub rl_set_key ($$;$) {
 	return _rl_set_key($_[0], _str2fn($_[1]), _str2map($_[2]));
     } else {
 	return _rl_set_key($_[0], _str2fn($_[1]));
+    }
+}
+
+# rl_bind_keyseq_if_unbound
+sub rl_bind_keyseq ($$;$) {
+    my ($version) = $Attribs{library_version}
+	=~ /(\d+\.\d+)/;
+    if ($version < 5.0) {
+	carp "rl_bind_keyseq_if_unbound() is not supported.  Ignored\n";
+	return;
+    }
+    if (defined $_[2]) {
+	return _rl_bind_keyseq_if_unbound($_[0], _str2fn($_[1]), _str2map($_[2]));
+    } else {
+	return _rl_bind_keyseq_if_unbound($_[0], _str2fn($_[1]));
     }
 }
 
@@ -212,10 +258,30 @@ sub rl_add_funmap_entry ($$) {
 }
 
 sub rl_tty_set_default_bindings (;$) {
+    my ($version) = $Attribs{library_version}
+	=~ /(\d+\.\d+)/;
+    if ($version < 4.2) {
+	carp "rl_tty_set_default_bindings() is not supported.  Ignored\n";
+	return;
+    }
     if (defined $_[0]) {
 	return _rl_tty_set_defaut_bindings(_str2map($_[1]));
     } else {
 	return _rl_tty_set_defaut_bindings();
+    }
+}
+
+sub rl_tty_unset_default_bindings (;$) {
+    my ($version) = $Attribs{library_version}
+	=~ /(\d+\.\d+)/;
+    if ($version < 5.0) {
+	carp "rl_tty_unset_default_bindings() is not supported.  Ignored\n";
+	return;
+    }
+    if (defined $_[0]) {
+	return _rl_tty_unset_defaut_bindings(_str2map($_[1]));
+    } else {
+	return _rl_tty_unset_defaut_bindings();
     }
 }
 
