@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.17 1996-12-30 16:53:25 hayashi Exp $
+#	$Id: Gnu.pm,v 1.18 1997-01-06 15:11:14 hayashi Exp $
 #
 #	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
 #
@@ -127,7 +127,9 @@ is in C<Features>.
 
 =cut
 
-sub readline {
+use vars qw($_Preput);
+
+sub readline {			# should be ReadLine
     my $self = shift;
     my ($prompt, $preput) = @_;
 
@@ -140,8 +142,15 @@ sub readline {
     }
 
     # call readline()
-    $preput = defined $preput ? $preput : '';
-    my $line = _rl_readline($prompt, $preput);
+    my $line;
+    if (defined $preput) {
+	$_Preput = $preput;
+	rl_store_var('rl_startup_hook', sub { rl_insert_text($_Preput) });
+	$line = rl_readline($prompt);
+	rl_store_var('rl_startup_hook', undef);
+    } else {
+	$line = rl_readline($prompt);
+    }
     undef $Next_Operate_Index;
     return undef unless defined $line;
 
@@ -275,14 +284,14 @@ the function.  Returns non-zero in the case of an invalid KEY.
 
   Example:
 	# bind function reverse_line() to "\C-t"
-	$term->BindKey(\&reverse_line, "\ct", 'reverse-line');
+	$term->BindKey('reverse-line', \&reverse_line, "\ct");
 
 =cut
 
 sub BindKey {
     my $self = shift;
-    my ($func, $key, $name) = @_;
-    rl_add_defun($func, ord $key, $name);
+    my ($name, $func, $key) = @_;
+    rl_add_defun($name, $func, ord $key);
 }
 
 =item C<UnbindKey(KEY)>
@@ -357,8 +366,12 @@ my %_rl_vars
        history_comment_char			=> ['C', 16],
        history_quotes_inhibit_expansion		=> ['I', 17],
 
-       rl_completion_entry_function		=> ['F', 'filename'],
-       rl_attempted_completion_function		=> ['F', undef],
+       rl_startup_hook				=> ['F', 0],
+       rl_event_hook				=> ['F', 1],
+       rl_getc_function				=> ['F', 2],
+       rl_redisplay_function			=> ['F', 3],
+       rl_completion_entry_function		=> ['F', 4, 'filename'],
+       rl_attempted_completion_function		=> ['F', 5, undef],
       );
 
 sub FetchVar {
@@ -381,8 +394,7 @@ sub rl_fetch_var ($) {
     } elsif ($type eq 'C') {
 	return chr(_rl_fetch_int($id));
     } elsif ($type eq 'F') {
-	my $func = $id;
-	return $func;		# return value which saved in perl variable
+	return _rl_fetch_function($id);
     } else {
 	carp "Term::ReadLine::Gnu::FetchVar: Illegal type `$type'\n";
 	return undef;
@@ -413,17 +425,7 @@ sub rl_store_var ($$) {
     } elsif ($type eq 'C') {
 	return chr(_rl_store_int(ord($value), $id));
     } elsif ($type eq 'F') {
-	my $func = $id;
-	if ($name eq 'rl_completion_entry_function') {
-	    _rl_store_completion_entry_function($value);
-	    return $_rl_vars{$name}[1] = $value;
-	} elsif ($name eq 'rl_attempted_completion_function') {
-	    _rl_store_attempted_completion_function($value);
-	    return $_rl_vars{$name}[1] = $value;
-	} else {
-	    warn "Internal error: Check Gnu.pm\n";
-	    return undef;
-	}
+	return _rl_store_function($value, $id);
     } else {
 	carp "Term::ReadLine::Gnu::StoreVar: Illegal type `$type'\n";
 	return undef;
