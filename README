@@ -1,9 +1,9 @@
 	-*- Indented-text -*-
-$Id: README,v 1.24 2003-03-17 03:52:50 hiroo Exp $
+$Id: README,v 1.25 2004-10-17 19:54:11 hiroo Exp $
 
 Term::ReadLine::Gnu --- GNU Readline Library Wrapper Module
 
-	Copyright (c) 2003 Hiroo Hayashi.  All rights reserved.
+	Copyright (c) 2004 Hiroo Hayashi.  All rights reserved.
 
 	This program is free software; you can redistribute it and/or
 	modify it under the same terms as Perl itself.
@@ -61,6 +61,24 @@ Author:
 
 
 Revision History:
+
+1.15  2004-10-17
+	- readline-5.0 support
+	    new function
+		bind_key_if_unbound
+		bind_keyseq
+		bind_keyseq_if_unbound
+		tty_unset_default_bindings
+		add_history_time
+		history_get_time
+	    new variable
+		history_write_timestamps
+		completion_quote_character
+		completion_suppress_quote
+		completion_found_quote
+		completion_word_break_hook
+	- double IO stream close bug fix (more use of PerlIO)
+	- warning on 'use Term::ReadLine::Gnu;'.
 
 1.14  2003-03-16
 	- kludge not to cause segmentation fault on Perl 5.8.0
