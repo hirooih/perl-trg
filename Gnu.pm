@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.37 1997-03-13 14:51:29 hayashi Exp $
+#	$Id: Gnu.pm,v 1.38 1997-03-17 17:38:23 hayashi Exp $
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
 #
@@ -42,12 +42,12 @@ B<Variables> and B<Functions> briefly.  For more detail of the GNU
 Readline/History Library, see 'GNU Readline Library Manual' and 'GNU
 History Library Manual'.
 
-=head2 Methods
+=head2 Minimal Set of Methods defined by B<Readline.pm>
 
 =cut
 
 use strict;
-use vars qw($VERSION @ISA %EXPORT_TAGS @EXPORT_OK);
+use vars qw($VERSION @ISA @EXPORT_OK);
 use Carp;
 
 $VERSION = '0.07';
@@ -55,134 +55,46 @@ $VERSION = '0.07';
 require Exporter;
 require DynaLoader;
 
-@ISA = qw(Exporter DynaLoader);
+@ISA = qw(Term::ReadLine::Gnu::AU Term::ReadLine::Stub Exporter DynaLoader);
+
+my %Attribs = ();		# This hash is set later.
+my %Features = (
+		appname => 1, minline => 1, autohistory => 1,
+		getHistory => 1, setHistory => 1, addHistory => 1,
+		readHistory => 1, writeHistory => 1,
+		preput => 1, tkRunning => 1, attribs => 1,
+		stiflehistory => 1,
+	       );
+
+sub Attribs { \%Attribs; }
+sub Features { \%Features; }
 
 #
 #	Variable lists to be Export_OK
 #
-my @basefn = qw( rl_fetch_var		rl_store_var
-		 rl_readline		add_history	history_expand
-	         $rl_library_version	$rl_terminal_name
-		 $rl_readline_name );
 
-my @bindfn = qw( rl_add_defun		rl_make_bare_keymap	rl_copy_keymap
-		 rl_make_keymap		rl_discard_keymap
-		 rl_get_keymap		rl_set_keymap
-		 rl_get_keymap_by_name	rl_get_keymap_name
-		 rl_bind_key		rl_unbind_key
-		 rl_generic_bind	rl_parse_and_bind
-		 rl_read_init_file	rl_call_function
-		 rl_named_function	rl_get_function_name
-		 rl_function_of_keyseq	rl_invoking_keyseqs
-		 rl_function_dumper	rl_list_funmap_names
+#
+#	GNU Readline/History Library constant definition
+#
+# for rl_filename_quoting_function
+sub NO_MATCH	 { 0; }
+sub SINGLE_MATCH { 1; }
+sub MULT_MATCH   { 2; }
 
-		 $rl_executing_keymap	$rl_binding_keymap
+# for rl_generic_bind, rl_function_of_keyseq
+sub ISFUNC	{ 0; }
+sub ISKMAP	{ 1; }
+sub ISMACR	{ 2; }
 
-		 ISFUNC			ISKMAP			ISMACR );
+# for rl_add_undo
+sub UNDO_DELETE	{ 0; }
+sub UNDO_INSERT	{ 1; }
+sub UNDO_BEGIN	{ 2; }
+sub UNDO_END	{ 3; }
 
-my @miscfn = qw( rl_begin_undo_group	rl_end_undo_group	rl_add_undo
-		 free_undo_list		rl_do_undo		rl_modifying
-
-		 UNDO_DELETE		UNDO_INSERT		UNDO_BEGIN
-		 UNDO_END
-
-		 rl_redisplay		rl_forced_update_display
-		 rl_on_new_line		rl_reset_line_state	rl_message
-		 rl_clear_message	rl_insert_text		rl_delete_text
-		 rl_copy_text		rl_kill_text 
-
-		 rl_read_key		rl_getc			rl_stuff_char
-		 rl_initialize		rl_reset_terminal	ding
-
-		 $rl_line_buffer
-		 $rl_point		$rl_end			$rl_mark
-		 $rl_done		$rl_pending_input	$rl_prompt
-		 $rl_instream		$rl_outstream
-		 $rl_startup_hook	$rl_event_hook
-		 $rl_getc_function	$rl_redisplay_function );
-
-my @cbfn   = qw( rl_callback_handler_install
-		 rl_callback_read_char
-		 rl_callback_handler_remove );
-
-my @cmplfn = qw( rl_complete_internal	completion_matches
-		 filename_completion_function
-		 username_completion_function
-		 list_completion_function
-
-		 $rl_completion_entry_function
-		 $rl_attempted_completion_function
-		 $rl_completion_query_items
-		 $rl_basic_word_break_characters
-		 $rl_basic_quote_characters
-		 $rl_completer_word_break_characters
-		 $rl_completer_quote_characters
-		 $rl_filename_quote_characters
-		 $rl_special_prefixes
-		 $rl_completion_append_character
-		 $rl_ignore_completion_duplicates
-		 $rl_filename_completion_desired
-		 $rl_filename_quoting_desired
-		 $rl_inhibit_completion
-
-		 NO_MATCH		SINGLE_MATCH		MULT_MATCH );
-
-my @histfn = qw( using_history		remove_history
-		 replace_history_entry	clear_history		stifle_history
-		 history_is_stifled	where_history		current_history
-		 history_get		history_total_bytes
-
-		 history_set_pos	previous_history	next_history
-
-		 history_search		history_search_prefix
-
-		 read_history_range	write_history		append_history
-		 history_trancate_file);
-
-my @histvar = qw($history_no_expand_chars
-		 $history_search_delimiter_chars
-		 $history_base
-		 $history_length
-		 $history_expansion_char
-		 $history_subst_char
-		 $history_comment_char
-		 $history_quotes_inhibit_expansion );
-
-# Perl 5.002 and 5.003 cause segmentation fault at end of script, if
-# @histfn is added to %EXPORT_TAGS.  But Perl 5.003_08 and later does
-# not.  Do Perl 5.002 and 5.003 have any restrictions on the number of
-# functions which can be exported?  Or does this module have any
-# trouble?
-if ($] < 5.00308) {
-%EXPORT_TAGS = (
-		 base_function		=> \@basefn,
-
-  		 keybind_function	=> \@bindfn,
-  		 misc_function		=> \@miscfn,
-  		 callback_function	=> \@cbfn,
-  		 completion_function	=> \@cmplfn,
-  		 history_function	=> \@histvar,
-		 all			=> [ @basefn, @bindfn, @miscfn,
-  					     @cbfn, @cmplfn, @histvar ],
-	       );
-} else {
-%EXPORT_TAGS = (
-		 base_function		=> \@basefn,
-
-  		 keybind_function	=> \@bindfn,
-  		 misc_function		=> \@miscfn,
-  		 callback_function	=> \@cbfn,
-  		 completion_function	=> \@cmplfn,
- 		 history_function	=> [ @histfn, @histvar ],
-		 all			=> [ @basefn, @bindfn, @miscfn,
-  					     @cbfn, @cmplfn,
-					     @histfn, @histvar ],
-	       );
-}
-
-Exporter::export_ok_tags(qw(base_function	keybind_function
- 			    misc_function	callback_function
- 			    completion_function	history_function));
+@EXPORT_OK = qw(NO_MATCH SINGLE_MATCH MULT_MATCH
+		ISFUNC ISKMAP ISMACR
+		UNDO_DELETE UNDO_INSERT UNDO_BEGIN UNDO_END);
 
 bootstrap Term::ReadLine::Gnu $VERSION;
 
@@ -219,28 +131,7 @@ sub new {
     my $this = shift;		# Package
     my $class = ref($this) || $this;
 
-    # initialize the GNU Readline Library first
-    rl_initialize();
-
     my $name = shift;
-    rl_store_var('rl_readline_name', $name);
-
-    if (!@_) {
-	my ($IN,$OUT) = Term::ReadLine::Stub::findConsole();
-	open(IN,"<$IN")   || croak "Cannot open $IN for read";
-	open(OUT,">$OUT") || croak "Cannot open $OUT for write";
-	rl_store_var('rl_instream', \*IN);
-	rl_store_var('rl_outstream', \*OUT);
-    } else {
-	rl_store_var('rl_instream', shift);
-	rl_store_var('rl_outstream', shift);
-    }
-    $Operate_Index = $Next_Operate_Index = undef; # for operate_and_get_next()
-
-    # Comment out next line to be compatible with Term::ReadLine::Perl.
-    # By default compatible with GNU Readline.
-#    $rl_basic_word_break_characters .= '-:+/*,[])}';
-
     my $self = {
 		AppName		=> $name,
 		MinLength	=> 1,
@@ -248,6 +139,25 @@ sub new {
 		CompletionWordList	=> \@Completion_Word_List,
 	       };
     bless $self, $class;
+
+    # initialize the GNU Readline Library first
+    $self->initialize();
+
+    $self->store_var('rl_readline_name', $name);
+
+    if (!@_) {
+	#my ($IN,$OUT) = Term::ReadLine::Stub::findConsole();
+	my ($IN,$OUT) = $self->findConsole();
+	open(IN,"<$IN")   || croak "Cannot open $IN for read";
+	open(OUT,">$OUT") || croak "Cannot open $OUT for write";
+	$self->store_var('rl_instream', \*IN);
+	$self->store_var('rl_outstream', \*OUT);
+    } else {
+	$self->store_var('rl_instream', shift);
+	$self->store_var('rl_outstream', shift);
+    }
+    $Operate_Index = $Next_Operate_Index = undef; # for operate_and_get_next()
+
     $self;
 }
 
@@ -268,10 +178,17 @@ sub readline {			# should be ReadLine
     my $self = shift;
     my ($prompt, $preput) = @_;
 
+    # TkRunning support
+    if (not $Term::ReadLine::registered and $Term::ReadLine::toloop
+	and defined &Tk::DoOneEvent) {
+	$self->register_Tk;
+	$self->Attribs->{getc_function} = \&Tk_getc;
+    }
+
     # cf. operate_and_get_next()
     if (defined $Operate_Index) {
 	$Next_Operate_Index = $Operate_Index + 1;
-	my $next_line = history_get($Next_Operate_Index);
+	my $next_line = $self->history_get($Next_Operate_Index);
 	$preput = $next_line if defined $next_line;
 	undef $Operate_Index;
     }
@@ -280,16 +197,16 @@ sub readline {			# should be ReadLine
     my $line;
     if (defined $preput) {
 	$_Preput = $preput;
-	$_Saved_Startup_Hook = rl_fetch_var('rl_startup_hook');
-	rl_store_var('rl_startup_hook',
-		     sub { rl_insert_text($_Preput);
+	$_Saved_Startup_Hook = $self->fetch_var('rl_startup_hook');
+	$self->store_var('rl_startup_hook',
+		     sub { $self->rl_insert_text($_Preput);
 			   &$_Saved_Startup_Hook
 			       if defined $_Saved_Startup_Hook;
 		       });
-	$line = rl_readline($prompt);
-	rl_store_var('rl_startup_hook', $_Saved_Startup_Hook);
+	$line = Term::ReadLine::Gnu::XS::rl_readline($prompt);
+	$self->store_var('rl_startup_hook', $_Saved_Startup_Hook);
     } else {
-	$line = rl_readline($prompt);
+	$line = Term::ReadLine::Gnu::XS::rl_readline($prompt);
     }
     undef $Next_Operate_Index;
     return undef unless defined $line;
@@ -297,8 +214,8 @@ sub readline {			# should be ReadLine
     # history expansion
     if ($self->{DoExpand}) {
 	my $result;
-	($result, $line) = history_expand($line);
-	my $outstream = rl_fetch_var('rl_outstream');
+	($result, $line) = $self->history_expand($line);
+	my $outstream = $self->fetch_var('rl_outstream');
 	print $outstream "$line\n" if ($result);
      
 	# return without adding line into history
@@ -308,27 +225,37 @@ sub readline {			# should be ReadLine
     }
 
     # add to history buffer
-    add_history($line) if (length($line) >= $self->{MinLength});
+    $self->add_history($line) if (length($line) >= $self->{MinLength});
 
     return $line;
 }
 
-=item C<AddHistory(LINE1, LINE2, ...)>
+sub Tk_getc {
+    &Term::ReadLine::Tk::Tk_loop
+	if $Term::ReadLine::toloop && defined &Tk::DoOneEvent;
+    my $FILE = $Attribs{instream};
+    return Term::ReadLine::Gnu::XS::rl_getc($FILE);
+}
+
+=item C<addhistory(LINE1, LINE2, ...)>
 
 adds the lines to the history of input, from where it can be used if
 the actual C<readline> is present.
 
 =cut
 
-*addhistory = \&AddHistory;	# for backward compatibility
+*addhistory = \&add_history;
+*AddHistory = \&add_history;	# for backward compatibility
 
-sub AddHistory {
-    shift;
-    local($_);
-    foreach (@_) {
-	add_history($_);
-    }
-}
+=item C<IN>, C<OUT>
+
+return the file handles for input and output or C<undef> if
+C<readline> input and output cannot be used for Perl.
+
+=cut
+
+sub IN  { shift->fetch_var('rl_instream'); }
+sub OUT { shift->fetch_var('rl_outstream'); }
 
 =item C<MinLine([MAX])>
 
@@ -345,174 +272,20 @@ sub MinLine {
     $old_minlength;
 }
 
-=item C<StifleHistory(MAX)>
-
-stifles the history list, remembering only the last C<MAX> entries.
-If MAX is undef,  remembers all entries.
-
-=cut
-
-sub StifleHistory {
-    my $self = shift;
-    stifle_history(shift);
-}
-
-=item C<SetHistory(LINE1, LINE2, ...)>
-
-sets the history of input, from where it can be used if the actual
-C<readline> is present.
-
-=cut
-
-sub SetHistory {
-    shift;
-    local($_);
-    clear_history();
-    foreach (@_) {
-	add_history($_);
-    }
-}
-
-=item C<GetHistory>
-
-returns the history of input as a list, if actual C<readline> is present.
-
-=cut
-
-sub GetHistory {
-    my ($i, $history_base, $history_length, @d);
-    $history_base   = rl_fetch_var('history_base');
-    $history_length = rl_fetch_var('history_length');
-    for ($i = $history_base; $i < $history_base + $history_length; $i++) {
-	push(@d, history_get($i));
-    }
-    @d;
-}
-
-=item C<ReadHistory([FILENAME [,FROM [,TO]]])>
-
-adds the contents of C<FILENAME> to the history list, a line at a
-time.  If C<FILENAME> is false, then read from F<~/.history>.  Start
-reading at line C<FROM> and end at C<TO>.  If C<FROM> is omitted or
-zero, start at the beginning.  If C<TO> is omittied or less than
-C<FROM>, then read until the end of the file.  Returns true if
-successful, or false if not.
-
-=cut
-
-sub ReadHistory {
-    shift;
-    if (defined $_[2]) {
-	! read_history_range($_[0], $_[1], $_[2]);
-    } elsif (defined $_[1]) {
-	! read_history_range($_[0], $_[1]);
-    } elsif (defined $_[0]) {
-	! read_history_range($_[0]);
-    } else {
-	! read_history_range();
-    }
-}
-
-=item C<WriteHistory([FILENAME])>
-
-writes the current history to C<FILENAME>, overwriting C<FILENAME> if
-necessary.  If C<FILENAME> is false, then write the history list to
-F<~/.history>.  Returns true if successful, or false if not.
-
-=cut
-
-sub WriteHistory {
-    shift;
-    if (defined $_[0]) {
-	! write_history($_[0]);
-    } else {
-	! write_history();
-    }
-}
-
-=item C<AddDefun(NAME, FUNC [,KEY])>
-
-Add name to the Perl function FUNC.  If optional argument KEY is
-specified, bind it to the FUNC.  Returns non-zero in the case of an
-invalid KEY.
-
-  Example:
-	# name name `reverse-line' to a function reverse_line(), and bind
-	# it to "\C-t"
-	$term->AddDefun('reverse-line', \&reverse_line, "\ct");
-
-=cut
-
-sub AddDefun {
-    my $self = shift;
-    if (defined $_[2]) {
-	rl_add_defun($_[0], $_[1], $_[2]);
-    } else {
-	rl_add_defun($_[0], $_[1]);
-    }
-}
-
-=item C<BindKey(KEY, FUNCTION [,MAP])>
-
-Bind KEY to the FUNCTION.  FUNCTION is the name added by the
-C<AddDefun> method.  If optional argument MAP is specified, binds
-in MAP.  Returns non-zero in case of error.
-
-=cut
-
-sub BindKey {
-    my $self = shift;
-    if (defined $_[2]) {
-	rl_bind_key($_[0], $_[1], $_[2]);
-    } else {
-	rl_bind_key($_[0], $_[1]);
-    }
-}
-
-=item C<UnbindKey(KEY [,MAP])>
-
-Bind KEY to the null function.  Returns non-zero in case of error.
-
-=cut
-
-sub UnbindKey {
-    my $self = shift;
-    if (defined $_[1]) {
-	rl_unbind_key($_[0], $_[1]);
-    } else {
-	rl_unbind_key($_[0]);
-    }
-}
-
-=item C<ParseAndBind(LINE)>
-
-Parse LINE as if it had been read from the F<~/.inputrc> file and
-perform any key bindings and variable assignments found.  For more
-detail see 'GNU Readline Library Manual'.
-
-=cut
-
-sub ParseAndBind {
-    my $self = shift;
-    rl_parse_and_bind($_[0]);
-}
-
-# The following functions are defined in ReadLine.pm.
-
-=item C<IN>, C<OUT>
-
-return the file handles for input and output or C<undef> if
-C<readline> input and output cannot be used for Perl.
-
-=cut
-
-sub IN  { rl_fetch_var('rl_instream'); }
-sub OUT { rl_fetch_var('rl_outstream'); }
+# findConsole is defined in ReadLine.pm.
 
 =item C<findConsole>
 
 returns an array with two strings that give most appropriate names for
 files for input and output using conventions C<"E<lt>$in">, C<"E<gt>$out">.
+
+=item C<Attribs>
+
+returns a reference to a hash which describes internal configuration
+(variables) of the package.  Names of keys in this hash conform to
+standard conventions with the leading C<rl_> stripped.
+
+See section "Variables" for supported variables.
 
 =item C<Features>
 
@@ -528,224 +301,64 @@ C<getHistory> and C<setHistory> denote that the corresponding methods are
 present. C<tkRunning> denotes that a Tk application may run while ReadLine
 is getting input B<(undocumented feature)>.
 
+=back
+
 =cut
-
-my %Features = (
-		appname => 1, minline => 1, autohistory => 1,
-		getHistory => 1, setHistory => 1, addHistory => 1,
-		readHistory => 1, writeHistory => 1,
-		preput => 1, tkRunning => 0, attribs => 1,
-		stiflehistory => 1,
-	       );
-
-sub Features { \%Features; }
-
-my %Attribs = ();		# This hash is set later.
-sub Attribs { \%Attribs; }
 
 
 #
-#	Readline/History Library Variable Access Routines
+#	Additional Supported Methods
 #
+# for backward compatibility
+*AddDefun = \&add_defun;
+*BindKey = \&bind_key;
+*UnbindKey = \&unbind_key;
+*ParseAndBind = \&parse_and_bind;
+*StifleHistory = \&stifle_history;
 
-=item C<FetchVar(VARIABLE_NAME), StoreVar(VARIABLE_NAME, VALUE)>
-
-Fetch and store a value of a GNU Readline Library variable.  See
-section VARIABLES.
-
-=cut
-
-my %_rl_vars
-    = (
-       rl_line_buffer				=> ['S', 0],
-       rl_prompt				=> ['S', 1],
-       rl_library_version			=> ['S', 2],
-       rl_terminal_name				=> ['S', 3],
-       rl_readline_name				=> ['S', 4],
-       rl_basic_word_break_characters		=> ['S', 5],
-       rl_basic_quote_characters		=> ['S', 6],
-       rl_completer_word_break_characters	=> ['S', 7],
-       rl_completer_quote_characters		=> ['S', 8],
-       rl_filename_quote_characters		=> ['S', 9],
-       rl_special_prefixes			=> ['S', 10],
-       history_no_expand_chars			=> ['S', 11],
-       history_search_delimiter_chars		=> ['S', 12],
-       
-       rl_point					=> ['I', 0],
-       rl_end					=> ['I', 1],
-       rl_mark					=> ['I', 2],
-       rl_done					=> ['I', 3],
-       rl_pending_input				=> ['I', 4],
-       rl_completion_query_items		=> ['I', 5],
-       rl_completion_append_character		=> ['C', 6],
-       rl_ignore_completion_duplicates		=> ['I', 7],
-       rl_filename_completion_desired		=> ['I', 8],
-       rl_filename_quoting_desired		=> ['I', 9],
-       rl_inhibit_completion			=> ['I', 10],
-       history_base				=> ['I', 11],
-       history_length				=> ['I', 12],
-       history_expansion_char			=> ['C', 13],
-       history_subst_char			=> ['C', 14],
-       history_comment_char			=> ['C', 15],
-       history_quotes_inhibit_expansion		=> ['I', 16],
-
-       rl_startup_hook				=> ['F', 0],
-       rl_event_hook				=> ['F', 1],
-       rl_getc_function				=> ['F', 2],
-       rl_redisplay_function			=> ['F', 3],
-       rl_completion_entry_function		=> ['F', 4],
-       rl_attempted_completion_function		=> ['F', 5],
-
-       rl_instream				=> ['IO', 0],
-       rl_outstream				=> ['IO', 1],
-
-       rl_executing_keymap			=> ['K', 0],
-       rl_binding_keymap			=> ['K', 1],
-      );
-
-sub rl_fetch_var ($) {
-    my $name = shift;
-    if (! defined $_rl_vars{$name}) {
-	carp "Term::ReadLine::Gnu::FetchVar: Unknown variable name `$name'\n";
-	return undef ;
-    }
-    
-    my ($type, $id) = @{$_rl_vars{$name}};
-    if ($type eq 'S') {
-	return _rl_fetch_str($id);
-    } elsif ($type eq 'I') {
-	return _rl_fetch_int($id);
-    } elsif ($type eq 'C') {
-	return chr(_rl_fetch_int($id));
-    } elsif ($type eq 'F') {
-	return _rl_fetch_function($id);
-    } elsif ($type eq 'IO') {
-	return _rl_fetch_iostream($id);
-    } elsif ($type eq 'K') {
-	return _rl_fetch_keymap($id);
-    } else {
-	carp "Term::ReadLine::Gnu::FetchVar: Illegal type `$type'\n";
-	return undef;
-    }
-}
-
-sub FetchVar {
+sub SetHistory {
     my $self = shift;
-    rl_fetch_var($_[0]);
-}
-
-sub rl_store_var ($$) {
-    my $name = shift;
-    if (! defined $_rl_vars{$name}) {
-	carp "Term::ReadLine::Gnu::StoreVar: Unknown variable name `$name'\n";
-	return undef ;
-    }
-    
-    my $value = shift;
-    my ($type, $id) = @{$_rl_vars{$name}};
-    if ($type eq 'S') {
-	if ($name eq 'rl_line_buffer') {
-	    return _rl_store_rl_line_buffer($value);
-	} else {
-	    return _rl_store_str($value, $id);
-	}
-    } elsif ($type eq 'I') {
-	return _rl_store_int($value, $id);
-    } elsif ($type eq 'C') {
-	return chr(_rl_store_int(ord($value), $id));
-    } elsif ($type eq 'F') {
-	return _rl_store_function($value, $id);
-    } elsif ($type eq 'IO') {
-	return _rl_store_iostream($value, $id);
-    } elsif ($type eq 'K') {
-	carp "Term::ReadLine::Gnu::StoreVar: read only variable `$name'\n";
-	return undef;
-    } else {
-	carp "Term::ReadLine::Gnu::StoreVar: Illegal type `$type'\n";
-	return undef;
+    local($_);
+    $self->clear_history();
+    foreach (@_) {
+	$self->add_history($_);
     }
 }
 
-sub StoreVar {
+sub GetHistory {
     my $self = shift;
-    rl_store_var($_[0], $_[1]);
+    my ($i, $history_base, $history_length, @d);
+    $history_base   = $self->fetch_var('history_base');
+    $history_length = $self->fetch_var('history_length');
+    for ($i = $history_base; $i < $history_base + $history_length; $i++) {
+	push(@d, $self->history_get($i));
+    }
+    @d;
 }
 
-#
-#	Tie functions for Readline/History Library variables
-#
-package Term::ReadLine::Gnu::Var;
+sub ReadHistory {
+    my $self = shift;
+    ! &Term::ReadLine::Gnu::XS::read_history_range;
+}
+
+sub WriteHistory {
+    my $self = shift;
+    ! &Term::ReadLine::Gnu::XS::write_history;
+}
+
+package Term::ReadLine::Gnu::XS;
 use Carp;
 use strict;
-
-sub TIESCALAR {
-    my $class = shift;
-    my $name = shift;
-    return bless \$name, $class;
-}
-
-sub FETCH {
-    my $self = shift;
-    confess "wrong type" unless ref $self;
-    return Term::ReadLine::Gnu::rl_fetch_var($$self);
-}
-
-sub STORE {
-    my $self = shift;
-    confess "wrong type" unless ref $self;
-    return Term::ReadLine::Gnu::rl_store_var($$self, shift);
-}
-
-package Term::ReadLine::Gnu;
-
-#	Tie all Readline/History variables
-foreach (keys %_rl_vars) {
-    # this interface is obsoleted
-    eval "use vars '\$$_'; tie \$$_, 'Term::ReadLine::Gnu::Var', '$_';";
-    # tie $Attribs{foo}, 'Term::ReadLine::Gnu::Var', 'rl_foo';
-    my $name;
-    ($name = $_) =~ s/^rl_//;	# strip leading `rl_'
-    eval "tie \$Attribs{$name},  'Term::ReadLine::Gnu::Var', '$_';";
-}
-#
-# for compatibility with Term::ReadLine::Gnu
-#
-tie $Attribs{completion_function}, 'Term::ReadLine::Gnu::Var',
-    'rl_attempted_completion_function';
-sub filename_list {
-    shift;
-    my ($text) = @_;
-    return completion_matches($text, \&filename_completion_function);
-}
-
-#
-#	GNU Readline/History Library constant definition
-#
-# for rl_filename_quoting_function
-sub NO_MATCH	 { 0; }
-sub SINGLE_MATCH { 1; }
-sub MULT_MATCH   { 2; }
-
-# for rl_generic_bind, rl_function_of_keyseq
-sub ISFUNC	{ 0; }
-sub ISKMAP	{ 1; }
-sub ISMACR	{ 2; }
-
-# for rl_add_undo
-sub UNDO_DELETE	{ 0; }
-sub UNDO_INSERT	{ 1; }
-sub UNDO_BEGIN	{ 2; }
-sub UNDO_END	{ 3; }
 
 #
 #	Readline function wrappers
 #
-sub _str2map ($) {
+sub _str2map ($) {		# convert keymap name to Keymap
     return ref $_[0] ? $_[0]
 	: (rl_get_keymap_by_name($_[0]) || carp "unknown keymap name \`$_[0]\'\n");
 }
 
-sub _str2fn ($) {
+sub _str2fn ($) {		# convert function name to Function
     return ref $_[0] ? $_[0]
 	: (rl_named_function($_[0]) || carp "unknown function name \`$_[0]\'\n");
 }
@@ -771,19 +384,19 @@ sub rl_unbind_key ($;$) {
 }
 
 sub rl_generic_bind ($$$;$) {
-    if      ($_[0] == ISFUNC) {
+    if      ($_[0] == Term::ReadLine::Gnu::ISFUNC) {
 	if (defined $_[3]) {
 	    _rl_generic_bind_function($_[1], _str2fn($_[2]), _str2map($_[3]));
 	} else {
 	    _rl_generic_bind_function($_[1], _str2fn($_[2]));
 	}
-    } elsif ($_[0] == ISKMAP) {
+    } elsif ($_[0] == Term::ReadLine::Gnu::ISKMAP) {
 	if (defined $_[3]) {
 	    _rl_generic_bind_keymap($_[1], _str2map($_[2]), _str2map($_[3]));
 	} else {
 	    _rl_generic_bind_keymap($_[1], _str2map($_[2]));
 	}
-    } elsif ($_[0] == ISMACR) {
+    } elsif ($_[0] == Term::ReadLine::Gnu::ISMACR) {
 	if (defined $_[3]) {
 	    _rl_generic_bind_macro($_[1], $_[2], _str2map($_[3]));
 	} else {
@@ -856,51 +469,716 @@ sub operate_and_get_next {
     $Operate_Index = rl_fetch_var('history_base') + where_history();
 }
 
-# bind this function to name and key
 rl_add_defun('operate-and-get-next', \&operate_and_get_next, ord "\co");
 
+#
+#	for compatibility with Term::ReadLine::Gnu
+#
+sub filename_list {
+    shift;
+    my ($text) = @_;
+    return completion_matches($text, \&filename_completion_function);
+}
+
+#
+#	Access Routines for GNU Readline/History Library Variables
+#
+
+my %_rl_vars
+    = (
+       rl_line_buffer				=> ['S', 0],
+       rl_prompt				=> ['S', 1],
+       rl_library_version			=> ['S', 2],
+       rl_terminal_name				=> ['S', 3],
+       rl_readline_name				=> ['S', 4],
+       rl_basic_word_break_characters		=> ['S', 5],
+       rl_basic_quote_characters		=> ['S', 6],
+       rl_completer_word_break_characters	=> ['S', 7],
+       rl_completer_quote_characters		=> ['S', 8],
+       rl_filename_quote_characters		=> ['S', 9],
+       rl_special_prefixes			=> ['S', 10],
+       history_no_expand_chars			=> ['S', 11],
+       history_search_delimiter_chars		=> ['S', 12],
+       
+       rl_point					=> ['I', 0],
+       rl_end					=> ['I', 1],
+       rl_mark					=> ['I', 2],
+       rl_done					=> ['I', 3],
+       rl_pending_input				=> ['I', 4],
+       rl_completion_query_items		=> ['I', 5],
+       rl_completion_append_character		=> ['C', 6],
+       rl_ignore_completion_duplicates		=> ['I', 7],
+       rl_filename_completion_desired		=> ['I', 8],
+       rl_filename_quoting_desired		=> ['I', 9],
+       rl_inhibit_completion			=> ['I', 10],
+       history_base				=> ['I', 11],
+       history_length				=> ['I', 12],
+       history_expansion_char			=> ['C', 13],
+       history_subst_char			=> ['C', 14],
+       history_comment_char			=> ['C', 15],
+       history_quotes_inhibit_expansion		=> ['I', 16],
+
+       rl_startup_hook				=> ['F', 0],
+       rl_event_hook				=> ['F', 1],
+       rl_getc_function				=> ['F', 2],
+       rl_redisplay_function			=> ['F', 3],
+       rl_completion_entry_function		=> ['F', 4],
+       rl_attempted_completion_function		=> ['F', 5],
+
+       rl_instream				=> ['IO', 0],
+       rl_outstream				=> ['IO', 1],
+
+       rl_executing_keymap			=> ['K', 0],
+       rl_binding_keymap			=> ['K', 1],
+      );
+
+sub rl_fetch_var ($) {
+    my $name = shift;
+    if (! defined $_rl_vars{$name}) {
+	confess "Term::ReadLine::Gnu::rl_fetch_var: Unknown variable name `$name'\n";
+	return undef ;
+    }
+    
+    my ($type, $id) = @{$_rl_vars{$name}};
+    if ($type eq 'S') {
+	return _rl_fetch_str($id);
+    } elsif ($type eq 'I') {
+	return _rl_fetch_int($id);
+    } elsif ($type eq 'C') {
+	return chr(_rl_fetch_int($id));
+    } elsif ($type eq 'F') {
+	return _rl_fetch_function($id);
+    } elsif ($type eq 'IO') {
+	return _rl_fetch_iostream($id);
+    } elsif ($type eq 'K') {
+	return _rl_fetch_keymap($id);
+    } else {
+	carp "Term::ReadLine::Gnu::rl_fetch_var: Illegal type `$type'\n";
+	return undef;
+    }
+}
+
+#  sub FetchVar {
+#      my $self = shift;
+#      rl_fetch_var($_[0]);
+#  }
+
+sub rl_store_var ($$) {
+    my $name = shift;
+    if (! defined $_rl_vars{$name}) {
+	confess "Term::ReadLine::Gnu::rl_store_var: Unknown variable name `$name'\n";
+	return undef ;
+    }
+    
+    my $value = shift;
+    my ($type, $id) = @{$_rl_vars{$name}};
+    if ($type eq 'S') {
+	if ($name eq 'rl_line_buffer') {
+	    return _rl_store_rl_line_buffer($value);
+	} else {
+	    return _rl_store_str($value, $id);
+	}
+    } elsif ($type eq 'I') {
+	return _rl_store_int($value, $id);
+    } elsif ($type eq 'C') {
+	return chr(_rl_store_int(ord($value), $id));
+    } elsif ($type eq 'F') {
+	return _rl_store_function($value, $id);
+    } elsif ($type eq 'IO') {
+	return _rl_store_iostream($value, $id);
+    } elsif ($type eq 'K') {
+	carp "Term::ReadLine::Gnu::rl_store_var: read only variable `$name'\n";
+	return undef;
+    } else {
+	carp "Term::ReadLine::Gnu::rl_store_var: Illegal type `$type'\n";
+	return undef;
+    }
+}
+
+#  sub StoreVar {
+#      my $self = shift;
+#      rl_store_var($_[0], $_[1]);
+#  }
+
+#
+#	Tie functions for Readline/History Library variables
+#
+package Term::ReadLine::Gnu::Var;
+use Carp;
+use strict;
+
+sub TIESCALAR {
+    my $class = shift;
+    my $name = shift;
+    return bless \$name, $class;
+}
+
+sub FETCH {
+    my $self = shift;
+    confess "wrong type" unless ref $self;
+    return Term::ReadLine::Gnu::XS::rl_fetch_var($$self);
+}
+
+sub STORE {
+    my $self = shift;
+    confess "wrong type" unless ref $self;
+    return Term::ReadLine::Gnu::XS::rl_store_var($$self, shift);
+}
+
+package Term::ReadLine::Gnu;
+use Carp;
+use strict;
+
+#
+#	set value of %Attribs
+#
+
+#	Tie all Readline/History variables
+foreach (keys %_rl_vars) {
+    # this interface is obsoleted
+    eval "use vars '\$$_'; tie \$$_, 'Term::ReadLine::Gnu::Var', '$_';";
+    # tie $Attribs{foo}, 'Term::ReadLine::Gnu::Var', 'rl_foo';
+    my $name;
+    ($name = $_) =~ s/^rl_//;	# strip leading `rl_'
+    eval "tie \$Attribs{$name},  'Term::ReadLine::Gnu::Var', '$_';";
+}
+
+my @_rl_funcs = qw(rl_getc
+		   filename_completion_function
+		   username_completion_function
+		   list_completion_function);
+
+foreach (@_rl_funcs) {
+    my $name;
+    ($name = $_) =~ s/^rl_//;	# strip leading `rl_'
+    eval "\$Attribs{'$name'} = \\&Term::ReadLine::Gnu::XS::$_";
+}
+
+#
+#	for compatibility with Term::ReadLine::Gnu
+#
+tie $Attribs{completion_function}, 'Term::ReadLine::Gnu::Var',
+    'rl_attempted_completion_function';
+
+package Term::ReadLine::Gnu::AU;
+use Carp;
+no strict;
+
+sub AUTOLOAD {
+    { $AUTOLOAD =~ s/.*:://; }	# preserve match data
+    my $name;
+    if (exists $Term::ReadLine::Gnu::XS::{"$AUTOLOAD"}) {
+	$name = "Term::ReadLine::Gnu::XS::$AUTOLOAD";
+    } elsif (exists $Term::ReadLine::Gnu::XS::{"rl_$AUTOLOAD"}) {
+	$name = "Term::ReadLine::Gnu::XS::rl_$AUTOLOAD";
+    } else {
+	croak "Cannot do `$AUTOLOAD' in Term::ReadLine::Gnu";
+    }
+    local $^W = 0;		# Why this line is necessary ?
+    *$AUTOLOAD = sub { shift; &$name };
+    goto &$AUTOLOAD;
+}
 1;
 __END__
+
 
-=back
+=head1 Additional Supported Methods
 
-=head2 Variables
+All these commands are callable via method interface and have names
+which conform to standard conventions with the leading C<rl_> stripped.
 
-Following GNU Readline Library variables can be accessed from Perl
-program.  See 'GNU Readline Library Manual' and ' GNU History Library
-Manual' for each variable.
+Followings GNU Readline/History Library support functions are provided
+as Perl functions. 
 
-You can access them with FetchVar()/StoreVar() methods and
-rl_fetch_var()/rl_store_var() functions.  And all these variables are
-tied to Perl scalar variables.  These are not exported by default.
-Full qualified name or explicit "import" is required.
+Almost methods have their lower level functions in
+Term::ReadLine::Gnu::XS package.  To use them full qualified name is
+required.  Using method interface is prefered.
 
-Examples:
-
-    # using method
-    $v = $term->FetchVar('rl_library_version');
-    # using full qualified name
-    $v = Term::ReadLine::GNU::rl_fetch_var('rl_library_version');
-    $v = $Term::ReadLine::GNU::rl_library_version;
-    # import symbols
-    use Term::ReadLine::GNU qw(rl_fetch_var rl_library_version);
-    $v = rl_fetch_var('rl_library_version');
-    $v = $rl_library_version;
+=head2 Readline Convenience Functions
 
 =over 4
 
-=item base_function
+=item Naming Function
 
-	str rl_library_version (read only)
-	str rl_terminal_name
-	str rl_readline_name
+=over 4
 
-=item keybind_function
+=item C<add_defun(NAME, FUNC [,KEY=-1])>
 
-	Keymap rl_executing_keymap (read only)
-	Keymap rl_binding_keymap (read only)
+Add name to the Perl function FUNC.  If optional argument KEY is
+specified, bind it to the FUNC.  Returns FunctionPtr.
 
-=item misc_function
+  Example:
+	# name name `reverse-line' to a function reverse_line(), and bind
+	# it to "\C-t"
+	$term->add_defun('reverse-line', \&reverse_line, "\ct");
+
+=back
+
+=item Selecting a Keymap
+
+=over 4
+
+=item C<make_bare_keymap>
+
+	Keymap	rl_make_bare_keymap()
+
+=item C<copy_keymap(MAP)>
+
+	Keymap	rl_copy_keymap(Keymap|str map)
+
+=item C<make_keymap>
+
+	Keymap	rl_make_keymap()
+
+=item C<discard_keymap(MAP)>
+
+	Keymap	rl_discard_keymap(Keymap|str map)
+
+=item C<get_keymap>
+
+	Keymap	rl_get_keymap()
+
+=item C<set_keymap(MAP)>
+
+	Keymap	rl_set_keymap(Keymap|str map)
+
+=item C<get_keymap_by_name(NAME)>
+
+	Keymap	rl_get_keymap_by_name(str name)
+
+=item C<get_keymap_name(MAP)>
+
+	str	rl_get_keymap_name(Keymap map)
+
+=back
+
+=item Binding Keys
+
+=over 4
+
+=item C<bind_key(KEY, FUNCTION [,MAP])>
+
+	int	rl_bind_key(int key, FunctionPtr|str function,
+			    Keymap|str map = rl_get_keymap())
+
+Bind KEY to the FUNCTION.  FUNCTION is the name added by the
+C<AddDefun> method.  If optional argument MAP is specified, binds
+in MAP.  Returns non-zero in case of error.
+
+=item C<unbind_key(KEY [,MAP])>
+
+	int	rl_unbind_key(int key, Keymap|str map = rl_get_keymap())
+
+Bind KEY to the null function.  Returns non-zero in case of error.
+
+=item C<generic_bind(TYPE, KEYSEQ, DATA, [,MAP])>
+
+	int	rl_generic_bind(int type, str keyseq,
+				FunctionPtr|Keymap|str data,
+				Keymap|str map = rl_get_keymap())
+
+=item C<parse_and_bind(LINE)>
+
+	void	rl_parse_and_bind(str line)
+
+Parse LINE as if it had been read from the F<~/.inputrc> file and
+perform any key bindings and variable assignments found.  For more
+detail see 'GNU Readline Library Manual'.
+
+=item C<read_init_file([FILENAME])>
+
+	int	rl_read_init_file(str filename = '~/.inputrc')
+
+=back
+
+=item Associating Function Names and Bindings
+
+=over 4
+
+=item C<call_function(FUNCTION, [COUNT [,KEY]])>
+
+	int	rl_call_function(FunctionPtr|str function, count = 1, key = -1)
+
+=item C<named_function(NAME)>
+
+	FunctionPtr rl_named_function(str name)
+
+=item C<get_function_name(FUNCTION)>
+
+	str	rl_get_function_name(FunctionPtr function)
+
+=item C<function_of_keyseq(KEYMAP [,MAP])>
+
+	(FunctionPtr|Keymap|str data, int type)
+		rl_function_of_keyseq(str keyseq,
+				      Keymap|str map = rl_get_keymap())
+
+=item C<invoking_keyseqs(FUNCTION [,MAP])>
+
+	(@str)	rl_invoking_keyseqs(FuntionPtr|str function,
+				    Keymap|str map = rl_get_keymap())
+
+=item C<function_dumper([READABLE])>
+
+	void	rl_function_dumper(int readable = 0)
+
+=item C<list_funmap_names>
+
+	void	rl_list_funmap_names()
+
+=back
+
+=item Allowing Undoing
+
+=over 4
+
+=item C<begin_undo_group>
+
+	int	rl_begin_undo_group()
+
+=item C<end_undo_group>
+
+	int	rl_end_undo_group()
+
+=item C<add_undo(WHAT, START, END, TEXT)>
+
+	int	rl_add_undo(int what, int start, int end, str text)
+
+=item C<free_undo_list>
+
+	void	free_undo_list()
+
+=item C<do_undo>
+
+	int	rl_do_undo()
+
+=item C<modifying([START [,END]])>
+
+	int	rl_modifying(int start = 0, int end = rl_end)
+
+=back
+
+=item Redisplay
+
+=over 4
+
+=item C<redisplay>
+
+	void	rl_redisplay()
+
+=item C<forced_update_display>
+
+	int	rl_forced_update_display()
+
+=item C<on_new_line>
+
+	int	rl_on_new_line()
+
+=item C<reset_line_state>
+
+	int	rl_reset_line_state()
+
+=item C<message(FMT[, ...])>
+
+	int	rl_message(str fmt, ...)
+
+=item C<clear_message>
+
+	int	rl_clear_message()
+
+=back
+
+=item Modifiying Text
+
+=over 4
+
+=item C<insert_text(TEXT)>
+
+	int	rl_insert_text(str text)
+
+=item C<delete_text([START [,END]])>
+
+	int	rl_delete_text(start = 0, end = rl_end)
+
+=item C<copy_text([START [,END]])>
+
+	str	rl_copy_text(start = 0, end = rl_end)
+
+=item C<kill_text([START [,END]])>
+
+	int	rl_kill_text(start = 0, end = rl_end)
+
+=back
+
+=item Utility Functions
+
+=over 4
+
+=item C<read_key>
+
+	int	rl_read_key()
+
+=item C<getc(FILE)>
+
+	int	rl_getc(FILE *)
+
+=item C<stuff_char(C)>
+
+	int	rl_stuff_char(int c)
+
+=item C<initialize>
+
+	int	rl_initialize()
+
+=item C<reset_terminal([TERMINAL_NAME])>
+
+	int	rl_reset_terminal(str terminal_name = getenv($TERM))
+
+=item C<ding>
+
+	int	ding()
+
+=back
+
+=item Alternate Interface
+
+=over 4
+
+=item C<callback_handler_install(PROMPT, LHANDLER)>
+
+	void	rl_callback_handler_install(str prompt, pfunc lhandler)
+
+=item C<callback_read_char>
+
+	void	rl_callback_read_char()
+
+=item C<callback_handler_remove>
+
+	void	rl_callback_handler_remove()
+
+=back
+
+=back
+
+=head2 Completion Functions
+
+=over 4
+
+=item C<complete_internal([WHAT_TO_DO])>
+
+	int	rl_complete_internal(int what_to_do = TAB)
+
+=item C<completion_matches(TEXT [,FUNC])>
+
+	(@str)	completion_matches(str text,
+				   pfunc func = filename_completion_function)
+
+=item C<filename_completion_function(TEXT, STATE)>
+
+	str	filename_completion_function(str text, int state)
+
+=item C<username_completion_function(TEXT, STATE)>
+
+	str	username_completion_function(str text, int state)
+
+=item C<listname_completion_function(TEXT, STATE)>
+
+	str	list_completion_function(str text, int state)
+
+=back
+
+=head2 History Functions
+
+=over 4
+
+=item Initializing History and State Management
+
+=over 4
+
+=item C<using_history>
+
+	void	using_history()
+
+=back
+
+=item History List Management
+
+=over 4
+
+=item C<add_history(STRING)>
+
+	void	add_history(str string)
+
+=item C<StifleHistory(MAX)>
+
+	int	stifle_history(int max|undef)
+
+stifles the history list, remembering only the last C<MAX> entries.
+If MAX is undef,  remembers all entries.
+
+=item C<SetHistory(LINE1 [, LINE2, ...])>
+
+sets the history of input, from where it can be used if the actual
+C<readline> is present.
+
+=item C<remove_history(WHICH)>
+
+	str	remove_history(int which)
+
+=item C<replace_history_entry(WHICH, LINE)>
+
+	str	replace_history_entry(int which, str line)
+
+=item C<clear_history>
+
+	void	clear_history()
+
+=item C<history_is_stifled>
+
+	int	history_is_stifled()
+
+=back
+
+=item Information About the History List
+
+=over 4
+
+=item C<where_history>
+
+	int	where_history()
+
+=item C<current_history>
+
+	str	current_history()
+
+=item C<history_get(OFFSET)>
+
+	str	history_get(offset)
+
+=item C<history_total_bytes>
+
+	int	history_total_bytes()
+
+=item C<GetHistory>
+
+returns the history of input as a list, if actual C<readline> is present.
+
+=back
+
+=item Moving Around the History List
+
+=over 4
+
+=item C<history_set_pos(POS)>
+
+	int	history_set_pos(int pos)
+
+=item C<previous_history>
+
+	str	previous_history()
+
+=item C<next_history>
+
+	str	next_history()
+
+=back
+
+=item Searching the History List
+
+=over 4
+
+=item C<history_search(STRING [,DIRECTION [,POS]])>
+
+	int	history_search(str string,
+			       int direction = -1, int pos = where_hisotry())
+
+=item C<history_search_prefix(STRING [,DIRECTION])>
+
+	int	history_search_prefix(str string, int direction = -1)
+
+=back
+
+=item Managing the History File
+
+=over 4
+
+=item C<ReadHistory([FILENAME [,FROM [,TO]]])>
+
+	int	read_history_range(str filename = '~/.history',
+				   int from = 0, int to = -1)
+
+adds the contents of C<FILENAME> to the history list, a line at a
+time.  If C<FILENAME> is false, then read from F<~/.history>.  Start
+reading at line C<FROM> and end at C<TO>.  If C<FROM> is omitted or
+zero, start at the beginning.  If C<TO> is omittied or less than
+C<FROM>, then read until the end of the file.  Returns true if
+successful, or false if not.
+
+=item C<WriteHistory([FILENAME])>
+
+	int	write_history(str filename = '~/.history')
+
+writes the current history to C<FILENAME>, overwriting C<FILENAME> if
+necessary.  If C<FILENAME> is false, then write the history list to
+F<~/.history>.  Returns true if successful, or false if not.
+
+
+=item C<append_history(NELEMENTS [,FILENAME])>
+
+	int	append_history(int nelements, str filename = '~/.history')
+
+=item C<history_trancate_file([FILENAME [,NLINES]])>
+
+	int	history_trancate_file(str filename = '~/.history',
+				      int nlines = 0)
+
+=back
+
+=item History Expansion
+
+=over 4
+
+=item C<history_expand(LINE)>
+
+	(int result, str expansion) history_expand(str line)
+
+=back
+
+=back
+
+=head2 Internal Variable Access
+
+=over 4
+
+=item C<fetch_var(NAME)>
+
+	any	rl_fetch_var(str name)
+
+=item C<store_var(NAME, VAL)>
+
+	any	rl_store_var(str name, any val)
+
+=back
+
+=head1 Variables
+
+Following GNU Readline Library variables can be accessed from Perl
+program.  See 'GNU Readline Library Manual' and ' GNU History Library
+Manual' for each variable.  You can access them with C<Attribs>
+methods.  Names of keys in this hash conform to standard conventions
+with the leading C<rl_> stripped.
+
+Examples:
+
+    $attribs = $term->Attribs;
+    $v = $attribs->{library_version};	# rl_library_version
+    $v = $attribs->{history_base};	# history_base
+
+    $v = Term::ReadLine::GNU::XS::rl_fetch_var('rl_library_version');
+
+=over 4
+
+=item Readline Variables
 
 	str rl_line_buffer
 	int rl_point
@@ -909,17 +1187,25 @@ Examples:
 	int rl_done		
 	int rl_pending_input
 	str rl_prompt (read only)
+	str rl_library_version (read only)
+	str rl_terminal_name
+	str rl_readline_name
 	filehandle rl_instream
 	filehandle rl_outstream
 	pfunc rl_startup_hook
 	pfunc rl_event_hook
 	pfunc rl_getc_function
 	pfunc rl_redisplay_function
+	Keymap rl_executing_keymap (read only)
+	Keymap rl_binding_keymap (read only)
 
-=item completion_function
+=item Completion Variables
 
 	pfunc rl_completion_entry_function
 	pfunc rl_attempted_completion_function
+	rl_filename_quoting_function (not implemented)
+	rl_filename_dequoting_function (not implemented)
+	rl_char_is_quoted_p (not implemented)
 	int rl_completion_query_items
 	str rl_basic_word_break_characters
 	str rl_basic_quote_characters
@@ -932,143 +1218,20 @@ Examples:
 	int rl_filename_completion_desired
 	int rl_filename_quoting_desired
 	int rl_inhibit_completion
+	rl_ignore_some_completion_function (not implemented)
+	rl_directory_completion_hook (not implemented)
 
-=item history_function
+=item History Variables
 
 	int history_base
 	int history_length
+	int max_input_history (not implemented)
 	char history_expansion_char
 	char history_subst_char
 	char history_comment_char
 	str history_no_expand_chars
 	str history_search_delimiter_chars
 	int history_quotes_inhibit_expansion
-
-=back
-
-=head2 Functions
-
-Followings GNU Readline/History Library support functions are provided
-as Perl functions.  These are not exported by default.  Full qualified
-name or explicit "import" is required.
-
-Examples:
-
-    # using full qualified name
-    $v = Term::ReadLine::GNU::rl_fetch_var('rl_library_version');
-    # import symbols
-    use Term::ReadLine::GNU qw(rl_fetch_var);
-    $v = rl_fetch_var('rl_library_version');
-
-=over 4
-
-=item base_function
-
-	any	rl_fetch_var(str name)
-	any	rl_store_var(str name, any val)
-	string	rl_readline(prompt = '')
-	void	add_history(str string)
-	(int result, str expansion)
-		history_expand(str line)
-
-=item keybind_function
-
-	FunctionPtr
-		rl_add_defun(str name, pfunc perl_fn, int key = -1)
-	Keymap	rl_make_bare_keymap()
-	Keymap	rl_copy_keymap(Keymap|str map)
-	Keymap	rl_make_keymap()
-	Keymap	rl_discard_keymap(Keymap|str map)
-	Keymap	rl_get_keymap()
-	Keymap	rl_set_keymap(Keymap|str map)
-	Keymap	rl_get_keymap_by_name(str name)
-	str	rl_get_keymap_name(Keymap map)
-	int	rl_bind_key(int key, FunctionPtr|str function,
-			    Keymap|str map = rl_get_keymap())
-	int	rl_unbind_key(int key, Keymap|str map = rl_get_keymap())
-	int	rl_generic_bind(int type, str keyseq,
-				FunctionPtr|Keymap|str data,
-				Keymap|str map = rl_get_keymap())
-	void	rl_parse_and_bind(str line)
-	int	rl_read_init_file(str filename = '~/.inputrc')
-	int	rl_call_function(FunctionPtr|str function, count = 1, key = -1)
-	FunctionPtr
-		rl_named_function(str name)
-	str	rl_get_function_name(FunctionPtr function)
-	(FunctionPtr|Keymap|str data, int type)
-		rl_function_of_keyseq(str keyseq,
-				      Keymap|str map = rl_get_keymap())
-	(@str)	rl_invoking_keyseqs(FuntionPtr|str function,
-				    Keymap|str map = rl_get_keymap())
-	void	rl_function_dumper(int readable = 0)
-	void	rl_list_funmap_names()
-
-=item misc_function
-
-	int	rl_begin_undo_group()
-	int	rl_end_undo_group()
-	int	rl_add_undo(int what, int start, int end, str text)
-	void	free_undo_list()
-	int	rl_do_undo()
-	int	rl_modifying(int start = 0, int end = rl_end)
-
-	void	rl_redisplay()
-	int	rl_forced_update_display()
-	int	rl_on_new_line()
-	int	rl_reset_line_state()
-	int	rl_message(str fmt, ...)
-	int	rl_clear_message()
-
-	int	rl_insert_text(str text)
-	int	rl_delete_text(start = 0, end = rl_end)
-	str	rl_copy_text(start = 0, end = rl_end)
-	int	rl_kill_text(start = 0, end = rl_end)
-	int	rl_read_key()
-	int	rl_getc(FILE *)
-	int	rl_stuff_char(int c)
-	int	rl_initialize()
-	int	rl_reset_terminal(str terminal_name = getenv($TERM))
-	int	ding()
-
-=item callback_function
-
-	void	rl_callback_handler_install(str prompt, pfunc lhandler)
-	void	rl_callback_read_char()
-	void	rl_callback_handler_remove()
-
-=item completion_function
-
-	int	rl_complete_internal(int what_to_do = TAB)
-	(@str)	completion_matches(str text,
-				   pfunc fn = filename_completion_function)
-	str	filename_completion_function(str text, int state)
-	str	username_completion_function(str text, int state)
-	str	list_completion_function(str text, int state)
-
-=item history_function
-
-	void	using_history()
-	str	remove_history(int which)
-	str	replace_history_entry(int which, str line)
-	void	clear_history()
-	int	stifle_history(int max|undef)
-	int	history_is_stifled()
-	int	where_history()
-	str	current_history()
-	str	history_get(offset)
-	int	history_total_bytes()
-	int	history_set_pos(int pos)
-	str	previous_history()
-	str	next_history()
-	int	history_search(str string,
-			       int direction = -1, int pos = where_hisotry())
-	int	history_search_prefix(str string, int direction = -1)
-	int	read_history_range(str filename = '~/.history',
-				   int from = 0, int to = -1)
-	int	write_history(str filename = '~/.history')
-	int	append_history(int nelements, str filename = '~/.history')
-	int	history_trancate_file(str filename = '~/.history',
-				      int nlines = 0)
 
 =back
 
@@ -1103,11 +1266,12 @@ A sample generator function, C<list_completion_function>, is defined
 in Gnu.pm.  You can use it as follows;
 
     use Term::ReadLine;
-    use Term::ReadLine::Gnu qw(:completion_function);
     ...
     my $term = new Term::ReadLine 'sample';
+    my $attribs = $term->Attribs;
     ...
-    $rl_completion_entry_function = \&list_completion_function;
+    $attribs->{rl_completion_entry_function} =
+	$attribs->{'list_completion_function'};
     ...
     @{$term->{CompletionWordList}} =
 	qw(list of words which you want to use for completion);
@@ -1131,18 +1295,23 @@ array of strings returned will be used.
 
 The default value of this variable is C<undef>.  You can use it as follows;
 
-    use Term::ReadLine::Gnu qw(:completion_function);
+    use Term::ReadLine;
+    ...
+    my $term = new Term::ReadLine 'sample';
+    my $attribs = $term->Attribs;
+    ...
     sub sample_completion {
         my ($text, $line, $start, $end) = @_;
         # If first word then username completion, else filename completion
         if (substr($line, 0, $start) =~ /^\s*$/) {
-    	    return completion_matches($text, \&username_completion_function);
+    	    return $term->completion_matches($text,
+					     $attrbs->{'username_completion_function'});
         } else {
     	    return ();
         }
     }
     ...
-    $rl_attempted_completion_function = \&sample_completion;
+    $attribs->{attempted_completion_function} = \&sample_completion;
 
 =item C<completion_matches(TEXT, ENTRY_FUNC)>
 
@@ -1223,10 +1392,6 @@ Term::ReadLine::Perl (Term-ReadLine-xx.tar.gz)
 
 Hiroo Hayashi, hayashi@pdcd.ilab.toshiba.co.jp
 
-=head1 TODO
-
-support TkRunning as Term::ReadLine::Perl
-
 =head1 BUGS
 
 rl_add_defun() can define up to 16 functions.
@@ -1247,8 +1412,5 @@ Test routines for following variable and functions are required.
 
 	history_search()
 	history_search_prefix()
-
-Perl 5.002 and 5.003 cause segmentation fault if @histfn is added to
-%EXPORT_TAGS.  But Perl 5.003_08 does not.  What's wrong?
 
 =cut
