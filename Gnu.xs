@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.88 2000-11-27 16:44:35 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.89 2000-12-05 15:29:38 hayashi Exp $
  *
  *	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
  *
@@ -42,6 +42,97 @@ extern "C" {
 #  endif
 #endif /* !__STDC__ */
 
+/*
+ * compatibility definitions
+ */
+
+/* rl_last_func() is defined in rlprivate.h */
+extern Function *rl_last_func;
+
+/* features introduced by GNU Readline 4.0 */
+#if (RLMAJORVER < 4)
+extern void rl_extend_line_buffer __P((int));
+extern char **rl_funmap_names __P((void));
+
+static int rl_erase_empty_line = 0;
+static int rl_catch_signals = 1;
+static int rl_catch_sigwinch = 1;
+static Function *rl_pre_input_hook;
+static VFunction *rl_completion_display_matches_hook;
+static VFunction *rl_prep_term_function;
+static VFunction *rl_deprep_term_function;
+
+static void rl_cleanup_after_signal(){};
+static void rl_free_line_state(){};
+static void rl_reset_after_signal(){};
+static void rl_resize_terminal(){};
+static void rl_prep_terminal(){};
+static void rl_deprep_terminal(){};
+/*
+ * Before GNU Readline Library Version 4.0, rl_save_prompt() was
+ * _rl_save_prompt and rl_restore_prompt() was _rl_restore_prompt().
+ */
+extern void _rl_save_prompt __P((void));
+extern void _rl_restore_prompt __P((void));
+static void rl_save_prompt() { _rl_save_prompt(); }
+static void rl_restore_prompt() { _rl_restore_prompt(); }
+#endif /* (RLMAJORVER < 4) */
+
+/* features introduced by GNU Readline 4.1 */
+#if (RLMAJORVER < 4 || RLMAJORVER == 4 && RLMINORVER < 1)
+static int rl_already_prompted = 0;
+#endif /* (RLMAJORVER < 4 || RLMAJORVER = 4 && RLMINORVER < 1) */
+
+/* features introduced by GNU Readline 4.2 */
+#if (RLMAJORVER < 4 || RLMAJORVER == 4 && RLMINORVER < 2)
+/* Provide backwards-compatible entry points for old function names
+   which are rename from readline-4.2. */
+typedef int rl_command_func_t __P((int, int));
+typedef char *rl_compentry_func_t __P((const char *, int));
+
+static char *rl_executing_macro = NULL;
+static int rl_readline_state = 0;
+
+static void
+rl_free_undo_list ()
+{
+  free_undo_list ();
+}
+
+static int
+rl_ding ()
+{
+  return ding ();
+}
+
+static char **
+rl_completion_matches (s, f)
+     char *s;
+     rl_compentry_func_t *f;
+{
+  return completion_matches (s, (CPFunction *)f);
+}
+
+static char *
+rl_username_completion_function (s, i)
+     const char *s;
+     int i;
+{
+  return username_completion_function ((char *)s, i);
+}
+
+static char *
+rl_filename_completion_function (s, i)
+     const char *s;
+     int i;
+{
+  return filename_completion_function ((char *)s, i);
+}
+#endif /* (RLMAJORVER < 4 || RLMAJORVER = 4 && RLMINORVER < 2) */
+
+/*
+ * utility/dummy functions
+ */                                                                                
 /* from GNU Readline:xmalloc.c */
 extern char *xmalloc __P((int));
 extern char *tgetstr __P((const char *, char **));
@@ -89,7 +180,7 @@ dupstr(s)			/* duplicate string */
  */
 static const char *
 rl_get_function_name (function)
-     Function *function;
+     rl_command_func_t *function;
 {
   register int i;
 
@@ -123,92 +214,6 @@ rl_quote_filename (s, rtype, qcp)
     *qcp = *rl_completer_quote_characters;
   return r;
 }
-
-/*
- * compatibility definitions
- */
-/* rl_last_func() is defined in rlprivate.h */
-extern Function *rl_last_func;
-
-/* features introduced by GNU Readline 4.0 */
-#if (RLMAJORVER < 4)
-extern void rl_extend_line_buffer __P((int));
-extern char **rl_funmap_names __P((void));
-
-static int rl_erase_empty_line = 0;
-static int rl_catch_signals = 1;
-static int rl_catch_sigwinch = 1;
-static Function *rl_pre_input_hook;
-static VFunction *rl_completion_display_matches_hook;
-static VFunction *rl_prep_term_function;
-static VFunction *rl_deprep_term_function;
-
-static void rl_cleanup_after_signal(){};
-static void rl_free_line_state(){};
-static void rl_reset_after_signal(){};
-static void rl_resize_terminal(){};
-static void rl_prep_terminal(){};
-static void rl_deprep_terminal(){};
-/*
- * Before GNU Readline Library Version 4.0, rl_save_prompt() was
- * _rl_save_prompt and rl_restore_prompt() was _rl_restore_prompt().
- */
-extern void _rl_save_prompt __P((void));
-extern void _rl_restore_prompt __P((void));
-static void rl_save_prompt() { _rl_save_prompt(); }
-static void rl_restore_prompt() { _rl_restore_prompt(); }
-#endif /* (RLMAJORVER < 4) */
-
-/* features introduced by GNU Readline 4.1 */
-#if (RLMAJORVER < 4 || RLMAJORVER == 4 && RLMINORVER < 1)
-static int rl_already_prompted = 0;
-#endif /* (RLMAJORVER < 4 || RLMAJORVER = 4 && RLMINORVER < 1) */
-
-/* features introduced by GNU Readline 4.2 */
-#if (RLMAJORVER < 4 || RLMAJORVER == 4 && RLMINORVER < 2)
-/* Provide backwards-compatible entry points for old function names
-   which are rename from readline-4.2. */
-typedef char *rl_compentry_func_t __P((const char *, int));
-
-static char *rl_executing_macro = NULL;
-static int rl_readline_state = 0;
-
-static void
-rl_free_undo_list ()
-{
-  free_undo_list ();
-}
-
-static int
-rl_ding ()
-{
-  return ding ();
-}
-
-static char **
-rl_completion_matches (s, f)
-     char *s;
-     rl_compentry_func_t *f;
-{
-  return completion_matches (s, (CPFunction *)f);
-}
-
-static char *
-rl_username_completion_function (s, i)
-     const char *s;
-     int i;
-{
-  return username_completion_function ((char *)s, i);
-}
-
-static char *
-rl_filename_completion_function (s, i)
-     const char *s;
-     int i;
-{
-  return filename_completion_function ((char *)s, i);
-}
-#endif /* (RLMAJORVER < 4 || RLMAJORVER = 4 && RLMINORVER < 2) */
 
 /*
  *	string variable table for _rl_store_str(), _rl_fetch_str()
@@ -1090,7 +1095,7 @@ rl_readline(prompt = NULL)
 #
 #	2.4.1 Naming a Function
 #
-Function *
+rl_command_func_t *
 rl_add_defun(name, fn, key = -1)
 	char *name
 	SV *fn
@@ -1187,7 +1192,7 @@ rl_get_keymap_name(map)
 int
 _rl_bind_key(key, function, map = rl_get_keymap())
 	int key
-	Function *function
+	rl_command_func_t *function
 	Keymap map
 	PROTOTYPE: $$;$
 	CODE:
@@ -1216,7 +1221,7 @@ _rl_unbind_key(key, map = rl_get_keymap())
 
 int
 _rl_unbind_function(function, map = rl_get_keymap())
-	Function *function
+	rl_command_func_t *function
 	Keymap map
 	PROTOTYPE: $;$
 	CODE:
@@ -1261,7 +1266,7 @@ _rl_set_key(keyseq, function, map = rl_get_keymap())
 int
 _rl_generic_bind_function(keyseq, function, map = rl_get_keymap())
 	char *keyseq
-	Function *function
+	rl_command_func_t *function
 	Keymap map
 	PROTOTYPE: $$;$
 	CODE:
@@ -1312,7 +1317,7 @@ rl_read_init_file(filename = NULL)
 #
 int
 _rl_call_function(function, count = 1, key = -1)
-	Function *function
+	rl_command_func_t *function
 	int count
 	int key
 	PROTOTYPE: $;$$
@@ -1323,14 +1328,14 @@ _rl_call_function(function, count = 1, key = -1)
 	OUTPUT:
 	RETVAL
 
-Function *
+rl_command_func_t *
 rl_named_function(name)
 	char *name
 	PROTOTYPE: $
 
 const char *
 rl_get_function_name(function)
-	Function *function
+	rl_command_func_t *function
 	PROTOTYPE: $
 
 void
@@ -1341,14 +1346,14 @@ rl_function_of_keyseq(keyseq, map = rl_get_keymap())
 	PPCODE:
 	{
 	  int type;
-	  Function *p = rl_function_of_keyseq(keyseq, map, &type);
+	  rl_command_func_t *p = rl_function_of_keyseq(keyseq, map, &type);
 	  SV *sv;
 
 	  if (p) {
 	    sv = sv_newmortal();
 	    switch (type) {
 	    case ISFUNC:
-	      sv_setref_pv(sv, "FunctionPtr", (void*)p);
+	      sv_setref_pv(sv, "rl_command_func_tPtr", (void*)p);
 	      break;
 	    case ISKMAP:
 	      sv_setref_pv(sv, "Keymap", (void*)p);
@@ -1371,7 +1376,7 @@ rl_function_of_keyseq(keyseq, map = rl_get_keymap())
 	  
 void
 _rl_invoking_keyseqs(function, map = rl_get_keymap())
-	Function *function
+	rl_command_func_t *function
 	Keymap map
 	PROTOTYPE: $;$
 	PPCODE:
