@@ -1,10 +1,10 @@
 -*- Indented-text -*-
-#	$Id: INSTALL,v 1.19 2002-03-28 03:42:56 hiroo Exp $
+#	$Id: INSTALL,v 1.20 2002-07-28 04:16:58 hiroo Exp $
 
 1. How to Install Term::ReadLine::Gnu
 
-	You need the GNU Readline library installed.  Except this, you
-	can install this module by the standard method, i.e.
+	You need the GNU Readline library installed.  Except for this,
+	you can install this module by the standard method, i.e.
 
 		perl Makefile.PL; make install
 
@@ -27,7 +27,7 @@
 
 	% perl Makefile.PL --includedir=/mydir/include --libdir=/mydir/lib
 
-	This example equivalent with the follows;
+	This example is equivalent to the following;
 
 	% perl Makefile.PL --prefix=/mydir
 
@@ -35,19 +35,23 @@
 	in your system directory, try
 		perldoc perlfaq8
 	and see the section 'How do I keep my own module/library
-	directory?'. (This section is for Perl 5.6 document.)
+	directory?' (This section is found in the Perl 5.6
+	documentation).
 
 1.3 Trouble Shooting
 
-	If you have any troubles during using this module, please let
-	me (hiroo.hayashi@computer.org) know them by E-Mail.  It may
-	help people who has same problem.  I'm sorry that I cannot
-	watch all articles on comp.lang.perl.modules.
+        If you have any trouble when using or installing this module,
+	please let me (hiroo.hayashi@computer.org) know by E-Mail.  It
+	may help other people who have the same problem.  I'm sorry
+	that I cannot watch all articles on comp.lang.perl.modules.
 
-	When you report me your trouble, send me the result of `perl
-	-V' and which compiler you use to compile the GNU Readline
-	Library (libreadline.a).
-
+	When you report your trouble, be sure to send me the following
+	information;
+		o result of `perl -V'
+		o compiler you used to compile the GNU Readline Library
+		  (libreadline.a).
+		o terminal emulater which you are using
+		o result of `echo $TERM`
 
 2. How to Install GNU Readline Library
 
