@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.34 1999-04-24 02:11:35 hayashi Exp $
+#	$Id: readline.t,v 1.35 1999-05-10 17:33:33 hayashi Exp $
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -497,7 +497,12 @@ $t->parse_and_bind('set bell-style none'); # make readline quiet
 
 $INSTR = "t/comp\cI\e*\cM";
 $line = $t->readline("insert completion>");
-# "a_b" < "README" on some locale ? (bug?)
+# "a_b" < "README" on some kind of locale since strcoll() is used in
+# the GNU Readline Library.
+# Not all perl support setlocale.  My perl supports locale and I tried
+#   use POSIX qw(locale_h); setlocale(LC_COLLATE, 'C');
+# But it seems that it does not affect strcoll() linked to GNU
+# Readline Library.
 $res = $line eq 't/comptest/0123 t/comptest/012345 t/comptest/023456 t/comptest/README t/comptest/a_b '
     || $line eq 't/comptest/0123 t/comptest/012345 t/comptest/023456 t/comptest/a_b t/comptest/README ';
 ok('insert completion', $line);
