@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.30 1999-03-17 16:20:56 hayashi Exp $
+#	$Id: readline.t,v 1.31 1999-04-03 08:58:01 hayashi Exp $
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -11,7 +11,7 @@
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl t/readline.t'
 
-BEGIN {print "1..81\n"; $n = 1;}
+BEGIN {print "1..87\n"; $n = 1;}
 END {print "not ok 1\tfail to loading\n" unless $loaded;}
 
 my $verbose = defined @ARGV && ($ARGV[0] eq 'verbose');
@@ -102,10 +102,11 @@ $res = ! defined($a->{prompt});			ok;
 $res = ! defined($a->{terminal_name});		ok;
 $res = $a->{readline_name} eq 'ReadLineTest';	ok('readline_name');
 
-# !!!TODO!!!
 # rl_instream, rl_outstream
-# rl_startup_hook, rl_pre_input_hook, rl_event_hook,
-# rl_getc_function, rl_redisplay_function
+
+# The following variables will be tested later.
+#	rl_startup_hook, rl_pre_input_hook, rl_event_hook,
+#	rl_getc_function, rl_redisplay_function
 
 # not defined here
 $res = ! defined($a->{executing_keymap});	ok('executing_keymap');
@@ -494,28 +495,42 @@ $res = $line eq '1234'; ok('history 3', $line);
 
 $t->parse_and_bind('set bell-style none'); # make readline quiet
 
+$INSTR = "t/comp\cI\e*\cM";
+$line = $t->readline("insert completion>");
+$res = $line eq 't/comptest/0123 t/comptest/012345 t/comptest/023456 t/comptest/a_b t/comptest/README ';
+ok('insert completion', $line);
+
 $INSTR = "t/comp\cIR\cI\cM";
 $line = $t->readline("filename completion (default)>");
-$res = $line eq 't/comptest/README '; ok('default completion');
+$res = $line eq 't/comptest/README '; ok('default completion', $line);
 
 $a->{completion_entry_function} = $a->{'username_completion_function'};
 $INSTR = "root\cI\cM";
 $line = $t->readline("username completion>");
-$res = $line eq 'root '; ok('username completion'); # !!!
+if ($line eq 'root ') {
+    print "ok $n\tusername completion\n"; $n++;
+} elsif ($line eq 'root') {
+    print "ok $n\t# skipped.  It seems that there is a user whose name starts with 'root'\n"; $n++;
+} else {
+    print "not ok $n\tusername completion\n"; $n++;
+    $ok = 0;
+}
 
 $a->{completion_word} = [qw(a list of words for completion and another word)];
 $a->{completion_entry_function} = $a->{'list_completion_function'};
 print $OUT "given list is: a list of words for completion and another word\n";
 $INSTR = "a\cI\cIn\cI\cIo\cI\cM";
 $line = $t->readline("list completion>");
-$res = $line eq 'another '; ok('list completion');
+$res = $line eq 'another '; ok('list completion', $line);
 
 
 $a->{completion_entry_function} = $a->{'filename_completion_function'};
 $INSTR = "t/comp\cI\cI\cI0\cI\cI1\cI\cI\cM";
 $line = $t->readline("filename completion>");
-$res = $line eq 't/comptest/0123'; ok('filename completion');
+$res = $line eq 't/comptest/0123'; ok('filename completion', $line);
+undef $a->{completion_entry_function};
 
+# attempted_completion_function
 sub sample_completion {
     my ($text, $line, $start, $end) = @_;
     # If first word then username completion, else filename completion
@@ -530,10 +545,90 @@ $a->{attempted_completion_function} = \&sample_completion;
 print $OUT "given list is: a list of words for completion and another word\n";
 $INSTR = "li\cIt/comp\cI\cI\cI0\cI\cI2\cI\cM";
 $line = $t->readline("list & filename completion>");
-$res = $line eq 'list t/comptest/023456 '; ok('list & file completion');
+$res = $line eq 'list t/comptest/023456 '; ok('list & file completion', $line);
+undef $a->{attempted_completion_function};
+
+# ignore_some_completions_function
+$a->{ignore_some_completions_function} = sub {
+    return (grep m|/$| || ! m|^(.*/)?[0-9]*$|, @_);
+};
+$INSTR = "t/co\cIRE\cI\cM";
+$line = $t->readline("ignore_some_completion>");
+$res = $line eq 't/comptest/README '; ok('ingore_some_completion', $line);
+undef $a->{ignore_some_completions_function};
+
+# char_is_quoted, filename_quoting_function, filename_dequoting_function
+
+sub char_is_quoted ($$) {	# borrowed from bash-2.03:subst.c
+    my ($string, $eindex) = @_;
+    my ($i, $pass_next);
+
+    for ($i = $pass_next = 0; $i <= $eindex; $i++) {
+	my $c = substr($string, $i, 1);
+	if ($pass_next) {
+	    $pass_next = 0;
+	    return 1 if ($i >= $eindex); # XXX was if (i >= eindex - 1)
+	} elsif ($c eq '\'') {
+	    $i = index($string, '\'', ++$i);
+	    return 1 if ($i == -1 || $i >= $eindex);
+#	} elsif ($c eq '"') {	# ignore double quote
+	} elsif ($c eq '\\') {
+	    $pass_next = 1;
+	}
+    }
+    return 0;
+}
+$a->{char_is_quoted_p} = \&char_is_quoted;
+$a->{filename_quoting_function} = sub {
+    my ($text, $match_type, $quote_pointer) = @_;
+    my $qc = $a->{filename_quote_characters};
+    return $text if $quote_pointer;
+    $text =~ s/[\Q${qc}\E]/\\$&/;
+    return $text;
+};
+$a->{filename_dequoting_function} = sub {
+    my ($text, $quote_char) = @_;
+    $quote_char = chr $quote_char;
+    print "($text)\n";
+    $text =~ s/\\//g;
+    print "($text)\n";
+    return $text;
+};
+
+$a->{completer_quote_characters} = '\'';
+$a->{filename_quote_characters} = ' _\'\\';
+
+$INSTR = "t/comp\cIa\cI 't/comp\cIa\cI\cM";
+$line = $t->readline("filename_quoting_function>");
+$res = $line eq 't/comptest/a\\_b  \'t/comptest/a_b\' ';
+ok('filename_quoting_function', $line);
+
+$INSTR = "\'t/comp\cIa\\_\cI\cM";
+$line = $t->readline("filename_dequoting_function>");
+$res = $line eq '\'t/comptest/a_b\' ';
+ok('filename_dequoting_function', $line);
+
+undef $a->{char_is_quoted_p};
+undef $a->{filename_quoting_function};
+undef $a->{filename_dequoting_function};
+
+# directory_completion_hook
+$a->{directory_completion_hook} = sub {
+    if ($_[0] eq 'comp/') {	# simple alias function
+	$_[0] = 't/comptest/';
+	return 1;
+    } else {
+	return 0;
+    }
+};
+
+$INSTR = "comp/\cI\cM";
+$line = $t->readline("directory_completion_hook>");
+$res = $line eq 't/comptest/';
+ok('directory_completion_hook', $line);
+undef $a->{directory_completion_hook};
 
 $t->parse_and_bind('set bell-style audible'); # resume to default style
-$a->{attempted_completion_function} = undef;
 
 ########################################################################
 # test rl_startup_hook, rl_pre_input_hook
@@ -569,8 +664,31 @@ if ($version > 4.0 - 0.1) {
     $t->parse_and_bind('set print-completions-horizontally on');
     $t->display_match_list(\@match_list);
     $t->parse_and_bind('set print-completions-horizontally off');
+    print "ok $n\n"; $n++;
+} else {
+    print "ok $n # skipped\n"; $n++;
 }
-print "ok $n\n"; $n++;
+
+#########################################################################
+# test rl_completion_display_matches_hook
+
+if ($version > 4.0 - 0.1) {
+    # See 'eg/perlsh' for better example
+    $a->{completion_display_matches_hook} = sub  {
+	my($matches, $num_matches, $max_length) = @_;
+	map { $_ = uc $_; }(@{$matches});
+	$t->display_match_list($matches);
+	$t->forced_update_display;
+    };
+    $t->parse_and_bind('set bell-style none'); # make readline quiet
+    $INSTR = "Gnu.\cI\cI\cM";
+    $t->readline("completion_display_matches_hook>");
+    undef $a->{completion_display_matches_hook};
+    print "ok $n\n"; $n++;
+    $t->parse_and_bind('set bell-style audible'); # resume to default style
+} else {
+    print "ok $n # skipped\n"; $n++;
+}
 
 ########################################################################
 # test ornaments
@@ -638,7 +756,6 @@ $a->{event_hook} = sub {
     if ($timer-- < 0) {
 	$a->{done} = 1;
 	undef $a->{event_hook};
-	0;
     }
 };
 $line = $t->readline("input in 2 seconds> ");
