@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.82 1999-05-17 14:32:34 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.83 2000-04-01 08:52:22 hayashi Exp $
  *
  *	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
  *
@@ -85,7 +85,7 @@ dupstr(s)			/* duplicate string */
 }
 
 /*
- * should be defined readline/bind.c ?
+ * should be defined in readline/bind.c ?
  */
 static char *
 rl_get_function_name (function)
@@ -176,12 +176,16 @@ static struct str_vars {
  *	integer variable table for _rl_store_int(), _rl_fetch_int()
  */
 
-#if (RLMAJORVER < 4)
 /* define dummy variable */
+#if (RLMAJORVER < 4)
 static int rl_erase_empty_line = 0;
 static int rl_catch_signals = 1;
 static int rl_catch_sigwinch = 1;
 #endif /* (RLMAJORVER < 4) */
+
+#if (RLMAJORVER < 4 || RLMAJORVER == 4 && RLMINORVER < 1)
+static int rl_already_prompted = 0;
+#endif /* (RLMAJORVER < 4 || RLMAJORVER = 4 && RLMINORVER < 1) */
 
 static struct int_vars {
   int *var;
@@ -210,7 +214,8 @@ static struct int_vars {
   { &history_quotes_inhibit_expansion,		0, 0 },	/* 17 */
   { &rl_erase_empty_line,			0, 0 },	/* 18 */
   { &rl_catch_signals,				0, 0 },	/* 19 */
-  { &rl_catch_sigwinch,				0, 0 }	/* 20 */
+  { &rl_catch_sigwinch,				0, 0 },	/* 20 */
+  { &rl_already_prompted,			0, 0 }	/* 21 */
 };
 
 /*
@@ -1348,6 +1353,13 @@ rl_forced_update_display()
 int
 rl_on_new_line()
 	PROTOTYPE:
+
+#if (RLMAJORVER >= 4 && RLMINORVER >= 1 || RLMAJORVER > 4)
+int
+rl_on_new_line_with_prompt()
+	PROTOTYPE:
+
+#endif /* readline-4.1 and later */
 
 int
 rl_reset_line_state()
