@@ -1,20 +1,6 @@
-#	$Id: INSTALL,v 1.10 1998-03-31 14:55:59 hayashi Exp $
+#	$Id: INSTALL,v 1.11 1998-04-15 12:08:40 hayashi Exp $
 
 1. How to Install Term::ReadLine::Gnu
-
-1.0 Prerequisites
-
-	To use Term::Readline::Gnu, your Perl may have to use the
-	system malloc().  When you built Perl, make sure that you
-	answered no to the "Do you wish to attempt to use the mallloc
-	that comes with Perl?" configuration question.
-
-	You can check your Perl as;
-		$ perl -V | grep perl -V |grep usemymalloc
-	Printed line should include word "usemymalloc=n".
-
-	Since your Perl may work with "usemymalloc=y", try "make test"
-	before you recompile your Perl.
 
 1.1 Install GNU Readline library 2.1 and its header files.
 
@@ -31,6 +17,18 @@
 	$ make
 	$ make test
 	$ make install
+
+1.4 Trouble Shooting
+
+	If you have any troubles during using this module, please let
+	me (hiroo.hayashi@computer.org) know them by E-Mail.  It may
+	help poeple who has same problem.  I'm sorry that I cannot
+	watch all articles on comp.lang.perl.modules.
+
+	When you report me your trouble, send me the result of `perl
+	-V' and compiler which you use for compiling the GNU Readline
+	Library (libreadline.a).
+
 
 2. How to Install GNU Readline Library
 
@@ -76,6 +74,10 @@ Makefile.PL.
 		$ make install
 
 2.2. libreadline.a in bash-2.0.tar.gz
+
+# I reported this patch to Chet Ramey, the bash maintener, it should
+# be fixed in the future.  But he has not fixed the current version
+# (bash-2.01.1.tar.gz) yet.
 
 	The libreadline.a which is made when you make bash does not
 	work as stand-alone library.  You must make it without defining
