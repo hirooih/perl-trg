@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.58 1999-02-22 15:48:47 hayashi Exp $
+#	$Id: Gnu.pm,v 1.59 1999-02-22 16:20:09 hayashi Exp $
 #
 #	Copyright (c) 1996,1997,1998 Hiroo Hayashi.  All rights reserved.
 #
@@ -54,7 +54,7 @@ use Carp;
     use DynaLoader;
     use vars qw($VERSION @ISA @EXPORT_OK);
 
-    $VERSION = '1.03';
+    $VERSION = '1.04';
 
     @ISA = qw(Term::ReadLine::Stub Term::ReadLine::Gnu::AU
 	      Exporter DynaLoader);
@@ -536,16 +536,6 @@ sub rl_message {
     my $fmt = shift;
     my $line = sprintf($fmt, @_);
     _rl_message($line);
-}
-
-# _rl_save_prompt() and _rl_restore_prompt() are not documented
-# in the GNU Readline Library Manual Version 2.2.
-sub rl_save_prompt {
-    _rl_save_prompt();
-}
-
-sub rl_restore_prompt {
-    _rl_restore_prompt();
 }
 
 #
