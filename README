@@ -1,5 +1,5 @@
 	-*- Indented-text -*-
-$Id: README,v 1.20 2001-04-22 14:08:45 hayashi Exp $
+$Id: README,v 1.21 2001-10-28 04:20:56 hayashi Exp $
 
 Term::ReadLine::Gnu --- GNU Readline Library Wrapper Module
 
@@ -61,6 +61,17 @@ Author:
 
 
 Revision History:
+
+1.11  2001-10-27
+	- fix bug of filename-list.  Now works with perldb.
+	- by setting rl_line_buffer, proper value are set in rl_end
+	  and rl_point.
+	- add history-expand-line command
+	- readline-4.2a support
+	    new variable
+		rl_readline_version
+	    new function
+		rl_get_termcap
 
 1.10  2001-04-22
 	- readline-4.2 support
