@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	history.t --- Term::ReadLine:GNU History Library Test Script
 #
-#	$Id: history.t,v 1.1 1998-03-26 13:54:11 hayashi Exp $
+#	$Id: history.t,v 1.2 1998-03-26 14:49:26 hayashi Exp $
 #
 #	Copyright (c) 1998 Hiroo Hayashi.  All rights reserved.
 #
@@ -129,7 +129,7 @@ print($t->history_is_stifled == 1 && $attribs->{history_length} == 3
 show_indices;
 
 # unstifle_history()
-$t->stifle_history(undef);
+$t->unstifle_history;
 print($t->history_is_stifled == 0 && $attribs->{history_length} == 3
       ? "ok $n\n" : "not ok $n\n"); $n++;
 #print "@{[$t->GetHistory]}\n";
