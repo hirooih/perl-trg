@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.36 1999-05-19 15:32:19 hayashi Exp $
+#	$Id: readline.t,v 1.37 1999-07-06 16:20:36 hayashi Exp $
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -286,7 +286,7 @@ $res = (is_boundp("\cT", 'reverse-line')
 	&& is_boundp("\eo",    'change-ornaments')
 	&& is_boundp("\e?f",   'dump-functions')
 	&& is_boundp("\e?v",   'dump-variables')
-	&& is_boundp("\e?m",   'dump-macros'));
+	&& ($version <= 2.1 or is_boundp("\e?m",   'dump-macros')));
 ok;
 
 # test rl_read_init_file
@@ -310,8 +310,13 @@ ok;
 $t->unbind_key(ord "\ct");	# reverse-line
 $t->unbind_key(ord "f", $helpmap); # dump-function
 $t->unbind_key(ord "v", 'emacs-ctlx'); # display-readline-version
-$t->unbind_command_in_map('display-readline-version', 'emacs-ctlx');
-$t->unbind_function_in_map($t->named_function('dump-variables'), $helpmap);
+if ($version > 2.1) {
+    $t->unbind_command_in_map('display-readline-version', 'emacs-ctlx');
+    $t->unbind_function_in_map($t->named_function('dump-variables'), $helpmap);
+} else {
+    $t->unbind_key(ord "\cV", 'emacs-ctlx');
+    $t->unbind_key(ord "v", $helpmap);
+}
 
 my @keyseqs = ($t->invoking_keyseqs('reverse-line'),
 	       $t->invoking_keyseqs('dump-functions'),
@@ -402,6 +407,7 @@ $a->{getc_function} = sub {
 sub is_boundp {
     my ($seq, $fname) = @_;
     my ($fn, $type) = $t->function_of_keyseq($seq);
+    die "no fn for seq $seq fname $fname" unless $fn;
     return ($t->get_function_name($fn) eq $fname
 	    && $type == ISFUNC);
 }
