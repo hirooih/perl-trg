@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.52 1997-03-16 17:20:21 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.53 1997-04-10 15:42:58 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -153,7 +153,7 @@ enum void_arg_func_type { STARTUP_HOOK, EVENT_HOOK, GETC_FN, REDISPLAY_FN,
 			  CMP_ENT, ATMPT_COMP };
 
 static struct fn_vars {
-  Function **rlfuncp;		/* Readline Library variable */
+  Function **rlfuncp;		/* GNU Readline Library variable */
   Function *defaultfn;		/* default function */
   Function *wrapper;		/* wrapper function */
   SV *callback;			/* Perl function */
@@ -1235,8 +1235,10 @@ history_expand(line)
 	}
 
 #
-#	Readline/History Library Variable Access Routines
+#	GNU Readline/History Library Variable Access Routines
 #
+
+MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu::Var
 
 void
 _rl_store_str(pstr, id)
@@ -1260,7 +1262,7 @@ _rl_store_str(pstr, id)
 
 	  /*
 	   * Use xmalloc() and xfree() instead of New() and Safefree(),
-	   * because this block may be reallocated by the Readline Library.
+	   * because this block may be reallocated by the GNU Readline Library.
 	   */
 	  if (str_tbl[id].accessed && *str_tbl[id].var) {
 	    /*
