@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.82 2000-12-05 15:26:49 hayashi Exp $
+#	$Id: Gnu.pm,v 1.83 2001-02-11 05:56:11 hayashi Exp $
 #
 #	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
 #
@@ -250,10 +250,7 @@ sub readline {			# should be ReadLine
     my ($prompt, $preput) = @_;
 
     # ornament support (now prompt only)
-    # non-printing characters must be told to readline
-    $prompt = RL_PROMPT_START_IGNORE . ${$Attribs{term_set}}[0] . RL_PROMPT_END_IGNORE
-	. $prompt
-	    . RL_PROMPT_START_IGNORE . ${$Attribs{term_set}}[1] . RL_PROMPT_END_IGNORE;
+    $prompt = ${$Attribs{term_set}}[0] . $prompt . ${$Attribs{term_set}}[1];
 
     # `completion_function' support for compatibility with
     # Term:ReadLine::Perl.  Prefer $completion_entry_function, since a
@@ -403,9 +400,7 @@ sub CallbackHandlerInstall {
     $Attribs{_callback_handler} = $lhandler;
 
     # ornament support (now prompt only)
-    $prompt = RL_PROMPT_START_IGNORE . ${$Attribs{term_set}}[0] . RL_PROMPT_END_IGNORE
-	. $prompt
-	    . RL_PROMPT_START_IGNORE . ${$Attribs{term_set}}[1] . RL_PROMPT_END_IGNORE;
+    $prompt = ${$Attribs{term_set}}[0] . $prompt . ${$Attribs{term_set}}[1];
 
     $Attribs{completion_entry_function} = $Attribs{_trp_completion_function}
 	if (!defined $Attribs{completion_entry_function}
