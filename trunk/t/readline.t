@@ -1,12 +1,12 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.3 1996-11-19 16:01:37 hayashi Exp $
+#	$Id: readline.t,v 1.4 1996-12-03 15:10:57 hayashi Exp $
 #
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl t/readline.t'
 
-BEGIN {print "1..9\n";}
+BEGIN {print "1..10\n";}
 END {print "not ok 1\n" unless $loaded;}
 
 $^W = 1;			# perl -w
@@ -31,7 +31,7 @@ if ($term->ReadLine eq 'Term::ReadLine::Gnu') {
     print "ok 3\n";
 } else {
     print "not ok 3\n";
-    print $OUT ("Package name should be \`Term::ReadLine::Gnu\', bus is \`",
+    print $OUT ("Package name should be \`Term::ReadLine::Gnu\', but it is \`",
 		$term->ReadLine, "\'\n");
 }
 
@@ -70,14 +70,14 @@ print "ok 5\n";
 
 $term->readline("filename completion (default)>", "this is default string");
 
-$rl_completion_entry_function = 'username';
+$term->StoreVar('rl_completion_entry_function', 'username');
 $term->readline("username completion>");
 
 @completion_word_list = qw(list of words which you want to use for completion);
-$rl_completion_entry_function = \&list_completion_function;
+$term->StoreVar('rl_completion_entry_function', \&list_completion_function);
 $term->readline("custom completion>");
 
-$rl_completion_entry_function = 'filename';
+$term->StoreVar('rl_completion_entry_function', 'filename');
 $term->readline("filename completion>");
 
 sub sample_completion {
@@ -91,18 +91,29 @@ sub sample_completion {
     }
 }
 
-$rl_attempted_completion_function = \&sample_completion;
+$term->StoreVar('rl_attempted_completion_function', \&sample_completion);
 $term->readline("username filename completion>");
-$rl_attempted_completion_function = undef;
+$term->StoreVar('rl_attempted_completion_function', undef);
 
 print "ok 6\n";
+########################################################################
+# test ParseAndBind()
+
+$term->StoreVar('rl_inhibit_completion', 1);
+$term->readline('disable completion>');
+$term->StoreVar('rl_inhibit_completion', 0);
+$term->StoreVar('rl_completion_append_character', ':');
+$term->readline('enable completion>');
+$term->StoreVar('rl_completion_append_character', ' ');
+
+print "ok 7\n";
 ########################################################################
 # test ParseAndBind()
 
 $term->ParseAndBind('"\C-i": self-insert');
 $term->readline('bind "\C-i" to self-insert>');
 
-print "ok 7\n";
+print "ok 8\n";
 ########################################################################
 # test WriteHistory(), ReadHistory()
 
@@ -111,7 +122,7 @@ $term->WriteHistory(".history_test") || warn "error at write_history: $!\n";
 $term->SetHistory();
 $term->ReadHistory(".history_test") || warn "error at read_history: $!\n";
 my @list_read = $term->GetHistory();
-print equal_list(\@list_write, \@list_read) ? "ok 8\n" : "not ok 8\n";
+print equal_list(\@list_write, \@list_read) ? "ok 9\n" : "not ok 9\n";
 
 ########################################################################
 # test SetHistory(), GetHistory()
@@ -119,7 +130,7 @@ print equal_list(\@list_write, \@list_read) ? "ok 8\n" : "not ok 8\n";
 my @list_set = qw(one two three);
 $term->SetHistory(@list_set);
 my @list_get = $term->GetHistory();
-print equal_list(\@list_set, \@list_get) ? "ok 9\n" : "not ok 9\n";
+print equal_list(\@list_set, \@list_get) ? "ok 10\n" : "not ok 10\n";
 
 sub equal_list {
     ($a, $b) = @_;
