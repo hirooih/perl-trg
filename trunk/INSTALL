@@ -1,4 +1,4 @@
-#	$Id: INSTALL,v 1.12 1998-05-12 16:20:11 hayashi Exp $
+#	$Id: INSTALL,v 1.13 1998-05-13 14:58:11 hayashi Exp $
 
 1. How to Install Term::ReadLine::Gnu
 
@@ -38,7 +38,7 @@ version 2.0 or later)
 
 Note that some free Unix distribution and Cygwin32-b19 include the GNU
 Readline Library 2.0 which is not supported by this module.  (I can
-make readline-2.2 with ordinary configure and make process even on
+make readline-2.2 by ordinary configure and make process even on
 Window 95 with Cygwin32 environment.  But my perl for Windows 95/NT
 does not work with it.  Your suggention will be welcome.)
 
@@ -53,6 +53,14 @@ Yamaga <yamaga@ipc.chiba-u.ac.jp> contribued me a patch which adds the
 definitions for shared library on Makefile.in of readline-2.2.  With
 this patch I can build a shared library easily on my Linux box, and it
 works with Term::ReadLine::Gnu.
+
+Since the GNU Readline Library is 8 bit clean, I use Japanese
+characters without any patch.  If you want to handle Japanese
+charactors better, check the following URL.
+
+      ftp://ftp.yynet.tama.tokyo.jp/pub/misc/readline/
+
+I've not try it, but it should work with my module.
 
 2.1. readline-2.2.tar.gz
 
