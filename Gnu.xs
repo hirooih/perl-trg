@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.37 1997-01-18 16:28:49 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.38 1997-01-18 17:31:14 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -530,17 +530,17 @@ callback_handler_wrapper(char *line)
  *	Misc.
  */
 static char *
-dupstr (s)			/* duplicate string */
+dupstr(s)			/* duplicate string */
      char *s;
 {
-  char *r;
-     
-/* Use xmalloc(), because 'r' will be freed in GNU Readline Library routine */
-  r = xmalloc (strlen (s) + 1);	
-  strcpy (r, s);
-  return (r);
+  /*
+   * Use xmalloc(), because allocated block will be freed in GNU
+   * Readline Library routine.
+   * Don't make a macro.  Because 's' is evaled twice.
+   */
+  strcpy (xmalloc (strlen (s) + 1), s);
 }
-     
+
 #if 0
 static int
 rl_debug(int count, int key)
@@ -909,6 +909,10 @@ rl_add_undo(what, start, end, text)
 	int	end
 	char	*text
 	PROTOTYPE: $$$$
+	CODE:
+	{
+	  rl_add_undo(what, start, end, dupstr(text));
+	}
 
 void
 free_undo_list()
@@ -1025,6 +1029,12 @@ rl_callback_handler_install(prompt, lhandler)
 	PROTOTYPE: $$
 	CODE:
 	{
+	  static char *cb_prompt = NULL;
+
+	  /* The value of prompt may be use afterward. */
+	  xfree(cb_prompt);
+	  cb_prompt = dupstr(prompt);
+
 	  /*
 	   * Don't remove braces. The definition of SvSetSV() of
 	   * Perl 5.003 has a problem.
@@ -1035,7 +1045,7 @@ rl_callback_handler_install(prompt, lhandler)
 	    callback_handler_callback = newSVsv(lhandler);
 	  }
 
-	  rl_callback_handler_install(prompt, callback_handler_wrapper);
+	  rl_callback_handler_install(cb_prompt, callback_handler_wrapper);
 	}
 
 void
@@ -1165,15 +1175,14 @@ remove_history(which)
 	}
 
 void
-replace_history_entry(which, line, data = NULL)
+replace_history_entry(which, line)
 	int which
 	char *line
-	char *data
-	PROTOTYPE: $$;$
+	PROTOTYPE: $$
 	CODE:
 	{
 	  HIST_ENTRY *entry;
-	  entry = replace_history_entry(which, line, data);
+	  entry = replace_history_entry(which, line, (char *)NULL);
 	  ST(0) = sv_newmortal();
 	  if (entry && entry->line)
 	    sv_setpv(ST(0), entry->line);
@@ -1366,8 +1375,6 @@ _rl_store_str(pstr, id)
 	    XSRETURN_UNDEF;
 	  }
 
-#	  warn("\n[%d;%d;var:%p,%p]\n", id, str_tbl[id].accessed,
-#	       *str_tbl[id].var, str_tbl[id].var);
 	  /*
 	   * Use xmalloc() instead of New(),
 	   * because this block may be reallocated by readline library.
@@ -1381,9 +1388,6 @@ _rl_store_str(pstr, id)
 	  len = strlen(pstr)+1;
 	  *str_tbl[id].var = xmalloc(len);
 	  Copy(pstr, *str_tbl[id].var, len, char);
-
-#	  warn("[%d;%d;var:%p,%p]\n", id, str_tbl[id].accessed,
-#	       *str_tbl[id].var, str_tbl[id].var);
 
 	  /* return variable value */
 	  sv_setpv(ST(0), *str_tbl[id].var);
