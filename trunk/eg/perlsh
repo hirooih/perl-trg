@@ -1,6 +1,6 @@
 #! /usr/local/bin/perl
 #
-#	$Id: perlsh,v 1.14 1999-03-21 17:57:26 hayashi Exp $	
+#	$Id: perlsh,v 1.15 1999-03-22 05:34:57 hayashi Exp $	
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi. All Rights Reserved.
 #
@@ -35,7 +35,7 @@ use strict;
 use Term::ReadLine;
 
 use vars qw($PS1 $PS2 $HISTFILE $HISTSIZE $INPUTRC $STRICT
-	    $HOSTNAME $LOGNAME);
+	    $HOSTNAME $LOGNAME $CWP);
 
 #$PS1 = '$ ';
 $PS1='\!$ ';
@@ -47,6 +47,7 @@ $STRICT = 0;
 
 $HOSTNAME = $ENV{HOSTNAME};
 $LOGNAME = $ENV{LOGNAME};
+$CWP = 'main';			# current working package
 
 package main;
 if (-f $PerlSh::INPUTRC) {
@@ -62,9 +63,9 @@ $attribs = $term->Attribs;
 $term->bind_key(ord "\cv", 'display-readline-version', 'emacs-ctlx');
 $term->bind_key(ord "\cc", 'abort'); # not works yet FIXME!!!
 
-if (defined &main::PerlSh_Init_Hook) {
+if (defined &main::afterinit) {
     package main;
-    &PerlSh_Init_Hook;
+    &afterinit;
     package PerlSh;
 }
 
@@ -101,10 +102,11 @@ sub toplevel {
     my ($strict, $command, @result);
     $strict = $STRICT ? '' : 'no strict;';
     while (defined($command = &reader)) {
-	@result = eval ("$strict package main; $command");
+	@result = eval ("$strict package $CWP; $command");
 	use strict;
 	if ($@) { print "Error: $@\n"; next; }
 	printer (@result);
+	$CWP = $1 if ($command =~ /^\s*package\s+([\w:]+)/);
     }
     &quit;
 }
@@ -166,68 +168,83 @@ sub prompt {
 	} else {
 	    # the first call
 	    $i = 0;		# clear index
-	    my $pkg = ($text =~ m/^(\$#|[\@\$%&])?(.*)::/)[1] || '';
-#print "[$text,$pkg,$state]\n";
-	    if ($text =~ /^(\$|\*)/) {
-		@symbol_list = get_symbol($pkg, 'SCALAR', $1);
-	    } elsif ($text =~ /^(\@|\$\#)/) {
-		@symbol_list = get_symbol($pkg, 'ARRAY', $1);
-	    } elsif ($text =~ /^(\%)/) {
-		@symbol_list = get_symbol($pkg, 'HASH', $1);
-	    } elsif ($text =~ /^(\&)/) {
-		@symbol_list = get_symbol($pkg, 'CODE', $1);
+	    my ($pkg, $pre, $pcmp);
+	    if ($text =~ m/^((\$#|[\@\$%&])?(.*::))/) {
+		$pkg = $3;
+		$pre = $1;
+		$pcmp = 0;
 	    } else {
-		@symbol_list = get_symbol($pkg, 'CODE', '');
-# following line causes segmention fault?
-#		@symbol_list = (get_symbol($pkg, 'CODE', ''),
-#				get_symbol($pkg, 'FILEHANDLE', ''));
+		if ($CWP eq 'main') {
+		    $pkg =  '::';
+		    $pcmp = 0;
+		} else {
+		    $pkg = $CWP . '::';
+		    $pcmp = 1;	# do pacakge name completion from `main'
+		}
+		$pre = ($text =~ m/^(\$#|[\@\$%&])/)[0];
 	    }
-	    @symbol_list = sort @symbol_list;
+#print "[$text,$pkg,$pre,$pcmp]\n";
+	    if ($text =~ /^(\$|\*)/) {
+		@symbol_list = get_symbol($pkg, 'SCALAR', $pre, $pcmp);
+	    } elsif ($text =~ /^(\@|\$\#)/) {
+		@symbol_list = get_symbol($pkg, 'ARRAY', $pre, $pcmp);
+	    } elsif ($text =~ /^(\%)/) {
+		@symbol_list = get_symbol($pkg, 'HASH', $pre, $pcmp);
+	    } elsif ($text =~ /^(\&)/) {
+		@symbol_list = get_symbol($pkg, 'CODE', $pre, $pcmp);
+	    } else {
+		@symbol_list = get_symbol($pkg, 'CODE', $pre, $pcmp);
+# the following line causes segmention fault?
+#@symbol_list = (@symbol_list, get_symbol($pkg, 'FILEHANDLE', $pre, $pcmp));
+	    }
+#	    @symbol_list = sort @symbol_list;
 #	    print "\n<<<@symbol_list>>>\n";
 	}
 
 	my $entry;
-	$text = quotemeta($text); # $foo -> \$foo
 	for (; $i <= $#symbol_list; $i++) {
 	    $entry = $symbol_list[$i];
-	    return $entry if ($entry =~ /^$text/);
+	    return $entry if ($entry =~ /^\Q$text/);
 	}
 	return undef;
     }
 }
 
-sub get_symbol ($$$) {
-    my ($pkg, $type, $pre) = @_;
+sub get_symbol ($$$$) {
+    my ($pkg, $type, $pre, $pcmp) = @_;
     my ($key, $ref, @list);
     no strict qw(vars refs);
 #    no strict qw(refs);
 
-    my $pkg_ = $pkg ? $pkg . '::' : '';
-#print "[", eval "keys \%${pkg}::", "]\n";
     @list = ();
-    foreach $key (eval "keys \%${pkg}::") {
+    foreach $key (keys %${pkg}) {
 	next if ($key =~ /^_</
 		 || $key =~ m/^::/
 		 || $key eq '$' || $key eq '"' || $key eq "\@");
-#print "\n[$pkg,$pkg_,$key,$type]\n";
-	local *sym = eval "*${pkg}::${key}";
-	eval "\$ref = *${pkg}::${key}{$type}";
-	if ($key =~ /::$/) {	# package name
-	    push (@list, "${pre}${pkg_}${key}");
+#print "\n[$pkg,$key,$type]\n";
+	my $pk = ${pkg} . ${key};
+	$ref = *$pk{$type};
+	if (!$pcmp && $key =~ /::$/) {	# package name
+	    push (@list, "${pre}${key}");
 	} elsif ($type eq 'SCALAR' && defined $ref) {
-	    push (@list, "${pre}${pkg_}${key}");
-	} elsif ($type eq 'ARRAY' && defined @sym) {
-#	} elsif ($type eq 'ARRAY' && defined $ref) {
-	    push (@list, $pre . $pkg_ . $key);
-	} elsif ($type eq 'HASH' && defined %sym) {
-#	} elsif ($type eq 'HASH' && defined $ref) {
-	    push (@list, $pre . $pkg_ . $key);
-	} elsif ($type eq 'CODE' && defined &sym) {
-	    push (@list, $pre . $pkg_ . $key);
-#	} elsif ($type eq 'FILEHANDLE' && defined $ref) {
-#	    push (@list, $pre . $pkg_ . $key);
+	    push (@list, "${pre}${key}");
+	} elsif ($type eq 'ARRAY' && defined $ref) {
+	    push (@list, $pre . $key);
+	} elsif ($type eq 'HASH' && defined $ref) {
+	    push (@list, $pre . $key);
+	} elsif ($type eq 'CODE' && defined $ref) {
+	    push (@list, $pre . $key);
+	} elsif ($type eq 'FILEHANDLE' && defined $ref) {
+	    push (@list, $pre . $key);
 	}
     }
+
+    if ($pcmp) {
+	foreach $key (keys %::) {
+	    push (@list, $pre . $key) if ($key =~ /::$/); # package name
+	}
+    }
+	    
     return @list;
 }
 
