@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.57 1998-03-27 18:00:39 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.58 1998-04-14 16:41:54 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -869,6 +869,14 @@ _rl_message(text)
 
 int
 rl_clear_message()
+	PROTOTYPE:
+
+void
+_rl_save_prompt()
+	PROTOTYPE:
+
+void
+_rl_restore_prompt()
 	PROTOTYPE:
 
 #
