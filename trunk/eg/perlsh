@@ -1,6 +1,6 @@
 #! /usr/local/bin/perl
 #
-#	$Id: perlsh,v 1.9 1997-03-18 17:26:06 hayashi Exp $	
+#	$Id: perlsh,v 1.10 1997-04-14 14:27:30 hayashi Exp $	
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi. All Rights Reserved.
 #
@@ -125,7 +125,7 @@ sub prompt {
 #
 #	variable name completion
 #
-BEGIN {
+{
     my $i;
     use vars qw(@symbol_list);
 
@@ -268,7 +268,7 @@ GNU Readline Library Texinfo Manual
 
 =head1 AUTHOR
 
-Hiroo Hayashi, hayashi@pdcd.ilab.toshiba.co.jp
+Hiroo Hayashi <hiroo.hayashi@toshiba.co.jp>
 
 =head1 BUGS
 
