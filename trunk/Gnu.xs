@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.59 1998-05-05 13:57:25 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.60 1998-09-27 15:22:25 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -1649,5 +1649,28 @@ _rl_fetch_function(id)
 	    /* return undef */
 	  } else if (fn_tbl[id].callback && SvTRUE(fn_tbl[id].callback)) {
 	    sv_setsv(ST(0), fn_tbl[id].callback);
+	  }
+	}
+
+MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu::TermCap
+
+#include <termcap.h>
+
+void
+_tgetstr(id)
+	const char *id
+	PROTOTYPE: $
+	CODE:
+	{
+	  /*
+	   * The magic number `2032' is derived from bash
+	   * terminal.c:_rl_init_terminal_io().
+	   */
+	  char buffer[2032];
+	  char *bp = buffer;
+
+	  ST(0) = sv_newmortal();
+	  if (id) {
+	    sv_setpv(ST(0), tgetstr(id, &bp));
 	  }
 	}
