@@ -1,8 +1,8 @@
-$Id: README,v 1.8 1997-08-24 15:33:29 hayashi Exp $
+$Id: README,v 1.9 1998-03-26 15:42:35 hayashi Exp $
 
 Term::ReadLine::Gnu --- GNU Readline Library Wrapper Module
 
-	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
+	Copyright (c) 1996,1997,1998 Hiroo Hayashi.  All rights reserved.
 
 	This program is free software; you can redistribute it and/or
 	modify it under the same terms as Perl itself.
@@ -56,4 +56,4 @@ Bugs:
 	grammar).  Comments and bug reports are very welcome.
 
 Author:
-	Hiroo Hayashi <hiroo.hayashi@toshiba.co.jp>
+	Hiroo Hayashi <hiroo.hayashi@computer.org>
