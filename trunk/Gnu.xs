@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.99 2001-10-28 03:58:24 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.100 2002-03-24 04:56:07 hiroo Exp $
  *
  *	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
  *
@@ -1148,9 +1148,9 @@ MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu::XS
 # The function name "readline()" is reserved for a method name.
 void
 rl_readline(prompt = NULL)
-	CONST char *prompt
-	PROTOTYPE: ;$
-	CODE:
+	CONST char *	prompt
+    PROTOTYPE: ;$
+    CODE:
 	{
 	  char *line_read = readline(prompt);
 
@@ -1171,11 +1171,11 @@ rl_readline(prompt = NULL)
 #
 rl_command_func_t *
 rl_add_defun(name, fn, key = -1)
-	const char *name
-	SV *fn
+	const char *	name
+	SV *		fn
 	int key
-	PROTOTYPE: $$;$
-	CODE:
+    PROTOTYPE: $$;$
+    CODE:
 	{
 	  int i;
 	  int nentry = sizeof(fntbl)/sizeof(struct fnnode);
@@ -1197,7 +1197,7 @@ rl_add_defun(name, fn, key = -1)
 	  rl_add_defun(dupstr(name), fntbl[i].wrapper, key);
 	  RETVAL = fntbl[i].wrapper;
 	}
-	OUTPUT:
+    OUTPUT:
 	RETVAL
 
 #
@@ -1205,60 +1205,54 @@ rl_add_defun(name, fn, key = -1)
 #
 Keymap
 rl_make_bare_keymap()
-	PROTOTYPE:
+    PROTOTYPE:
 	  
 Keymap
 _rl_copy_keymap(map)
 	Keymap map
-	PROTOTYPE: $
-	CODE:
-	{
-	  RETVAL = rl_copy_keymap(map);
-	}
-	OUTPUT:
+    PROTOTYPE: $
+    CODE:
+	RETVAL = rl_copy_keymap(map);
+    OUTPUT:
 	RETVAL
 
 Keymap
 rl_make_keymap()
-	PROTOTYPE:
+    PROTOTYPE:
 
 Keymap
 _rl_discard_keymap(map)
 	Keymap map
-	PROTOTYPE: $
-	CODE:
-	{
-	  rl_discard_keymap(map);
-	  RETVAL = map;
-	}
-	OUTPUT:
+    PROTOTYPE: $
+    CODE:
+	rl_discard_keymap(map);
+	RETVAL = map;
+    OUTPUT:
 	RETVAL
 
 Keymap
 rl_get_keymap()
-	PROTOTYPE:
+    PROTOTYPE:
 
 Keymap
 _rl_set_keymap(map)
 	Keymap map
-	PROTOTYPE: $
-	CODE:
-	{
-	  rl_set_keymap(map);
-	  RETVAL = map;
-	}
-	OUTPUT:
+    PROTOTYPE: $
+    CODE:
+	rl_set_keymap(map);
+	RETVAL = map;
+    OUTPUT:
 	RETVAL
 
 Keymap
 rl_get_keymap_by_name(name)
-	CONST char *name
-	PROTOTYPE: $
+	CONST char *	name
+    PROTOTYPE: $
 
 char *
 rl_get_keymap_name(map)
 	Keymap map
-	PROTOTYPE: $
+    PROTOTYPE: $
 
 #
 #	2.4.3 Binding Keys
@@ -1266,26 +1260,22 @@ rl_get_keymap_name(map)
 int
 _rl_bind_key(key, function, map = rl_get_keymap())
 	int key
-	rl_command_func_t *function
+	rl_command_func_t *	function
 	Keymap map
-	PROTOTYPE: $$;$
-	CODE:
-	{
-	  RETVAL = rl_bind_key_in_map(key, function, map);
-	}
-	OUTPUT:
+    PROTOTYPE: $$;$
+    CODE:
+	RETVAL = rl_bind_key_in_map(key, function, map);
+    OUTPUT:
 	RETVAL
 
 int
 _rl_unbind_key(key, map = rl_get_keymap())
 	int key
 	Keymap map
-	PROTOTYPE: $;$
-	CODE:
-	{
-	  RETVAL = rl_unbind_key_in_map(key, map);
-	}
-	OUTPUT:
+    PROTOTYPE: $;$
+    CODE:
+	RETVAL = rl_unbind_key_in_map(key, map);
+    OUTPUT:
 	RETVAL
 
 #if (RL_READLINE_VERSION >= 0x0202)
@@ -1295,26 +1285,22 @@ _rl_unbind_key(key, map = rl_get_keymap())
 
 int
 _rl_unbind_function(function, map = rl_get_keymap())
-	rl_command_func_t *function
+	rl_command_func_t *	function
 	Keymap map
-	PROTOTYPE: $;$
-	CODE:
-	{
-	  RETVAL = rl_unbind_function_in_map(function, map);
-	}
-	OUTPUT:
+    PROTOTYPE: $;$
+    CODE:
+	RETVAL = rl_unbind_function_in_map(function, map);
+    OUTPUT:
 	RETVAL
 
 int
 _rl_unbind_command(command, map = rl_get_keymap())
-	CONST char *command
+	CONST char *	command
 	Keymap map
-	PROTOTYPE: $;$
-	CODE:
-	{
-	  RETVAL = rl_unbind_command_in_map(command, map);
-	}
-	OUTPUT:
+    PROTOTYPE: $;$
+    CODE:
+	RETVAL = rl_unbind_command_in_map(command, map);
+    OUTPUT:
 	RETVAL
 
 #endif /* (RL_READLINE_VERSION >= 0x0202) */
@@ -1324,63 +1310,55 @@ _rl_unbind_command(command, map = rl_get_keymap())
 # rl_generic_bind(ISFUNC, keyseq, (char *)function, map).
 int
 _rl_set_key(keyseq, function, map = rl_get_keymap())
-	const char *keyseq
-	rl_command_func_t *function
+	const char *	keyseq
+	rl_command_func_t *	function
 	Keymap map
-	PROTOTYPE: $$;$
-	CODE:
-	{
-	  RETVAL = rl_set_key(keyseq, function, map);
-	}
-	OUTPUT:
+    PROTOTYPE: $$;$
+    CODE:
+	RETVAL = rl_set_key(keyseq, function, map);
+    OUTPUT:
 	RETVAL
 
 #endif /* (RL_READLINE_VERSION >= 0x0402) */
 
 int
 _rl_generic_bind_function(keyseq, function, map = rl_get_keymap())
-	CONST char *keyseq
-	rl_command_func_t *function
+	CONST char *	keyseq
+	rl_command_func_t *	function
 	Keymap map
-	PROTOTYPE: $$;$
-	CODE:
-	{
-	  RETVAL = rl_generic_bind(ISFUNC, keyseq, (char *)function, map);
-	}
-	OUTPUT:
+    PROTOTYPE: $$;$
+    CODE:
+	RETVAL = rl_generic_bind(ISFUNC, keyseq, (char *)function, map);
+    OUTPUT:
 	RETVAL
 
 int
 _rl_generic_bind_keymap(keyseq, keymap, map = rl_get_keymap())
-	CONST char *keyseq
+	CONST char *	keyseq
 	Keymap keymap
 	Keymap map
-	PROTOTYPE: $$;$
-	CODE:
-	{
-	  RETVAL = rl_generic_bind(ISKMAP, keyseq, (char *)keymap, map);
-	}
-	OUTPUT:
+    PROTOTYPE: $$;$
+    CODE:
+	RETVAL = rl_generic_bind(ISKMAP, keyseq, (char *)keymap, map);
+    OUTPUT:
 	RETVAL
 
 int
 _rl_generic_bind_macro(keyseq, macro, map = rl_get_keymap())
-	CONST char *keyseq
-	const char *macro
+	CONST char *	keyseq
+	CONST char *	macro
 	Keymap map
-	PROTOTYPE: $$;$
-	CODE:
-	{
-	  RETVAL = rl_generic_bind(ISMACR, keyseq, dupstr(macro), map);
-	}
-	OUTPUT:
+    PROTOTYPE: $$;$
+    CODE:
+	RETVAL = rl_generic_bind(ISMACR, keyseq, dupstr(macro), map);
+    OUTPUT:
 	RETVAL
 
 void
 rl_parse_and_bind(line)
-	const char *line
-	PROTOTYPE: $
-	CODE:
+	CONST char *	line
+    PROTOTYPE: $
+    CODE:
 	{
 	  char *s = dupstr(line);
 	  rl_parse_and_bind(s);
@@ -1389,41 +1367,39 @@ rl_parse_and_bind(line)
 
 int
 rl_read_init_file(filename = NULL)
-	CONST char *filename
-	PROTOTYPE: ;$
+	CONST char *	filename
+    PROTOTYPE: ;$
 
 #
 #	2.4.4 Associating Function Names and Bindings
 #
 int
 _rl_call_function(function, count = 1, key = -1)
-	rl_command_func_t *function
+	rl_command_func_t *	function
 	int count
 	int key
-	PROTOTYPE: $;$$
-	CODE:
-	{
-	  RETVAL = (*function)(count, key);
-	}
-	OUTPUT:
+    PROTOTYPE: $;$$
+    CODE:
+	RETVAL = (*function)(count, key);
+    OUTPUT:
 	RETVAL
 
 rl_command_func_t *
 rl_named_function(name)
-	CONST char *name
-	PROTOTYPE: $
+	CONST char *	name
+    PROTOTYPE: $
 
 const char *
 rl_get_function_name(function)
-	rl_command_func_t *function
-	PROTOTYPE: $
+	rl_command_func_t *	function
+    PROTOTYPE: $
 
 void
 rl_function_of_keyseq(keyseq, map = rl_get_keymap())
-	CONST char *keyseq
+	CONST char *	keyseq
 	Keymap map
-	PROTOTYPE: $;$
-	PPCODE:
+    PROTOTYPE: $;$
+    PPCODE:
 	{
 	  int type;
 	  rl_command_func_t *p = rl_function_of_keyseq(keyseq, map, &type);
@@ -1456,10 +1432,10 @@ rl_function_of_keyseq(keyseq, map = rl_get_keymap())
 	  
 void
 _rl_invoking_keyseqs(function, map = rl_get_keymap())
-	rl_command_func_t *function
+	rl_command_func_t *	function
 	Keymap map
-	PROTOTYPE: $;$
-	PPCODE:
+    PROTOTYPE: $;$
+    PPCODE:
 	{
 	  char **keyseqs;
 	  
@@ -1486,17 +1462,17 @@ _rl_invoking_keyseqs(function, map = rl_get_keymap())
 void
 rl_function_dumper(readable = 0)
 	int readable
-	PROTOTYPE: ;$
+    PROTOTYPE: ;$
 
 void
 rl_list_funmap_names()
-	PROTOTYPE:
+    PROTOTYPE:
 
 # return list of all function name. (Term::Readline::Gnu specific function)
 void
 rl_get_all_function_names()
-	PROTOTYPE:
-	PPCODE:
+    PROTOTYPE:
+    PPCODE:
 	{
 	  int i, count;
 	  /* count number of entries */
@@ -1511,8 +1487,8 @@ rl_get_all_function_names()
 
 void
 rl_funmap_names()
-	PROTOTYPE:
-	PPCODE:
+    PROTOTYPE:
+    PPCODE:
 	{
 	  const char **funmap;
 
@@ -1539,14 +1515,12 @@ rl_funmap_names()
 # rl_add_funmap_entry() is introduced by readline-4.2.
 int
 _rl_add_funmap_entry(name, function)
-	const char *name
-	rl_command_func_t *function
-	PROTOTYPE: $$
-	CODE:
-	{
-	  RETVAL = rl_add_funmap_entry(name, function);
-	}
-	OUTPUT:
+	const char *		name
+	rl_command_func_t *	function
+    PROTOTYPE: $$
+    CODE:
+	RETVAL = rl_add_funmap_entry(name, function);
+    OUTPUT:
 	RETVAL
 
 #endif /* (RL_READLINE_VERSION >= 0x0402) */
@@ -1556,105 +1530,102 @@ _rl_add_funmap_entry(name, function)
 #
 int
 rl_begin_undo_group()
-	PROTOTYPE:
+    PROTOTYPE:
 
 int
 rl_end_undo_group()
-	PROTOTYPE:
+    PROTOTYPE:
 
 void
 rl_add_undo(what, start, end, text)
 	int what
 	int start
 	int end
-	const char *text
-	PROTOTYPE: $$$$
-	CODE:
-	{
-	  rl_add_undo((enum undo_code)what, start, end, dupstr(text));
-	}
+	const char *	text
+    PROTOTYPE: $$$$
+    CODE:
+	rl_add_undo((enum undo_code)what, start, end, dupstr(text));
 
 void
 rl_free_undo_list()
-	PROTOTYPE:
+    PROTOTYPE:
 
 int
 rl_do_undo()
-	PROTOTYPE:
+    PROTOTYPE:
 
 int
 rl_modifying(start = 0, end = rl_end)
 	int start
 	int end
-	PROTOTYPE: ;$$
+    PROTOTYPE: ;$$
 
 #
 #	2.4.6 Redisplay
 #
 void
 rl_redisplay()
-	PROTOTYPE:
+    PROTOTYPE:
 
 int
 rl_forced_update_display()
-	PROTOTYPE:
+    PROTOTYPE:
 
 int
 rl_on_new_line()
-	PROTOTYPE:
+    PROTOTYPE:
 
 #if (RL_READLINE_VERSION >= 0x0401)
 int
 rl_on_new_line_with_prompt()
-	PROTOTYPE:
+    PROTOTYPE:
 
 #endif /* (RL_READLINE_VERSION >= 0x0401) */
 
 int
 rl_reset_line_state()
-	PROTOTYPE:
+    PROTOTYPE:
 
 int
 rl_show_char(i)
 	int i
-	PROTOTYPE: $
+    PROTOTYPE: $
 
 int
 _rl_message(text)
-	const char *text
-	PROTOTYPE: $
-	CODE:
-	{
-	  RETVAL = rl_message(text);
-	}
-	OUTPUT:
+	const char *	text
+    PROTOTYPE: $
+    CODE:
+	RETVAL = rl_message(text);
+    OUTPUT:
 	RETVAL
 
 int
 rl_crlf()
-	PROTOTYPE:
+    PROTOTYPE:
 
 int
 rl_clear_message()
-	PROTOTYPE:
+    PROTOTYPE:
 
 void
 rl_save_prompt()
-	PROTOTYPE:
+    PROTOTYPE:
 
 void
 rl_restore_prompt()
-	PROTOTYPE:
+    PROTOTYPE:
 
 int
 rl_expand_prompt(prompt)
-	char *prompt
+	# should be defined as 'const char *'
+	char *		prompt
 
 #if (RL_READLINE_VERSION >= 0x0402)
 
 int
 rl_set_prompt(prompt)
-	const char *prompt
+	const char *	prompt
 
 #endif /* (RL_READLINE_VERSION >= 0x0402) */
 
@@ -1663,74 +1634,72 @@ rl_set_prompt(prompt)
 #
 int
 rl_insert_text(text)
-	CONST char *text
-	PROTOTYPE: $
+	CONST char *	text
+    PROTOTYPE: $
 
 int
 rl_delete_text(start = 0, end = rl_end)
 	int start
 	int end
-	PROTOTYPE: ;$$
+    PROTOTYPE: ;$$
 
 char *
 rl_copy_text(start = 0, end = rl_end)
 	int start
 	int end
-	PROTOTYPE: ;$$
+    PROTOTYPE: ;$$
 
 int
 rl_kill_text(start = 0, end = rl_end)
 	int start
 	int end
-	PROTOTYPE: ;$$
+    PROTOTYPE: ;$$
 
 # rl_push_macro_input() is documented by readline-4.2 but it has been
 # implemented from 2.2.1.
 
 void
 rl_push_macro_input(macro)
-	const char *macro
-	PROTOTYPE: $
-	CODE:
-	{
-	  rl_push_macro_input(dupstr(macro));
-	}
+	const char *	macro
+    PROTOTYPE: $
+    CODE:
+	rl_push_macro_input(dupstr(macro));
 
 #
 #	2.4.8 Character Input
 #
 int
 rl_read_key()
-	PROTOTYPE:
+    PROTOTYPE:
 
 int
 rl_getc(stream)
-	FILE *stream
-	PROTOTYPE: $
+	FILE *	stream
+    PROTOTYPE: $
 
 int
 rl_stuff_char(c)
 	int c
-	PROTOTYPE: $
+    PROTOTYPE: $
 
 #if (RL_VERSION_MAJOR >= 4)
 
 int
 rl_execute_next(c)
 	int c
-	PROTOTYPE: $
+    PROTOTYPE: $
 
 #endif /* (RL_VERSION_MAJOR >= 4) */
 #if (RL_READLINE_VERSION >= 0x0402)
 
 int
 rl_clear_pending_input()
-	PROTOTYPE:
+    PROTOTYPE:
 
 int
 rl_set_keyboard_input_timeout(usec)
 	int usec
-	PROTOTYPE: $
+    PROTOTYPE: $
 
 #endif /* (RL_READLINE_VERSION >= 0x0402) */
 
@@ -1743,45 +1712,43 @@ rl_set_keyboard_input_timeout(usec)
 void
 rl_prep_terminal(meta_flag)
 	int meta_flag
-	PROTOTYPE: $
+    PROTOTYPE: $
 
 void
 rl_deprep_terminal()
-	PROTOTYPE:
+    PROTOTYPE:
 
 void
 _rl_tty_set_default_bindings(kmap = rl_get_keymap())
 	Keymap kmap
-	PROTOTYPE: ;$
-	CODE:
-	{
-	  rl_tty_set_default_bindings(kmap);
-	}
+    PROTOTYPE: ;$
+    CODE:
+	rl_tty_set_default_bindings(kmap);
 
 #endif /* (RL_VERSION_MAJOR >= 4) */
 
 int
 rl_reset_terminal(terminal_name = NULL)
-	CONST char *terminal_name
-	PROTOTYPE: ;$
+	CONST char *	terminal_name
+    PROTOTYPE: ;$
 
 #
 #	2.4.10 Utility Functions
 #
 int
 rl_initialize()
-	PROTOTYPE:
+    PROTOTYPE:
 
 int
 rl_ding()
-	PROTOTYPE:
+    PROTOTYPE:
 
 #if (RL_READLINE_VERSION >= 0x0402)
 
 int
 rl_alphabetic(c)
 	int c
-	PROTOTYPE: $
+    PROTOTYPE: $
 
 #endif /* (RL_READLINE_VERSION >= 0x0402) */
 
@@ -1789,11 +1756,11 @@ rl_alphabetic(c)
 
 void
 rl_display_match_list(pmatches, plen = -1, pmax = -1)
-	SV *pmatches
+	SV *	pmatches
 	int plen
 	int pmax
-	PROTOTYPE: $;$$
-	CODE:
+    PROTOTYPE: $;$$
+    CODE:
 	{
 	  unsigned int len, max, i;
 	  STRLEN l;
@@ -1842,15 +1809,13 @@ rl_display_match_list(pmatches, plen = -1, pmax = -1)
 # rl_generic_bind(ISMACR, keyseq, (char *)macro_keys, map).
 int
 _rl_macro_bind(keyseq, macro, map = rl_get_keymap())
-	CONST char *keyseq
-	CONST char *macro
+	CONST char *	keyseq
+	CONST char *	macro
 	Keymap map
-	PROTOTYPE: $$;$
-	CODE:
-	{
-	  RETVAL = rl_macro_bind(keyseq, macro, map);
-	}
-	OUTPUT:
+    PROTOTYPE: $$;$
+    CODE:
+	RETVAL = rl_macro_bind(keyseq, macro, map);
+    OUTPUT:
 	RETVAL
 
 # rl_macro_dumper is documented by Readline 4.2,
@@ -1859,16 +1824,16 @@ _rl_macro_bind(keyseq, macro, map = rl_get_keymap())
 void
 rl_macro_dumper(readable = 0)
 	int readable
-	PROTOTYPE: ;$
+    PROTOTYPE: ;$
 
 # rl_variable_bind() is documented by readline-4.2 but it has been implemented 
 # from 2.2.1.
 
 int
 rl_variable_bind(name, value)
-	CONST char *name
-	CONST char *value
-	PROTOTYPE: $$
+	CONST char *	name
+	CONST char *	value
+    PROTOTYPE: $$
 
 # rl_variable_dumper is documented by Readline 4.2,
 # but have been implemented for 2.2.1.
@@ -1876,14 +1841,14 @@ rl_variable_bind(name, value)
 void
 rl_variable_dumper(readable = 0)
 	int readable
-	PROTOTYPE: ;$
+    PROTOTYPE: ;$
 
 #if (RL_READLINE_VERSION >= 0x0402)
 
 int
 rl_set_paren_blink_timeout(usec)
 	int usec
-	PROTOTYPE: $
+    PROTOTYPE: $
 
 #endif /* (RL_READLINE_VERSION >= 0x0402) */
 
@@ -1892,18 +1857,18 @@ rl_set_paren_blink_timeout(usec)
 
 char *
 rl_get_termcap(cap)
-	CONST char *cap
-	PROTOTYPE: $
+	CONST char *	cap
+    PROTOTYPE: $
 
 #
 #	2.4.12 Alternate Interface
 #
 void
 rl_callback_handler_install(prompt, lhandler)
-	const char *prompt
-	SV *lhandler
-	PROTOTYPE: $$
-	CODE:
+	const char *	prompt
+	SV *		lhandler
+    PROTOTYPE: $$
+    CODE:
 	{
 	  static char *cb_prompt = NULL;
 	  int len = strlen(prompt) + 1;
@@ -1930,11 +1895,11 @@ rl_callback_handler_install(prompt, lhandler)
 
 void
 rl_callback_read_char()
-	PROTOTYPE:
+    PROTOTYPE:
 
 void
 rl_callback_handler_remove()
-	PROTOTYPE:
+    PROTOTYPE:
 
 #
 #	2.5 Readline Signal Handling
@@ -1942,19 +1907,19 @@ rl_callback_handler_remove()
 
 void
 rl_cleanup_after_signal()
-	PROTOTYPE:
+    PROTOTYPE:
 
 void
 rl_free_line_state()
-	PROTOTYPE:
+    PROTOTYPE:
 
 void
 rl_reset_after_signal()
-	PROTOTYPE:
+    PROTOTYPE:
 
 void
 rl_resize_terminal()
-	PROTOTYPE:
+    PROTOTYPE:
 
 #if (RL_READLINE_VERSION >= 0x0402)
 
@@ -1962,12 +1927,12 @@ void
 rl_set_screen_size(rows, cols)
 	int rows
 	int cols
-	PROTOTYPE: $$
+    PROTOTYPE: $$
 
 void
 rl_get_screen_size()
-	PROTOTYPE:
-	PPCODE:
+    PROTOTYPE:
+    PPCODE:
 	{
 	  int rows, cols;
 	  rl_get_screen_size(&rows, &cols);
@@ -1980,11 +1945,11 @@ rl_get_screen_size()
 
 int
 rl_set_signals()
-	PROTOTYPE:
+    PROTOTYPE:
 
 int
 rl_clear_signals()
-	PROTOTYPE:
+    PROTOTYPE:
 
 #
 #	2.6 Custom Completers
@@ -1993,14 +1958,14 @@ rl_clear_signals()
 int
 rl_complete_internal(what_to_do = TAB)
 	int what_to_do
-	PROTOTYPE: ;$
+    PROTOTYPE: ;$
 
 void
 rl_completion_matches(text, fn = NULL)
-	const char *text
-	SV *fn
-	PROTOTYPE: $;$
-	PPCODE:
+	const char *	text
+	SV *		fn
+    PROTOTYPE: $;$
+    PPCODE:
 	{
 	  char **matches;
 
@@ -2046,10 +2011,10 @@ rl_completion_matches(text, fn = NULL)
 
 void
 rl_filename_completion_function(text, state)
-	const char *text
+	const char *	text
 	int state
-	PROTOTYPE: $$
-	CODE:
+    PROTOTYPE: $$
+    CODE:
 	{
 	  char *str = rl_filename_completion_function(text, state);
 	  ST(0) = sv_newmortal();
@@ -2061,10 +2026,10 @@ rl_filename_completion_function(text, state)
 
 void
 rl_username_completion_function(text, state)
-	const char *text
+	const char *	text
 	int state
-	PROTOTYPE: $$
-	CODE:
+    PROTOTYPE: $$
+    CODE:
 	{
 	  char *str = rl_username_completion_function(text, state);
 	  ST(0) = sv_newmortal();
@@ -2085,14 +2050,14 @@ rl_username_completion_function(text, state)
 #
 void
 using_history()
-	PROTOTYPE:
+    PROTOTYPE:
 
 #  history_get_history_state() and history_set_history_state() are useless
-#  and too dangerous
+#  and too dangerous to be used in Perl code
 # void
 # history_get_history_state()
-# 	PROTOTYPE:
-# 	PPCODE:
+#     PROTOTYPE:
+#     PPCODE:
 # 	{
 # 	  HISTORY_STATE *state;
 #
@@ -2108,16 +2073,18 @@ using_history()
 #
 #	2.3.2 History List Management
 #
+# TODO: typemap HIST_ENTRY
+
 void
 add_history(string)
-	CONST char *string
-	PROTOTYPE: $
+	CONST char *	string
+    PROTOTYPE: $
 
 void
 remove_history(which)
 	int which
-	PROTOTYPE: $
-	CODE:
+    PROTOTYPE: $
+    CODE:
 	{
 	  HIST_ENTRY *entry;
 	  entry = remove_history(which);
@@ -2135,9 +2102,9 @@ remove_history(which)
 void
 replace_history_entry(which, line)
 	int which
-	CONST char *line
-	PROTOTYPE: $$
-	CODE:
+	CONST char *	line
+    PROTOTYPE: $$
+    CODE:
 	{
 	  HIST_ENTRY *entry;
 	  entry = replace_history_entry(which, line, (char *)NULL);
@@ -2154,13 +2121,13 @@ replace_history_entry(which, line)
 
 void
 clear_history()
-	PROTOTYPE:
+    PROTOTYPE:
 
 int
 stifle_history(i)
-	SV *i
-	PROTOTYPE: $
-	CODE:
+	SV *	i
+    PROTOTYPE: $
+    CODE:
 	{
 	  if (SvOK(i)) {
 	    int max = SvIV(i);
@@ -2170,16 +2137,16 @@ stifle_history(i)
 	    RETVAL = unstifle_history();
 	  }
 	}
-	OUTPUT:
+    OUTPUT:
 	RETVAL
 
 int
 unstifle_history()
-	PROTOTYPE:
+    PROTOTYPE:
 
 int
 history_is_stifled()
-	PROTOTYPE:
+    PROTOTYPE:
 
 #
 #	2.3.3 Information about the History List
@@ -2189,12 +2156,12 @@ history_is_stifled()
 
 int
 where_history()
-	PROTOTYPE:
+    PROTOTYPE:
 
 void
 current_history()
-	PROTOTYPE:
-	CODE:
+    PROTOTYPE:
+    CODE:
 	{
 	  HIST_ENTRY *entry;
 	  entry = current_history();
@@ -2207,8 +2174,8 @@ current_history()
 void
 history_get(offset)
 	int offset
-	PROTOTYPE: $
-	CODE:
+    PROTOTYPE: $
+    CODE:
 	{
 	  HIST_ENTRY *entry;
 	  entry = history_get(offset);
@@ -2220,7 +2187,7 @@ history_get(offset)
 
 int
 history_total_bytes()
-	PROTOTYPE:
+    PROTOTYPE:
 
 #
 #	2.3.4 Moving Around the History List
@@ -2228,12 +2195,12 @@ history_total_bytes()
 int
 history_set_pos(pos)
 	int pos
-	PROTOTYPE: $
+    PROTOTYPE: $
 
 void
 previous_history()
-	PROTOTYPE:
-	CODE:
+    PROTOTYPE:
+    CODE:
 	{
 	  HIST_ENTRY *entry;
 	  entry = previous_history();
@@ -2245,8 +2212,8 @@ previous_history()
 
 void
 next_history()
-	PROTOTYPE:
-	CODE:
+    PROTOTYPE:
+    CODE:
 	{
 	  HIST_ENTRY *entry;
 	  entry = next_history();
@@ -2261,58 +2228,59 @@ next_history()
 #
 int
 history_search(string, direction = -1)
-	CONST char *string
+	CONST char *	string
 	int direction
-	PROTOTYPE: $;$
+    PROTOTYPE: $;$
 
 int
 history_search_prefix(string, direction = -1)
-	CONST char *string
+	CONST char *	string
 	int direction
-	PROTOTYPE: $;$
+    PROTOTYPE: $;$
 
 int
 history_search_pos(string, direction = -1, pos = where_history())
-	CONST char *string
+	CONST char *	string
 	int direction
 	int pos
-	PROTOTYPE: $;$$
+    PROTOTYPE: $;$$
 
 #
 #	2.3.6 Managing the History File
 #
 int
 read_history_range(filename = NULL, from = 0, to = -1)
-	CONST char *filename
+	CONST char *	filename
 	int from
 	int to
-	PROTOTYPE: ;$$$
+    PROTOTYPE: ;$$$
 
 int
 write_history(filename = NULL)
-	CONST char *filename
-	PROTOTYPE: ;$
+	CONST char *	filename
+    PROTOTYPE: ;$
 
 int
 append_history(nelements, filename = NULL)
 	int nelements
-	CONST char *filename
-	PROTOTYPE: $;$
+	CONST char *	filename
+    PROTOTYPE: $;$
 
 int
 history_truncate_file(filename = NULL, nlines = 0)
-	CONST char *filename
+	CONST char *	filename
 	int nlines
-	PROTOTYPE: ;$$
+    PROTOTYPE: ;$$
 
 #
 #	2.3.7 History Expansion
 #
 void
 history_expand(line)
-	char *line
-	PROTOTYPE: $
-	PPCODE:
+	# should be defined as 'const char *'
+	char *	line
+    PROTOTYPE: $
+    PPCODE:
 	{
 	  char *expansion;
 	  int result;
@@ -2326,11 +2294,11 @@ history_expand(line)
 
 void
 _get_history_event(string, cindex, qchar = 0)
-	CONST char *string
+	CONST char *	string
 	int cindex
 	int qchar
-	PROTOTYPE: $$;$
-	PPCODE:
+    PROTOTYPE: $$;$
+    PPCODE:
 	{
 	  char *text;
 
@@ -2346,9 +2314,9 @@ _get_history_event(string, cindex, qchar = 0)
 
 void
 history_tokenize(text)
-	CONST char *text
-	PROTOTYPE: $
-	PPCODE:
+	CONST char *	text
+    PROTOTYPE: $
+    PPCODE:
 	{
 	  char **tokens;
 
@@ -2375,15 +2343,13 @@ history_tokenize(text)
 
 char *
 _history_arg_extract(line, first = 0 , last = DALLAR)
-	CONST char *line
+	CONST char *	line
 	int first
 	int last
-	PROTOTYPE: $;$$
-	CODE:
-	{
-	  RETVAL = history_arg_extract(first, last, line);
-	}
-	OUTPUT:
+    PROTOTYPE: $;$$
+    CODE:
+	RETVAL = history_arg_extract(first, last, line);
+    OUTPUT:
 	RETVAL
 
 
@@ -2395,10 +2361,10 @@ MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu::Var
 
 void
 _rl_store_str(pstr, id)
-	const char *pstr
+	const char *	pstr
 	int id
-	PROTOTYPE: $$
-	CODE:
+    PROTOTYPE: $$
+    CODE:
 	{
 	  size_t len;
 
@@ -2439,9 +2405,9 @@ _rl_store_str(pstr, id)
 
 void
 _rl_store_rl_line_buffer(pstr)
-	const char *pstr
-	PROTOTYPE: $
-	CODE:
+	const char *	pstr
+    PROTOTYPE: $
+    CODE:
 	{
 	  size_t len;
 
@@ -2469,8 +2435,8 @@ _rl_store_rl_line_buffer(pstr)
 void
 _rl_fetch_str(id)
 	int id
-	PROTOTYPE: $
-	CODE:
+    PROTOTYPE: $
+    CODE:
 	{
 	  ST(0) = sv_newmortal();
 	  if (id < 0 || id >= sizeof(str_tbl)/sizeof(struct str_vars)) {
@@ -2486,8 +2452,8 @@ void
 _rl_store_int(pint, id)
 	int pint
 	int id
-	PROTOTYPE: $$
-	CODE:
+    PROTOTYPE: $$
+    CODE:
 	{
 	  ST(0) = sv_newmortal();
 	  if (id < 0 || id >= sizeof(int_tbl)/sizeof(struct int_vars)) {
@@ -2513,8 +2479,8 @@ _rl_store_int(pint, id)
 void
 _rl_fetch_int(id)
 	int id
-	PROTOTYPE: $
-	CODE:
+    PROTOTYPE: $
+    CODE:
 	{
 	  ST(0) = sv_newmortal();
 	  if (id < 0 || id >= sizeof(int_tbl)/sizeof(struct int_vars)) {
@@ -2529,10 +2495,10 @@ _rl_fetch_int(id)
 
 FILE *
 _rl_store_iostream(stream, id)
-	FILE *stream
+	FILE *	stream
 	int id
-	PROTOTYPE: $$
-	CODE:
+    PROTOTYPE: $$
+    CODE:
 	{
 	  switch (id) {
 	  case 0:
@@ -2560,14 +2526,14 @@ _rl_store_iostream(stream, id)
 	    break;
 	  }
 	}
-	OUTPUT:
+    OUTPUT:
 	RETVAL
 
 FILE *
 _rl_fetch_iostream(id)
 	int id
-	PROTOTYPE: $
-	CODE:
+    PROTOTYPE: $
+    CODE:
 	{
 	  switch (id) {
 	  case 0:
@@ -2582,14 +2548,14 @@ _rl_fetch_iostream(id)
 	    break;
 	  }
 	}
-	OUTPUT:
+    OUTPUT:
 	RETVAL
 
 Keymap
 _rl_fetch_keymap(id)
 	int id
-	PROTOTYPE: $
-	CODE:
+    PROTOTYPE: $
+    CODE:
 	{
 	  switch (id) {
 	  case 0:
@@ -2604,15 +2570,15 @@ _rl_fetch_keymap(id)
 	    break;
 	  }
 	}
-	OUTPUT:
+    OUTPUT:
 	RETVAL
 
 void
 _rl_store_function(fn, id)
-	SV *fn
+	SV *	fn
 	int id
-	PROTOTYPE: $$
-	CODE:
+    PROTOTYPE: $$
+    CODE:
 	{
 	  /*
 	   * If "fn" is undef, default value of the GNU Readline
@@ -2649,8 +2615,8 @@ _rl_store_function(fn, id)
 void
 _rl_fetch_function(id)
 	int id
-	PROTOTYPE: $
-	CODE:
+    PROTOTYPE: $
+    CODE:
 	{
 	  ST(0) = sv_newmortal();
 	  if (id < 0 || id >= sizeof(fn_tbl)/sizeof(struct fn_vars)) {
@@ -2663,21 +2629,19 @@ _rl_fetch_function(id)
 
 Function *
 _rl_fetch_last_func()
-	PROTOTYPE:
-	CODE:
-	{
-	  RETVAL = rl_last_func;
-	}
-	OUTPUT:
+    PROTOTYPE:
+    CODE:
+	RETVAL = rl_last_func;
+    OUTPUT:
 	RETVAL
 
 MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu::XS
 
 void
 tgetstr(id)
-	const char *id
-	PROTOTYPE: $
-	CODE:
+	const char *	id
+    PROTOTYPE: $
+    CODE:
 	{
 	  /*
 	   * The magic number `2032' is derived from bash
