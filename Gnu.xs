@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.103 2002-07-28 04:13:58 hiroo Exp $
+ *	$Id: Gnu.xs,v 1.104 2003-03-17 01:25:27 hiroo Exp $
  *
  *	Copyright (c) 2002 Hiroo Hayashi.  All rights reserved.
  *
@@ -177,6 +177,7 @@ static int rl_completion_mark_symlink_dirs;
 /* from GNU Readline:xmalloc.c */
 extern char *xmalloc PARAMS((int));
 extern char *tgetstr PARAMS((const char *, char **));
+extern int tputs PARAMS((const char *, int, int (*)(int)));
 
 /*
  * Using xfree() in GNU Readline Library causes problem with Solaris
@@ -222,7 +223,7 @@ static int
 tputs_char(c)
      int c;
 {
-  *tputs_ptr++ = c;
+  return *tputs_ptr++ = c;
 }
 
 /*
@@ -2611,7 +2612,7 @@ _rl_fetch_last_func()
 
 MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu::XS
 
-SV *
+void
 tgetstr(id)
 	const char *	id
     PROTOTYPE: $
