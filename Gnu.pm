@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.25 1997-01-17 17:48:10 hayashi Exp $
+#	$Id: Gnu.pm,v 1.26 1997-01-18 16:08:32 hayashi Exp $
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
 #
@@ -588,7 +588,15 @@ sub rl_store_var ( $$ ) {
     my ($type, $id) = @{$_rl_vars{$name}};
     if ($type eq 'S') {
 	if ($name eq 'rl_line_buffer') {
-	    rl_store_var('rl_line_buffer_len', length($value) + 1);
+	    # If you modify rl_line_buffer directly, you must manage
+	    # rl_line_buffer_len.
+	    &rl_begin_undo_group;
+	    &rl_delete_text();
+	    rl_store_var('rl_point', 0); # rl_delete_text() does not
+                                         # care rl_point ;-<
+	    rl_insert_text($value);
+	    &rl_end_undo_group;
+	    return $value;
 	}
 	return _rl_store_str($value, $id);
     } elsif ($type eq 'I') {
