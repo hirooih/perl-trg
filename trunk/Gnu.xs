@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.6 1996-11-19 15:08:35 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.7 1996-11-24 13:56:03 hayashi Exp $
  *
  *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
  *
@@ -23,7 +23,9 @@ extern "C" {
 #include <readline/readline.h>
 #include <readline/history.h>
 
-extern char *xmalloc ();	/* defined in libreadline.a */
+/* from GNU Readline:xmalloc.c */
+extern char *xmalloc (int);
+extern char *xfree (char *);
 
 static char *
 dupstr (s)			/* duplicate string */
@@ -43,6 +45,23 @@ rl_insert_preput ()
   if (preput_str)
     rl_insert_text(preput_str);
   return 0;
+}
+
+void
+_rl_set_internal_variable(const char *str, char *var, char *int_var)
+{
+  size_t len;
+
+  /* save mortal perl variable value */
+  if (var != NULL) {
+    Safefree(var);
+    var = (char *)NULL;
+  }
+  len =  strlen(str)+1;
+  New(0, var, len, char);
+  Copy(str, var, len, char);
+
+  int_var = var;
 }
 
 /*
@@ -167,7 +186,7 @@ _rl_readline(prompt = (char *)NULL, preput = (char *)NULL)
 	  ST(0) = sv_newmortal();
 	  if (line_read != (char *)NULL) {
 	    sv_setpv(ST(0), line_read);
-	    free(line_read);
+	    xfree(line_read);
 	  }
 	}
 
@@ -184,7 +203,7 @@ history_expand(line)
 	  EXTEND(sp, 2);
 	  PUSHs(sv_2mortal(newSViv(result)));
 	  PUSHs(sv_2mortal(newSVpv(expansion, 0)));
-	  free(expansion);
+	  xfree(expansion);
 	}
 
 int
@@ -245,8 +264,8 @@ _rl_SetHistory(...)
 	    if (!entry)
 	      fprintf (stderr, "ReadLine: No such entry %d\n", i);
 	    else {
-	      free (entry->line);
-	      free (entry);
+	      xfree(entry->line);
+	      xfree((char *)entry);
 	    }
 	  }
 	  for (i = 0; i < items; i++)
@@ -260,16 +279,8 @@ _rl_set_readline_name(name)
 	CODE:
 	{
 	  static char *readline_name = (char *)NULL;
-	  size_t len;
 
-	  if (readline_name != NULL) {
-	    Safefree(readline_name);
-	    readline_name = (char *)NULL;
-	  }
-	  len =  strlen(name)+1;
-	  New(0, readline_name, len, char);
-	  Copy(name, readline_name, len, char);
-	  rl_readline_name = readline_name;
+	  _rl_set_internal_variable(name, readline_name, rl_readline_name);
 	}
 
 void
@@ -279,16 +290,19 @@ _rl_store_basic_word_break_characters(str)
 	CODE:
 	{
 	  static char *bwbc = (char *)NULL;
-	  size_t len;
 
-	  if (bwbc != NULL) {
-	    Safefree(bwbc);
-	    bwbc = (char *)NULL;
-	  }
-	  len =  strlen(str)+1;
-	  New(0, bwbc, len, char);
-	  Copy(str, bwbc, len, char);
-	  rl_basic_word_break_characters = bwbc;
+	  _rl_set_internal_variable(str, bwbc, rl_basic_word_break_characters);
+	}
+
+void
+_rl_store_completer_word_break_characters(str)
+	const char *	str
+	PROTOTYPE: $
+	CODE:
+	{
+	  static char *cwbc = (char *)NULL;
+
+	  _rl_set_internal_variable(str, cwbc, rl_completer_word_break_characters);
 	}
 
 void
@@ -422,9 +436,9 @@ completion_matches(text, fn)
 	    EXTEND(sp, count);
 	    for (i = 0; i < count; i++) {
 	      PUSHs(sv_2mortal(newSVpv(matches[i], 0)));
-	      free(matches[i]);
+	      xfree(matches[i]);
 	    }
-	    free(matches);
+	    xfree((char *)matches);
 	  } else {
 	    /* return null list */
 	  }
