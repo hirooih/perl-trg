@@ -1,9 +1,9 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.48 1998-02-27 14:03:00 hayashi Exp $
+#	$Id: Gnu.pm,v 1.49 1998-03-06 16:55:32 hayashi Exp $
 #
-#	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 1996,1997,1998 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -47,18 +47,30 @@ History Library Manual'.
 =cut
 
 use strict;
-use vars qw($VERSION @ISA @EXPORT_OK %Attribs %Features);
 use Carp;
 
-$VERSION = '0.10';
+BEGIN {
+    use Exporter ();
+    use DynaLoader;
+    use vars qw($VERSION @ISA @EXPORT_OK);
 
-require Exporter;
-require DynaLoader;
+    $VERSION = '0.10';
 
-@ISA = qw(Term::ReadLine::Stub Term::ReadLine::Gnu::AU Exporter DynaLoader);
+    @ISA = qw(Term::ReadLine::Stub Term::ReadLine::Gnu::AU
+	      Exporter DynaLoader);
 
+    @EXPORT_OK = qw(NO_MATCH SINGLE_MATCH MULT_MATCH
+		    ISFUNC ISKMAP ISMACR
+		    UNDO_DELETE UNDO_INSERT UNDO_BEGIN UNDO_END);
+
+    bootstrap Term::ReadLine::Gnu $VERSION;
+}
+
+#	Global Variables
 my $Operate_Index;
 my $Next_Operate_Index;
+
+use vars qw(%Attribs %Features);
 
 %Attribs  = (
 	     do_expand => 0,
@@ -77,15 +89,10 @@ my $Next_Operate_Index;
 sub Attribs { \%Attribs; }
 sub Features { \%Features; }
 
-sub DESTROY {}
-
-#
-#	Variable lists to be Export_OK
-#
-
 #
 #	GNU Readline/History Library constant definition
-#
+#	These are included in @EXPORT_OK.
+
 # for rl_filename_quoting_function
 sub NO_MATCH	 { 0; }
 sub SINGLE_MATCH { 1; }
@@ -102,16 +109,9 @@ sub UNDO_INSERT	{ 1; }
 sub UNDO_BEGIN	{ 2; }
 sub UNDO_END	{ 3; }
 
-@EXPORT_OK = qw(NO_MATCH SINGLE_MATCH MULT_MATCH
-		ISFUNC ISKMAP ISMACR
-		UNDO_DELETE UNDO_INSERT UNDO_BEGIN UNDO_END);
-
-bootstrap Term::ReadLine::Gnu $VERSION;
-
-# Preloaded methods go here.
-
-# Autoload methods go after =cut, and are processed by the autosplit program.
-
+#
+#	Methods Definition
+#
 =over 4
 
 =item C<ReadLine>
@@ -164,6 +164,8 @@ sub new {
     $self;
 }
 
+sub DESTROY {}
+
 =item C<readline(PROMPT[,PREPUT])>
 
 gets an input line, with actual C<GNU Readline> support.  Trailing
@@ -186,8 +188,7 @@ sub readline {			# should be ReadLine
 
     # ornament support (now prompt only)
     $prompt = $Term::ReadLine::Stub::rl_term_set[0]
-	. $prompt . $Term::ReadLine::Stub::rl_term_set[1]
-	    . $Term::ReadLine::Stub::rl_term_set[2];
+	. $prompt . $Term::ReadLine::Stub::rl_term_set[1];
 
     # TkRunning support
     if (not $Term::ReadLine::registered and $Term::ReadLine::toloop
@@ -322,28 +323,6 @@ is getting input B<(undocumented feature)>.
 =back
 
 =cut
-
-sub ornaments {
-    my $self = shift;
-    my $ornaments = $self->Term::ReadLine::TermCap::ornaments(@_);
-    $Attribs{redisplay_function} = sub {
-	# The variable rl_prompt is readonly.  The ornaments of a prompt
-	# string is handled in the readline().
-#	my $line_buffer = $Attribs{line_buffer};
-#	local *rl_term_set = \@Term::ReadLine::TermCap::rl_term_set;
-#	$Attribs{line_buffer} = rl_term_set[2] . $line_buffer . rl_term_set[3];
-#	$Attribs{line_buffer} = $Term::ReadLine::TermCap::rl_term_set[2]
-#	    . $line_buffer . $Term::ReadLine::TermCap::rl_term_set[3];
-	
-	$self->rl_redisplay();
-
-	print { $Attribs{outstream} } $Term::ReadLine::TermCap::rl_term_set[3];
-
-#	$Attribs{line_buffer} = $line_buffer;
-	1;			# an integer return value is required.
-    };
-    return $ornaments;
-}
 
 # Not tested yet.  How do I use this?
 sub newTTY {
@@ -494,13 +473,11 @@ sub rl_message {
 
     sub list_completion_function ( $$ ) {
 	my($text, $state) = @_;
-	my $entry;
 
 	$i = $state ? $i + 1 : 0; # clear counter at the first call
 	my $cw = $Term::ReadLine::Gnu::Attribs{completion_word};
 	for (; $i <= $#{$cw}; $i++) {
-	    return $entry
-		if (($entry = $cw->[$i]) =~ /^$text/);
+	    return $cw->[$i] if ($cw->[$i] =~ /^$text/);
 	}
 	return undef;
     }
@@ -679,20 +656,18 @@ foreach (keys %Term::ReadLine::Gnu::Var::_rl_vars) {
 }
 
 #	add reference to some functions
-my @_rl_funcs = qw(rl_getc
-		   rl_callback_read_char
-		   filename_completion_function
-		   username_completion_function
-		   list_completion_function);
-
 {
     my ($name, $fname);
     no strict 'refs';
-    foreach (@_rl_funcs) {
+    map {
 	($name = $_) =~ s/^rl_//; # strip leading `rl_'
 	$fname = 'Term::ReadLine::Gnu::XS::' . $_;
 	$Attribs{$name} = \&$fname; # symbolic reference
-    }
+    } qw(rl_getc
+	 rl_callback_read_char
+	 filename_completion_function
+	 username_completion_function
+	 list_completion_function);
 }
 
 #
