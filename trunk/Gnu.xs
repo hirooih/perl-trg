@@ -1,9 +1,9 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.33 1997-01-12 15:25:05 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.34 1997-01-12 17:38:40 hayashi Exp $
  *
- *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
+ *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
  *	This program is free software; you can redistribute it and/or
  *	modify it under the same terms as Perl itself.
@@ -331,54 +331,59 @@ static struct int_vars {
  *	_rl_fetch_funtion()
  */
 
-static int startup_hook_lapper(void);
-static int event_hook_lapper(void);
-static int getc_function_lapper(FILE *);
-static void redisplay_function_lapper(void);
-static char *completion_entry_function_lapper(char *, int);
-static char **attempted_completion_function_lapper(char *, int, int);
+static int startup_hook_wrapper(void);
+static int event_hook_wrapper(void);
+static int getc_function_wrapper(FILE *);
+static void redisplay_function_wrapper(void);
+static char *completion_entry_function_wrapper(char *, int);
+static char **attempted_completion_function_wrapper(char *, int, int);
 
 enum void_arg_func_type { STARTUP_HOOK, EVENT_HOOK, GETC_FN, REDISPLAY_FN,
 			  CMP_ENT, ATMPT_COMP };
 
 static struct fn_vars {
   Function **rlfuncp;		/* Readline Library variable */
-  Function *lapper;		/* lapper function */
+  Function *wrapper;		/* wrapper function */
   SV *callback;			/* Perl function */
 } fn_tbl[] = {
-  { &rl_startup_hook,		startup_hook_lapper,	NULL },	/* 0 */
-  { &rl_event_hook,		event_hook_lapper,	NULL },	/* 1 */
-  { &rl_getc_function,		getc_function_lapper,	NULL },	/* 2 */
+  { &rl_startup_hook,		startup_hook_wrapper,	NULL },	/* 0 */
+  { &rl_event_hook,		event_hook_wrapper,	NULL },	/* 1 */
+  { &rl_getc_function,		getc_function_wrapper,	NULL },	/* 2 */
   {								
     (Function **)&rl_redisplay_function,			/* 3 */
-    (Function *)redisplay_function_lapper,
+    (Function *)redisplay_function_wrapper,
     NULL
   },
   {
     (Function **)&rl_completion_entry_function,			/* 4 */
-    (Function *)completion_entry_function_lapper,		
+    (Function *)completion_entry_function_wrapper,		
     NULL
   },
   {
     (Function **)&rl_attempted_completion_function,		 /* 5 */
-    (Function *)attempted_completion_function_lapper,
+    (Function *)attempted_completion_function_wrapper,
     NULL
   }
 };
 
 /*
- * Perl function lappers
+ * Perl function wrappers
  */
-static int void_arg_func_lapper(int);
-
-static int  startup_hook_lapper()	{ void_arg_func_lapper(STARTUP_HOOK); }
-static int  event_hook_lapper()		{ void_arg_func_lapper(EVENT_HOOK); }
-/* ignore *fp. rl_getc() should be called from Perl function */
-static int  getc_function_lapper(FILE *fp) { void_arg_func_lapper(GETC_FN); }
-static void redisplay_function_lapper()	{ void_arg_func_lapper(REDISPLAY_FN); }
+static int void_arg_func_wrapper(int);
 
 static int
-void_arg_func_lapper(int type)
+startup_hook_wrapper()		{ void_arg_func_wrapper(STARTUP_HOOK); }
+static int
+event_hook_wrapper()		{ void_arg_func_wrapper(EVENT_HOOK); }
+
+/* ignore *fp. rl_getc() should be called from Perl function */
+static int
+getc_function_wrapper(FILE *fp)	{ void_arg_func_wrapper(GETC_FN); }
+static void
+redisplay_function_wrapper()	{ void_arg_func_wrapper(REDISPLAY_FN); }
+
+static int
+void_arg_func_wrapper(int type)
 {
   dSP;
   int count;
@@ -389,7 +394,7 @@ void_arg_func_lapper(int type)
   SPAGAIN;
 
   if (count != 1)
-    croak("Gnu.xs:void_arg_func_lapper: Internal error\n");
+    croak("Gnu.xs:void_arg_func_wrapper: Internal error\n");
 
   ret = POPi;
   PUTBACK;
@@ -402,7 +407,7 @@ void_arg_func_lapper(int type)
  * call a perl function as rl_completion_entry_function
  */
 static char *
-completion_entry_function_lapper(char *text, int state)
+completion_entry_function_wrapper(char *text, int state)
 {
   dSP;
   int count;
@@ -422,7 +427,7 @@ completion_entry_function_lapper(char *text, int state)
   SPAGAIN;
 
   if (count != 1)
-    croak("Gnu.xs:completion_entry_function_lapper: Internal error\n");
+    croak("Gnu.xs:completion_entry_function_wrapper: Internal error\n");
 
   match = POPs;
   str = SvOK(match) ? dupstr(SvPV(match, na)) : NULL;
@@ -437,7 +442,7 @@ completion_entry_function_lapper(char *text, int state)
  * call a perl function as rl_attempted_completion_function
  */
 static char **
-attempted_completion_function_lapper(char *text, int start, int end)
+attempted_completion_function_wrapper(char *text, int start, int end)
 {
   dSP;
   int count;
@@ -485,13 +490,13 @@ attempted_completion_function_lapper(char *text, int start, int end)
 }
 
 static int
-custom_function_lapper(int count, int key)
+custom_function_wrapper(int count, int key)
 {
   dSP;
   struct fbnode *np;
 
   if ((np = lookup_bind_myfun(key, rl_executing_keymap)) == NULL)
-    croak("Gnu.xs:custom_function_lapper: Internal error (lookup_bind_myfun)");
+    croak("Gnu.xs:custom_function_wrapper: Internal error (lookup_bind_myfun)");
 
   PUSHMARK(sp);
   XPUSHs(sv_2mortal(newSViv(count)));
@@ -506,7 +511,7 @@ custom_function_lapper(int count, int key)
 static SV* callback_handler_callback = NULL;
 
 static void
-callback_handler_lapper(char *line)
+callback_handler_wrapper(char *line)
 {
   dSP;
   int count;
@@ -590,20 +595,22 @@ rl_add_defun(name, fn, key = -1)
 	    warn("Gnu.xs:rl_add_defun: function name '%s' is already defined.\n",
 		 name);
 	    RETVAL = -1;
-	    return;
+	    XSRETURN(1);
 	  }
 	  /* rl_add_defun() always returns 0. */
-	  rl_add_defun(dupstr(name), custom_function_lapper, -1);
+	  rl_add_defun(dupstr(name), custom_function_wrapper, -1);
 	  /* register custom function name */
 	  register_myfun(name, fn); 
 	  RETVAL = 0;
 
 	  if (key != -1) {
-	    RETVAL = rl_bind_key(key, custom_function_lapper);
+	    RETVAL = rl_bind_key(key, custom_function_wrapper);
 	    if (RETVAL == 0)
 	      bind_myfun(key, fn, rl_get_keymap());
 	  }
 	}
+	OUTPUT:
+	RETVAL
 
 #
 #	2.4.2 Selection a Keymap
@@ -615,8 +622,10 @@ rl_make_bare_keymap(name)
 	CODE:
 	{
 	  my_discard_keymap(name);
-	  register_mykeymap(name, rl_make_bare_keymap());
+	  RETVAL = register_mykeymap(name, rl_make_bare_keymap());
 	}
+	OUTPUT:
+	RETVAL
 	  
 int
 rl_copy_keymap(map, name)
@@ -626,9 +635,11 @@ rl_copy_keymap(map, name)
 	CODE:
 	{
 	  my_discard_keymap(name);
-	  register_mykeymap(name, rl_copy_keymap(map));
+	  RETVAL = register_mykeymap(name, rl_copy_keymap(map));
 	}
-	  
+	OUTPUT:
+	RETVAL	  
+
 int
 rl_make_keymap(name)
 	char *name
@@ -636,18 +647,22 @@ rl_make_keymap(name)
 	CODE:
 	{
 	  my_discard_keymap(name);
-	  register_mykeymap(name, rl_make_keymap());
+	  RETVAL = register_mykeymap(name, rl_make_keymap());
 	}
-	  
+	OUTPUT:
+	RETVAL	  
+
 int
 rl_discard_keymap(name)
 	char *name
 	PROTOTYPE: $
 	CODE:
 	{
-	  my_discard_keymap(name);
+	  RETVAL = my_discard_keymap(name);
 	}
-	  
+	OUTPUT:
+	RETVAL	  
+
 void
 rl_get_keymap()
 	PROTOTYPE:
@@ -694,7 +709,7 @@ rl_bind_key(key, function = NULL, map = NULL)
 	  if ((fn = rl_named_function(function)) == NULL) {
 	    warn ("Gnu.xs:rl_bind_key: undefined function `%s'\n", function);
 	    RETVAL = -1;
-	    return;
+	    XSRETURN(1);
 	  }
 
 	  RETVAL = rl_bind_key_in_map(key, fn, keymap);
@@ -702,6 +717,8 @@ rl_bind_key(key, function = NULL, map = NULL)
 	  if (RETVAL == 0 && (np = lookup_myfun(function)) != NULL)
 	    bind_myfun(key, np->fn, keymap); /* perl function */
 	}
+	OUTPUT:
+	RETVAL
 
 int
 rl_unbind_key(key, map = NULL)
@@ -715,8 +732,9 @@ rl_unbind_key(key, map = NULL)
 
 	  RETVAL = rl_unbind_key_in_map(key, keymap);
 	  unbind_myfun(key, keymap); /* do nothing for C function */
-	  return;
 	}
+	OUTPUT:
+	RETVAL
 
 # add code for perl function !!!
 int
@@ -736,7 +754,7 @@ rl_generic_bind(type, keyseq, data, map = NULL)
 	    if (lookup_myfun(data)) {
 	      warn("Gnu.xs:rl_generic_bind: does not support Perl function yet\n");
 	      RETVAL = -1;
-	      return;
+	      XSRETURN(1);
 	    }
 	    p = rl_named_function(data);
 	    break;
@@ -752,11 +770,13 @@ rl_generic_bind(type, keyseq, data, map = NULL)
 	  defaults:
 	    warn("Gnu.xs:rl_generic_bind: illegal type `%d'\n", type);
 	    RETVAL = -1;
-	    return;
+	    XSRETURN(1);
 	  }
 
-	  rl_generic_bind(type, keyseq, p, keymap);
+	  RETVAL = rl_generic_bind(type, keyseq, p, keymap);
 	}
+	OUTPUT:
+	RETVAL
 
 # add code for perl function !!!
 void
@@ -789,6 +809,8 @@ rl_do_named_function(name, count = 1, key = -1)
 	    RETVAL = -1;
 	  }
 	}
+	OUTPUT:
+	RETVAL
 
 void
 rl_function_of_keyseq(keyseq, map = NULL)
@@ -815,7 +837,7 @@ rl_function_of_keyseq(keyseq, map = NULL)
 	      break;
 	    defaults:
 	      warn("Gnu.xs:rl_function_of_keyseq: illegal type `%d'\n", type);
-	      return;		/* return NULL list */
+	      XSRETURN_EMPTY;	/* return NULL list */
 	    }
 	    if (data) {
 	      EXTEND(sp, 2);
@@ -1001,7 +1023,7 @@ rl_callback_handler_install(prompt, lhandler)
 	    callback_handler_callback = newSVsv(lhandler);
 	  }
 
-	  rl_callback_handler_install(prompt, callback_handler_lapper);
+	  rl_callback_handler_install(prompt, callback_handler_wrapper);
 	}
 
 void
@@ -1037,7 +1059,7 @@ completion_matches(text, fn = NULL)
 	    fn_tbl[CMP_ENT].callback = newSVsv(fn);
 
 	    matches = completion_matches(text,
-					 completion_entry_function_lapper);
+					 completion_entry_function_wrapper);
 
 	    SvREFCNT_dec(fn_tbl[CMP_ENT].callback);
 	    fn_tbl[CMP_ENT].callback = callback_save;
@@ -1251,8 +1273,10 @@ history_search(string, direction = -1, pos = where_history())
 	PROTOTYPE: $;$$
 	CODE:
 	{	
-	  history_search_pos(string, direction, pos);
+	  RETVAL = history_search_pos(string, direction, pos);
 	}
+	OUTPUT:
+	RETVAL
 
 int
 history_search_prefix(string, direction = -1)
@@ -1322,12 +1346,12 @@ _rl_store_str(pstr, id)
 	  ST(0) = sv_newmortal();
 	  if (id < 0 || id >= sizeof(str_tbl)/sizeof(struct str_vars)) {
 	    warn("Gnu.xs:_rl_store_str: Illegal `id' value: `%d'", id);
-	    return;		/* return undef */
+	    XSRETURN_UNDEF;
 	  }
 
 	  if (str_tbl[id].readonly) {
 	    warn("Gnu.xs:_rl_store_str: store to read only variable");
-	    return;
+	    XSRETURN_UNDEF;
 	  }
 
 #	  warn("\n[%d;%d;var:%p,%p]\n", id, str_tbl[id].accessed,
@@ -1379,7 +1403,7 @@ _rl_store_int(pint, id)
 	  ST(0) = sv_newmortal();
 	  if (id < 0 || id >= sizeof(int_tbl)/sizeof(struct int_vars)) {
 	    warn("Gnu.xs:_rl_store_int: Illegal `id' value: `%d'", id);
-	    return;		/* return undef */
+	    XSRETURN_UNDEF;
 	  }
 
 	  /* set C variable */
@@ -1419,7 +1443,7 @@ _rl_store_function(fn, id)
 	  ST(0) = sv_newmortal();
 	  if (id < 0 || id >= sizeof(fn_tbl)/sizeof(struct fn_vars)) {
 	    warn("Gnu.xs:_rl_store_function: Illegal `id' value: `%d'", id);
-	    return;		/* return undef */
+	    XSRETURN_UNDEF;
 	  }
 	  
 	  /*
@@ -1432,7 +1456,7 @@ _rl_store_function(fn, id)
 	    fn_tbl[id].callback = newSVsv(fn);
 	  }
 
-	  *(fn_tbl[id].rlfuncp) = SvTRUE(fn) ? fn_tbl[id].lapper : NULL;
+	  *(fn_tbl[id].rlfuncp) = SvTRUE(fn) ? fn_tbl[id].wrapper : NULL;
 
 	  /* return variable value */
 	  sv_setsv(ST(0), fn);
