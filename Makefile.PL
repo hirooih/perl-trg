@@ -1,7 +1,7 @@
 #
 #	Makefile.PL for Term::ReadLine::Gnu
 #
-#	$Id: Makefile.PL,v 1.7 1998-03-31 14:54:24 hayashi Exp $
+#	$Id: Makefile.PL,v 1.8 1998-04-11 16:33:09 hayashi Exp $
 #
 #	Copyright (c) 1996,1997,1998 Hiroo Hayashi.  All rights reserved.
 #		<hiroo.hayashi@computer.org>
@@ -14,11 +14,6 @@
 
 use ExtUtils::MakeMaker;
 use Config;
-
-warn "Note:\n\tYour Perl does not use the system malloc().
-\tIt may cause some trouble with this module.
-\tPlease read INSTALL.\n"
-    if ($Config{usemymalloc} ne 'n' and $Config{osname} ne'os2');
 
 $defs = ($Config{strings} =~ m|/string.h$|) ? '-DHAVE_STRING_H' : '';
 
