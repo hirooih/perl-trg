@@ -1,6 +1,6 @@
 #! /usr/local/bin/perl
 #
-#	$Id: pftp,v 1.1 1997-03-22 15:32:46 hayashi Exp $
+#	$Id: pftp,v 1.2 1997-03-22 17:46:08 hayashi Exp $
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi. All Rights Reserved.
 #
@@ -60,51 +60,17 @@ my @ftp_cmd_list = qw(ls dir get put pwd cwd);
 
 $attribs->{attempted_completion_function} = sub {
     my ($text, $line, $start, $end) = @_;
-    # If first word then username completion, else filename completion
     if (substr($line, 0, $start) =~ /^\s*$/) {
 	$attribs->{completion_word} = \@ftp_cmd_list;
 	return $term->completion_matches($text,
 					 $attribs->{'list_completion_function'});
     } elsif ($line =~ /^\s*(get|cd|cwd)\s/) {
-	$rdir{$pwd} = $ftp->ls() unless $rdir{$pwd};
-	$attribs->{completion_word} = $rdir{$pwd};
 	return $term->completion_matches($text,
-					 $attribs->{'list_completion_function'});
+					 \&ftp_filename_completion_function);
     } else {
 	return ();
     }
 };
-
-BEGIN {
-    my ($i, $file, $dir);
-
-    sub ftp_filename_completion_function ( $$ ) {
-	my($text, $state) = @_;
-	my $entry;
-
-	unless ($state) {
-	    $i = 0;		# clear counter at the first call
-	    ($dir, $file) = ($text =~ m|(.*/)(.*)$|);
-	    $dir = "$pwd/$dir" unless $dir =~ m|^/|; # full path name
-	    unless $rdir{$dir} {
-		my $newdirs = $ftp->ls($dir);
-		if ($newdirs) {
-		    $rdir{$dir} = $newdirs;
-		} else {
-		    return undef;
-		}
-	    }
-	} else {
-	    $i++;
-	}
-	my $cw = $rdir{$dir};
-	for (; $i <= $#{$cw}; $i++) {
-	    return $entry
-		if (($entry = $cw->[$i]) =~ /^$file/);
-	}
-	return undef;
-    }
-}
 
 no strict 'refs';
 while (defined($_ = $term->readline('pftp> '))) {
@@ -124,12 +90,48 @@ $term->WriteHistory($HISTFILE)
     or warn "perlsh: cannot write history file: $!\n";
 exit (0);
 
+########################################################################
+#	complete remote filename
+BEGIN {
+    my ($i, $file, $dir, $fdir);
+
+    sub ftp_filename_completion_function ( $$ ) {
+	my($text, $state) = @_;
+	my $entry;
+
+	unless ($state) {
+	    $i = 0;		# clear counter at the first call
+	    ($dir, $file) = ($text =~ m|(.*/)?(.*)$|);
+	    $dir = '' unless defined $dir; # to piecify -w
+	    $fdir = ($dir =~ m|^/|) ? $dir : "$pwd/$dir"; # full path name
+	    $fdir =~ s|//|/|g;
+	    unless ($rdir{$fdir}) {
+		my $d = $ftp->ls($fdir);
+		if ($d) {
+		    foreach (@{$d}) { s|.*/||; }
+		    $rdir{$fdir} = $d;
+		} else {
+		    return undef;
+		}
+	    }
+	} else {
+	    $i++;
+	}
+	my $cw = $rdir{$fdir};
+	for (; $i <= $#{$cw}; $i++) {
+	    return ($dir . $entry)
+		if (($entry = $cw->[$i]) =~ /^$file/);
+	}
+	return undef;
+    }
+}
+
+########################################################################
+
 sub AUTOLOAD {
     $AUTOLOAD =~ s/.*::cmd_//;
     warn "command \`$AUTOLOAD\' is not defined or not implemented.\n";
 }
-
-########################################################################
 
 sub cmd_cwd {
     if ($ftp->cwd(@_)) {
@@ -161,6 +163,9 @@ sub cmd_ls {
 	foreach (sort @{$dir}) {
 	    print STDERR "$_\n";
 	}
+	foreach (@{$dir}) {
+	    s|.*/||;
+	}
 	$rdir{$pwd} = $dir;
     } else {
 	print STDERR "ls failed\n";
@@ -175,8 +180,8 @@ sub cmd_dir {
 	    print STDERR "$_\n";
 	    my $info = (parse_dir($_, '+0000'))[0]; # GMT
 	    next unless $info;	# ignore if parse_dir() can not phase.
-	    push(@dir, $$info[0])
-		unless $$info[0] =~ /^\.\.?$/; # ignore '.' and '..'
+	    next unless $$info[0] =~ /^\.\.?$/; # ignore '.' and '..'
+	    push(@dir, $$info[0]);
 	}
 	$rdir{$pwd} = \@dir;
     } else {
