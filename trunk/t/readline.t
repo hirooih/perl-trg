@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.37 1999-07-06 16:20:36 hayashi Exp $
+#	$Id: readline.t,v 1.38 2000-04-01 09:59:02 hayashi Exp $
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -669,7 +669,7 @@ $line = $t->readline("rl_pre_input_hook test>", "cursor is, <- here");
 if ($version > 4.0 - 0.1) {
     $res = $line eq 'cursor is,insert <- here'; ok('pre_input_hook', $line);
 } else {
-    print "ok $n # skipped\n"; $n++;
+    print "ok $n # skipped because of old GNU Readline Library.\n"; $n++;
 }
 $a->{pre_input_hook} = undef;
 
@@ -694,7 +694,7 @@ if ($version > 4.0 - 0.1) {
     $t->parse_and_bind('set print-completions-horizontally off');
     print "ok $n\n"; $n++;
 } else {
-    print "ok $n # skipped\n"; $n++;
+    print "ok $n # skipped because of old GNU Readline Library.\n"; $n++;
 }
 
 #########################################################################
@@ -715,7 +715,7 @@ if ($version > 4.0 - 0.1) {
     print "ok $n\n"; $n++;
     $t->parse_and_bind('set bell-style audible'); # resume to default style
 } else {
-    print "ok $n # skipped\n"; $n++;
+    print "ok $n # skipped because of old GNU Readline Library.\n"; $n++;
 }
 
 ########################################################################
