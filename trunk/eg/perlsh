@@ -1,8 +1,8 @@
 #! /usr/local/bin/perl
 #
-#	$Id: perlsh,v 1.22 1999-12-30 05:05:30 hayashi Exp $	
+#	$Id: perlsh,v 1.23 2000-04-02 16:01:12 hayashi Exp $	
 #
-#	Copyright (c) 1999 Hiroo Hayashi. All Rights Reserved.
+#	Copyright (c) 2000 Hiroo Hayashi. All Rights Reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -51,7 +51,7 @@ $CWP = 'main';			# current working package
 
 package main;
 if (-f $PerlSh::INPUTRC) {
-  do $PerlSh::INPUTRC;
+    do $PerlSh::INPUTRC;
 }
 
 package PerlSh;
@@ -82,7 +82,10 @@ sub toplevel {
 	    or warn "perlsh: cannot read history file: $!\n";
     }
     $attribs->{attempted_completion_function} = \&attempt_perl_completion;
-
+    $attribs->{special_prefixes} = '$@%&';
+    $attribs->{completion_display_matches_hook}
+	= \&perl_symbol_display_match_list;
+    
     $SIG{INT} = sub {
 	$term->modifying;
 	$term->delete_text;
@@ -158,10 +161,6 @@ sub perl_symbol_display_match_list ($$$) {
 
 sub attempt_perl_completion ($$$$) {
     my ($text, $line, $start, $end) = @_;
-    
-    $attribs->{special_prefixes} = '$@%&';
-    $attribs->{completion_display_matches_hook}
-	= \&perl_symbol_display_match_list;
     
     no strict qw(refs);
     if (substr($line, 0, $start) =~ m/\$([\w:]+)\s*(->)?\s*{\s*['"]?$/) {
