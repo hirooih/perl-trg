@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.3 1996-11-09 15:04:59 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.4 1996-11-11 15:25:02 hayashi Exp $
  *
  *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
  *
@@ -82,6 +82,61 @@ completion_entry_function_lapper(text, state)
   FREETMPS;
   LEAVE;
   return str;
+}
+
+/*
+ * call a perl function as rl_attempted_completion_function
+ */
+static SV * attempted_completion_function = (SV *)NULL;
+
+static char **
+attempted_completion_function_lapper(text, start, end)
+     char *text;
+     int start, end;
+{
+  dSP;
+  int count;
+  char **matches;
+  
+  ENTER;
+  SAVETMPS;
+
+  PUSHMARK(sp);
+  XPUSHs(sv_2mortal(newSVpv(text, 0)));
+  XPUSHs(sv_2mortal(newSVpv(rl_line_buffer, 0)));
+  XPUSHs(sv_2mortal(newSViv(start)));
+  XPUSHs(sv_2mortal(newSViv(end)));
+  PUTBACK;
+
+  count = perl_call_sv(attempted_completion_function, G_ARRAY);
+
+  SPAGAIN;
+
+  matches = (char **)NULL;
+
+  if (count > 1) {
+    int i;
+
+    matches = (char **)xmalloc (sizeof(char *) * (count + 1));
+    matches[count] = (char *)NULL;
+    for (i = count - 1; i >= 0; i--)
+      matches[i] = dupstr(POPp);
+
+  } else if (count == 1) {	/* return NULL if undef is returned */
+    SV *v = POPs;
+
+    if (SvOK(v)) {
+      matches = (char **)xmalloc (sizeof(char *) * 2);
+      matches[0] = dupstr(SvPV(v, na));
+      matches[1] = (char *)NULL;
+    }
+  }
+
+  PUTBACK;
+  FREETMPS;
+  LEAVE;
+
+  return matches;
 }
 
 MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu
@@ -306,5 +361,66 @@ _rl_store_completion_entry_function(fn)
 
 	    rl_completion_entry_function
 	      = (Function *)completion_entry_function_lapper;
+	  }
+	}
+
+void
+_rl_store_attempted_completion_function(fn)
+	SV *	fn
+	CODE:
+	{
+	  if (! SvTRUE(fn)) {
+	    rl_attempted_completion_function = (CPPFunction *)NULL;
+	  } else {
+	    if (attempted_completion_function == (SV *)NULL)
+	      attempted_completion_function = newSVsv(fn);
+	    else
+	      SvSetSV(attempted_completion_function, fn);
+
+	    rl_attempted_completion_function
+	      = (CPPFunction *)attempted_completion_function_lapper;
+	  }
+	}
+
+MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine
+
+void
+completion_matches(text, fn)
+	char * text
+	SV * fn
+	PPCODE:
+	{
+	  char **matches;
+	  if (! SvTRUE(fn)
+	      || (SvPOK(fn) && (strcmp("filename", SvPV(fn, na)) == 0))) {
+	    matches = completion_matches(text, filename_completion_function);
+	  } else if (SvPOK(fn) && (strcmp("username", SvPV(fn, na)) == 0)) {
+	    matches = completion_matches(text, username_completion_function);
+	  } else {
+	    /* use completion_entry_function temporarily */
+	    SV * save = completion_entry_function;
+	    if (save == (SV *)NULL)
+	      completion_entry_function = newSVsv(fn);
+	    else
+	      SvSetSV(completion_entry_function, fn);
+	    matches = completion_matches(text,
+					 completion_entry_function_lapper);
+	    completion_entry_function = save;
+	  }
+	  if (matches != NULL) {
+	    int i, count;
+
+	    /* count number of entries */
+	    for (count = 0; matches[count]; count++)
+	      ;
+
+	    EXTEND(sp, count);
+	    for (i = 0; i < count; i++) {
+	      PUSHs(sv_2mortal(newSVpv(matches[i], 0)));
+	      free(matches[i]);
+	    }
+	    free(matches);
+	  } else {
+	    /* return null list */
 	  }
 	}
