@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.35 1997-01-17 17:40:13 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.36 1997-01-18 16:10:08 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -376,9 +376,12 @@ startup_hook_wrapper()		{ void_arg_func_wrapper(STARTUP_HOOK); }
 static int
 event_hook_wrapper()		{ void_arg_func_wrapper(EVENT_HOOK); }
 
-/* ignore *fp. rl_getc() should be called from Perl function */
 static int
-getc_function_wrapper(FILE *fp)	{ void_arg_func_wrapper(GETC_FN); }
+getc_function_wrapper(FILE *fp)	{
+  /* 'FILE *fp' is ignored.  Use rl_instream instead in the getc_function. */
+  void_arg_func_wrapper(GETC_FN);
+}
+
 static void
 redisplay_function_wrapper()	{ void_arg_func_wrapper(REDISPLAY_FN); }
 
@@ -900,7 +903,6 @@ int
 rl_end_undo_group()
 	PROTOTYPE:
 
-#!!! default value
 void
 rl_add_undo(what, start, end, text)
 	int	what
@@ -990,6 +992,11 @@ rl_kill_text(start = 0, end = rl_end)
 int
 rl_read_key()
 	PROTOTYPE:
+
+int
+rl_getc(stream)
+	FILE *stream
+	PROTOTYPE: $
 
 int
 rl_stuff_char(c)
