@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.27 1997-01-06 16:50:03 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.28 1997-01-07 17:26:46 hayashi Exp $
  *
  *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
  *
@@ -664,34 +664,35 @@ rl_set_keymap(keymap_name)
 #	2.4.3 Binding Keys
 #
 int
-rl_bind_key(key, function, map = NULL)
+rl_bind_key(key, function = NULL, map = NULL)
 	int key
 	char *function
 	char *map
-	PROTOTYPE: $$;$
+	PROTOTYPE: $;$$
 	CODE:
 	{
 	  /* add code for custom function !!! */
-	  Function *fn = rl_named_function(function);
 	  Keymap keymap = map ? my_get_keymap_by_name(map) : rl_get_keymap();
+	  Function *fn;
 	  struct fnnode *np;
+
+	  if (!function) {	/* unbind_key */
+	    RETVAL = rl_unbind_key_in_map(key, keymap);
+	    unbind_myfun(key, keymap); /* do nothing for C function */
+	    return;
+	  }
+
+	  /* bind_key */
+	  if ((fn = rl_named_function(function)) == NULL) {
+	    warn ("Gnu.xs:rl_bind_key: undefined function `%s'\n", function);
+	    RETVAL = -1;
+	    return;
+	  }
 
 	  RETVAL = rl_bind_key_in_map(key, fn, keymap);
 
 	  if (RETVAL == 0 && (np = lookup_myfun(function)) != NULL)
 	    bind_myfun(key, np->fn, keymap); /* perl function */
-	}
-
-int
-rl_unbind_key(key, map = NULL)
-	int	key
-	char *map
-	PROTOTYPE: $;$
-	CODE:
-	{
-	  Keymap keymap = map ? my_get_keymap_by_name(map) : rl_get_keymap();
-	  rl_unbind_key_in_map(key, keymap);
-	  unbind_myfun(key, keymap); /* do nothing for C function */
 	}
 
 # add code for perl function !!!
@@ -813,9 +814,9 @@ rl_invoking_keyseqs(fn, map = NULL)
 	}
 
 void
-rl_function_dumper(readable)
+rl_function_dumper(readable = 0)
 	int	readable
-	PROTOTYPE: $
+	PROTOTYPE: ;$
 
 void
 rl_list_funmap_names()
@@ -832,6 +833,7 @@ int
 rl_end_undo_group()
 	PROTOTYPE:
 
+#!!! default value
 void
 rl_add_undo(what, start, end, text)
 	int	what
@@ -849,10 +851,10 @@ rl_do_undo()
 	PROTOTYPE:
 
 int
-rl_modifying(start, end)
+rl_modifying(start = 0, end = rl_end)
 	int	start
 	int	end
-	PROTOTYPE: $$
+	PROTOTYPE: ;$$
 
 #
 #	2.4.6 Redisplay
@@ -892,22 +894,22 @@ rl_insert_text(text)
 	PROTOTYPE: $
 
 int
-rl_delete_text(start, end)
+rl_delete_text(start = 0, end = rl_end)
 	int	start
 	int	end
-	PROTOTYPE: $$
+	PROTOTYPE: ;$$
 
 char *
-rl_copy_text(start, end)
+rl_copy_text(start = 0, end = rl_end)
 	int	start
 	int	end
-	PROTOTYPE: $$
+	PROTOTYPE: ;$$
 
 int
-rl_kill_text(start, end)
+rl_kill_text(start = 0, end = rl_end)
 	int	start
 	int	end
-	PROTOTYPE: $$
+	PROTOTYPE: ;$$
 
 #
 #	2.4.8 Utility Functions
@@ -970,15 +972,15 @@ rl_callback_handler_remove()
 #
 
 int
-rl_complete_internal(what_to_do)
+rl_complete_internal(what_to_do = TAB)
 	int what_to_do
-	PROTOTYPE: $
+	PROTOTYPE: ;$
 
 void
-completion_matches(text, fn)
+completion_matches(text, fn = NULL)
 	char * text
 	SV * fn
-	PROTOTYPE: $$
+	PROTOTYPE: $;$
 	PPCODE:
 	{
 	  char **matches;
@@ -1197,23 +1199,21 @@ next_history()
 #	2.3.5 Searching the History List
 #
 int
-history_search(string, direction)
-	char *string
-	int direction
-	PROTOTYPE: $$
-
-int
-history_search_prefix(string, direction)
-	char *string
-	int direction
-	PROTOTYPE: $$
-
-int
-history_search_pos(string, direction, pos)
+history_search(string, direction = -1, pos = where_history())
 	char *string
 	int direction
 	int pos
-	PROTOTYPE: $$$
+	PROTOTYPE: $;$$
+	CODE:
+	{	
+	  history_search_pos(string, direction, pos);
+	}
+
+int
+history_search_prefix(string, direction = -1)
+	char *string
+	int direction
+	PROTOTYPE: $$
 
 #
 #	2.3.6 Managing the History File
