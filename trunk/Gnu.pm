@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.41 1997-03-22 13:41:33 hayashi Exp $
+#	$Id: Gnu.pm,v 1.42 1997-03-22 14:25:16 hayashi Exp $
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
 #
@@ -57,13 +57,12 @@ require DynaLoader;
 
 @ISA = qw(Term::ReadLine::Stub Term::ReadLine::Gnu::AU Exporter DynaLoader);
 
-my @Completion_Word_List;	# used by list_completion_function()
 my $Operate_Index;
 my $Next_Operate_Index;
 
 %Attribs  = (
 	     do_expand => 0,
-	     completion_word => \@Completion_Word_List,
+	     completion_word => [],
 	    );
 %Features = (
 	     appname => 1, minline => 1, autohistory => 1,
@@ -138,7 +137,6 @@ sub new {
     # Don't use this hash.  Use Attribs method instead.
     my $self = {
 		MinLength	=> 1,
-		CompletionWordList	=> \@Completion_Word_List,
 	       };
     bless $self, $class;
 
@@ -454,9 +452,10 @@ BEGIN {
 	my $entry;
 
 	$i = $state ? $i + 1 : 0; # clear counter at the first call
-	for (; $i <= $#Completion_Word_List; $i++) {
+	my $cw = $Term::ReadLine::Gnu::Attribs{completion_word};
+	for (; $i <= $#{$cw}; $i++) {
 	    return $entry
-		if (($entry = $Completion_Word_List[$i]) =~ /^$text/);
+		if (($entry = $cw->[$i]) =~ /^$text/);
 	}
 	return undef;
     }
@@ -1285,8 +1284,8 @@ in Gnu.pm.  You can use it as follows;
     $attribs->{rl_completion_entry_function} =
 	$attribs->{'list_completion_function'};
     ...
-    @{$attribs->{completion_word}} =
-	qw(list of words which you want to use for completion);
+    $attribs->{completion_word} =
+	[qw(reference to a list of words which you want to use for completion)];
     $term->readline("custom completion>");
 
 See also C<completion_matches>.
