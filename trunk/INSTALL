@@ -1,4 +1,4 @@
-#	$Id: INSTALL,v 1.17 1999-06-23 12:51:43 hayashi Exp $
+#	$Id: INSTALL,v 1.18 1999-07-19 13:26:33 hayashi Exp $
 
 1. How to Install Term::ReadLine::Gnu
 
@@ -9,19 +9,27 @@
 
 	See the section `How to Install GNU Readline Library'.
 
-1.2 Edit Makefile.PL
+1.2 Make and install
 
-	Specify directory for libreadline.a ($libreadlinedir) and
-	include files of GNU Readline library ($increadlinedir).
-
-1.3 Make and install
-
-	% perl Makefile.PL
+	% perl Makefile.PL [--prefix=...] [--includedir=...] [--libdir=...]
 	% make
 	% make test
 	% make install
 
-1.4 Trouble Shooting
+	If you have installed the GNU Readline Library
+	(libreadline.{a,so} and readline/readline.h, etc.) on
+	directories for which your perl is not configured to search
+	(refer the value of ccflags and libpath in the output of `perl
+	-V'), specify the paths as follows;
+
+	% perl Makefile.PL --includedir=/mydir/include --libdir=/mydir/lib
+
+	This example equivalent with the follows;
+
+	% perl Makefile.PL --prefix=/mydir
+
+
+1.3 Trouble Shooting
 
 	If you have any troubles during using this module, please let
 	me (hiroo.hayashi@computer.org) know them by E-Mail.  It may
@@ -220,6 +228,11 @@
 	dynamically-linked version.
 
 3.3 Install GNU Readline Library.
+
+	The version of the GNU Readline Library included in Cygwin
+	b20.1 is not supported Term::ReadLine::Gnu.  But you can
+	install up to date version with standard configuration
+	process.
 
 	readline-4.0.tar.gz has a bug on the Cygwin environment in
 	history file access routine.  Apply the following patch.
