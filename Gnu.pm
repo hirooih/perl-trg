@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.60 1999-03-01 15:33:44 hayashi Exp $
+#	$Id: Gnu.pm,v 1.61 1999-03-08 16:39:29 hayashi Exp $
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -461,34 +461,39 @@ sub rl_unbind_key ($;$) {
     }
 }
 
-sub rl_unbind_function_in_map ($;$) {
+sub rl_unbind_function ($;$) {
     # libreadline.* in Debian GNU/Linux 2.0 tells wrong value as '2.1-bash'
     my ($version) = $Term::ReadLine::Gnu::Attribs{library_version}
 	=~ /(\d+\.\d+)/;
     if ($version < 2.2) {
-	carp "rl_unbind_function_in_map() is not supported.  Ignored\n";
+	carp "rl_unbind_function() is not supported.  Ignored\n";
 	return;
     }
     if (defined $_[1]) {
-	return _rl_unbind_function_in_map($_[0], _str2map($_[1]));
+	return _rl_unbind_function($_[0], _str2map($_[1]));
     } else {
-	return _rl_unbind_function_in_map($_[0]);
+	return _rl_unbind_function($_[0]);
     }
 }
 
-sub rl_unbind_command_in_map ($;$) {
+sub rl_unbind_command ($;$) {
     my ($version) = $Term::ReadLine::Gnu::Attribs{library_version}
 	=~ /(\d+\.\d+)/;
     if ($version < 2.2) {
-	carp "rl_unbind_command_in_map() is not supported.  Ignored\n";
+	carp "rl_unbind_command() is not supported.  Ignored\n";
 	return;
     }
     if (defined $_[1]) {
-	return _rl_unbind_command_in_map($_[0], _str2map($_[1]));
+	return _rl_unbind_command($_[0], _str2map($_[1]));
     } else {
-	return _rl_unbind_command_in_map($_[0]);
+	return _rl_unbind_command($_[0]);
     }
 }
+
+# For backward compatibility.  Use of these name is deprecated.
+use vars qw(*rl_unbind_function_in_map *rl_unbind_command_in_map);
+*rl_unbind_function_in_map = \&rl_unbind_function;
+*rl_unbind_command_in_map  = \&rl_unbind_command;
 
 sub rl_generic_bind ($$$;$) {
     if      ($_[0] == Term::ReadLine::Gnu::ISFUNC) {
@@ -902,15 +907,15 @@ in C<MAP>.  Returns non-zero in case of error.
 
 Bind C<KEY> to the null function.  Returns non-zero in case of error.
 
-=item C<unbind_function_in_map(FUNCTION [,MAP])>
+=item C<unbind_function(FUNCTION [,MAP])>
 
-	int	rl_unbind_function_in_map(FunctionPtr|str function,
-					  Keymap|str map = rl_get_keymap())
+	int	rl_unbind_function(FunctionPtr|str function,
+				   Keymap|str map = rl_get_keymap())
 
-=item C<unbind_command_in_map(COMMAND [,MAP])>
+=item C<unbind_command(COMMAND [,MAP])>
 
-	int	rl_unbind_command_in_map(str command,
-					 Keymap|str map = rl_get_keymap())
+	int	rl_unbind_command(str command,
+				  Keymap|str map = rl_get_keymap())
 
 =item C<generic_bind(TYPE, KEYSEQ, DATA, [,MAP])>
 
@@ -1091,6 +1096,10 @@ detail see 'GNU Readline Library Manual'.
 
 	void	rl_display_match_list(@str)	# GRL 4.0
 	void	rl_display_match_list(\@str)	# GRL 4.0
+
+Since the first element of an array @str as treated as a possible
+completion, it is not displayed.  See the descriptions of
+C<completion_matches()>.
 
 =back
 
@@ -1341,6 +1350,8 @@ F<~/.history>.  Returns true if successful, or false if not.
 =item C<history_expand(LINE)>
 
 	(int result, str expansion) history_expand(str line)
+
+Note that this function returns C<expansion> in scalar context.
 
 =item C<history_arg_extract(LINE, [FIRST [,LAST]])>
 
