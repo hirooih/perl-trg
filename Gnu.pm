@@ -1,9 +1,9 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.70 1999-04-03 17:04:11 hayashi Exp $
+#	$Id: Gnu.pm,v 1.71 1999-04-10 05:18:24 hayashi Exp $
 #
-#	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 1999 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -80,6 +80,7 @@ require Term::ReadLine::Gnu::XS;
 use vars qw(%Attribs %Features);
 
 %Attribs  = (
+	     MinLength => 1,
 	     do_expand => 0,
 	     completion_word => [],
 	     term_set => ['', '', '', ''],
@@ -151,10 +152,8 @@ sub new {
     my $class = ref($this) || $this;
 
     my $name = shift;
-    # Don't use this hash.  Use Attribs method instead.
-    my $self = {
-		MinLength	=> 1,
-	       };
+
+    my $self = \%Attribs;
     bless $self, $class;
 
     # set rl_readline_name before .inputrc is read in rl_initialize()
@@ -265,7 +264,7 @@ sub readline {			# should be ReadLine
 
     # add to history buffer
     $self->add_history($line) 
-       if ($self->{MinLength} > 0 && length($line) >= $self->{MinLength});
+	if ($self->{MinLength} > 0 && length($line) >= $self->{MinLength});
 
     return $line;
 }
@@ -353,6 +352,35 @@ sub newTTY {
     my $sel = select($out);
     $| = 1;			# for DB::OUT
     select($sel);
+}
+
+=item C<CallbackHandlerInstall(PROMPT, LHANDLER)>
+
+This method provides the function C<rl_callback_handler_install()>
+with the following addtional feature compatible with C<readline>
+method; ornament feature, C<Term::ReadLine::Perl> compatible
+completion function, histroy expansion, and addition to history
+buffer.
+
+=cut
+
+sub CallbackHandlerInstall {
+    my $self = shift;
+    my ($prompt, $lhandler) = @_;
+
+    $Attribs{_callback_handler} = $lhandler;
+
+    # ornament support (now prompt only)
+    $prompt = RL_PROMPT_START_IGNORE . ${$Attribs{term_set}}[0] . RL_PROMPT_END_IGNORE
+	. $prompt
+	    . RL_PROMPT_START_IGNORE . ${$Attribs{term_set}}[1] . RL_PROMPT_END_IGNORE;
+
+    $Attribs{completion_entry_function} = $Attribs{_trp_completion_function}
+	if (!defined $Attribs{completion_entry_function}
+	    && defined $Attribs{completion_function});
+
+    $self->rl_callback_handler_install($prompt,
+				       \&Term::ReadLine::Gnu::XS::_ch_wrapper);
 }
 
 
