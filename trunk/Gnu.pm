@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.62 1999-03-10 15:47:17 hayashi Exp $
+#	$Id: Gnu.pm,v 1.63 1999-03-14 14:50:52 hayashi Exp $
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -56,7 +56,9 @@ use Carp;
 
     $VERSION = '1.05';
 
-    @ISA = qw(Term::ReadLine::Stub Term::ReadLine::Gnu::AU
+    # Term::ReadLine::Gnu::AU makes a function in
+    # `Term::ReadLine::Gnu::XS' as a method.
+    @ISA = qw(Term::ReadLine::Gnu::AU Term::ReadLine::Stub
 	      Exporter DynaLoader);
 
     @EXPORT_OK = qw(RL_PROMPT_START_IGNORE RL_PROMPT_END_IGNORE
@@ -64,7 +66,7 @@ use Carp;
 		    ISFUNC ISKMAP ISMACR
 		    UNDO_DELETE UNDO_INSERT UNDO_BEGIN UNDO_END);
 
-    bootstrap Term::ReadLine::Gnu $VERSION;
+    bootstrap Term::ReadLine::Gnu $VERSION; # DynaLoader
 }
 
 #	Global Variables
@@ -215,7 +217,7 @@ sub readline {			# should be ReadLine
     if (not $Term::ReadLine::registered and $Term::ReadLine::toloop
 	and defined &Tk::DoOneEvent) {
 	$self->register_Tk;
-	$Attribs{getc_function} = \&Tk_getc;
+	$Attribs{getc_function} = $Attribs{Tk_getc};
     }
 
     # cf. operate_and_get_next()
@@ -236,10 +238,10 @@ sub readline {			# should be ReadLine
 	    &$_Saved_Startup_Hook
 		if defined $_Saved_Startup_Hook;
 	};
-	$line = Term::ReadLine::Gnu::XS::rl_readline($prompt);
+	$line = $self->rl_readline($prompt);
 	$Attribs{startup_hook} = $_Saved_Startup_Hook;
     } else {
-	$line = Term::ReadLine::Gnu::XS::rl_readline($prompt);
+	$line = $self->rl_readline($prompt);
     }
     undef $Next_Operate_Index;
     return undef unless defined $line;
@@ -262,13 +264,6 @@ sub readline {			# should be ReadLine
        if ($self->{MinLength} > 0 && length($line) >= $self->{MinLength});
 
     return $line;
-}
-
-sub Tk_getc {
-    &Term::ReadLine::Tk::Tk_loop
-	if $Term::ReadLine::toloop && defined &Tk::DoOneEvent;
-    my $FILE = $Attribs{instream};
-    return Term::ReadLine::Gnu::XS::rl_getc($FILE);
 }
 
 =item C<AddHistory(LINE1, LINE2, ...)>
@@ -340,7 +335,7 @@ C<MinLine>), and C<addHistory> if C<AddHistory> method is not dummy.
 C<preput> means the second argument to C<readline> method is processed.
 C<getHistory> and C<setHistory> denote that the corresponding methods are 
 present. C<tkRunning> denotes that a Tk application may run while ReadLine
-is getting input B<(undocumented feature)>.
+is getting input.
 
 =back
 
@@ -362,14 +357,14 @@ is getting input B<(undocumented feature)>.
     my $rl_term_set = ',,,';
 
     sub ornaments {
-	shift;
+	my $self = shift;
 	return $rl_term_set unless @_;
 	$rl_term_set = shift;
 	$rl_term_set ||= ',,,';
 	$rl_term_set = 'us,me,,' if $rl_term_set eq '1';
 	my @ts = split /,/, $rl_term_set, 4;
 	@rl_term_set
-	    = map {$_ ? Term::ReadLine::Gnu::TermCap::_tgetstr($_) || '' : ''} @ts;
+	    = map {$_ ? $self->tgetstr($_) || '' : ''} @ts;
 	return $rl_term_set;
     }
 }
@@ -424,6 +419,9 @@ package Term::ReadLine::Gnu::XS;
 use Carp;
 use strict;
 
+use vars qw(%Attribs);
+*Attribs = \%Term::ReadLine::Gnu::Attribs;
+
 #
 #	Readline Library function wrappers
 #
@@ -463,7 +461,7 @@ sub rl_unbind_key ($;$) {
 
 sub rl_unbind_function ($;$) {
     # libreadline.* in Debian GNU/Linux 2.0 tells wrong value as '2.1-bash'
-    my ($version) = $Term::ReadLine::Gnu::Attribs{library_version}
+    my ($version) = $Attribs{library_version}
 	=~ /(\d+\.\d+)/;
     if ($version < 2.2) {
 	carp "rl_unbind_function() is not supported.  Ignored\n";
@@ -477,7 +475,7 @@ sub rl_unbind_function ($;$) {
 }
 
 sub rl_unbind_command ($;$) {
-    my ($version) = $Term::ReadLine::Gnu::Attribs{library_version}
+    my ($version) = $Attribs{library_version}
 	=~ /(\d+\.\d+)/;
     if ($version < 2.2) {
 	carp "rl_unbind_command() is not supported.  Ignored\n";
@@ -490,7 +488,7 @@ sub rl_unbind_command ($;$) {
     }
 }
 
-# For backward compatibility.  Use of these name is deprecated.
+# For backward compatibility.  Using these name (*_in_map) is deprecated.
 use vars qw(*rl_unbind_function_in_map *rl_unbind_command_in_map);
 *rl_unbind_function_in_map = \&rl_unbind_function;
 *rl_unbind_command_in_map  = \&rl_unbind_command;
@@ -554,12 +552,22 @@ sub rl_message {
 	my($text, $state) = @_;
 
 	$i = $state ? $i + 1 : 0; # clear counter at the first call
-	my $cw = $Term::ReadLine::Gnu::Attribs{completion_word};
+	my $cw = $Attribs{completion_word};
 	for (; $i <= $#{$cw}; $i++) {
 	    return $cw->[$i] if ($cw->[$i] =~ /^$text/);
 	}
 	return undef;
     }
+}
+
+#
+#	for tkRunning
+#
+sub Tk_getc {
+    &Term::ReadLine::Tk::Tk_loop
+	if $Term::ReadLine::toloop && defined &Tk::DoOneEvent;
+    my $FILE = $Attribs{instream};
+    return rl_getc($FILE);
 }
 
 #
@@ -573,13 +581,13 @@ sub operate_and_get_next {
 
     if (defined $Next_Operate_Index) {
 	history_set_pos($Next_Operate_Index
-			- $Term::ReadLine::Gnu::Attribs{history_base});
+			- $Attribs{history_base});
 	undef $Next_Operate_Index;
     }
     rl_call_function("accept-line", $count, $key);
 
     $Operate_Index
-	= $Term::ReadLine::Gnu::Attribs{history_base} + where_history();
+	= $Attribs{history_base} + where_history();
 }
 
 rl_add_defun('operate-and-get-next', \&operate_and_get_next, ord "\co");
@@ -587,8 +595,7 @@ rl_add_defun('operate-and-get-next', \&operate_and_get_next, ord "\co");
 #
 #	for compatibility with Term::ReadLine::Perl
 #
-sub filename_list {
-    shift;
+sub rl_filename_list {
     my ($text) = @_;
     return completion_matches($text, \&filename_completion_function);
 }
@@ -598,8 +605,8 @@ sub filename_list {
 #
 sub history_list () {
     my ($i, $history_base, $history_length, @d);
-    $history_base   = $Term::ReadLine::Gnu::Attribs{history_base};
-    $history_length = $Term::ReadLine::Gnu::Attribs{history_length};
+    $history_base   = $Attribs{history_base};
+    $history_length = $Attribs{history_length};
     for ($i = $history_base; $i < $history_base + $history_length; $i++) {
 	push(@d, history_get($i));
     }
@@ -785,14 +792,17 @@ foreach (keys %Term::ReadLine::Gnu::Var::_rl_vars) {
 	$fname = 'Term::ReadLine::Gnu::XS::' . $_;
 	$Attribs{$name} = \&$fname; # symbolic reference
     } qw(rl_getc
+	 rl_redisplay
 	 rl_callback_read_char
+	 rl_display_match_list
 	 filename_completion_function
 	 username_completion_function
-	 list_completion_function);
+	 list_completion_function
+	 Tk_getc);
 }
 
 #
-#	for compatibility with Term::ReadLine::Gnu
+#	for compatibility with Term::ReadLine::Perl
 #
 tie $Attribs{completion_function}, 'Term::ReadLine::Gnu::Var',
     'rl_attempted_completion_function';
@@ -804,10 +814,10 @@ no strict;
 sub AUTOLOAD {
     { $AUTOLOAD =~ s/.*:://; }	# preserve match data
     my $name;
-    if (exists $Term::ReadLine::Gnu::XS::{"$AUTOLOAD"}) {
-	$name = "Term::ReadLine::Gnu::XS::$AUTOLOAD";
-    } elsif (exists $Term::ReadLine::Gnu::XS::{"rl_$AUTOLOAD"}) {
+    if (exists $Term::ReadLine::Gnu::XS::{"rl_$AUTOLOAD"}) {
 	$name = "Term::ReadLine::Gnu::XS::rl_$AUTOLOAD";
+    } elsif (exists $Term::ReadLine::Gnu::XS::{"$AUTOLOAD"}) {
+	$name = "Term::ReadLine::Gnu::XS::$AUTOLOAD";
     } else {
 	croak "Cannot do `$AUTOLOAD' in Term::ReadLine::Gnu";
     }
