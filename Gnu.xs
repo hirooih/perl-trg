@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.98 2001-10-26 04:14:01 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.99 2001-10-28 03:58:24 hayashi Exp $
  *
  *	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
  *
@@ -158,6 +158,12 @@ rl_filename_completion_function (s, i)
 #else  /* (RL_READLINE_VERSION < 0x0402) */
 #define CONST const
 #endif /* (RL_READLINE_VERSION < 0x0402) */
+
+/* features introduced by GNU Readline 4.2a */
+#if (RL_READLINE_VERSION < 0x0403)
+static int rl_readline_version = RL_READLINE_VERSION;
+extern char *rl_get_termcap PARAMS((const char *));
+#endif /* (RL_READLINE_VERSION < 0x0403) */
 
 /*
  * utility/dummy functions
@@ -320,7 +326,8 @@ static struct int_vars {
   { &rl_numeric_arg,				0, 0 },	/* 27 */
   { &rl_editing_mode,				0, 0 },	/* 28 */
   { &rl_attempted_completion_over,		0, 0 },	/* 29 */
-  { &rl_completion_type,			0, 0 }	/* 30 */
+  { &rl_completion_type,			0, 0 },	/* 30 */
+  { &rl_readline_version,			0, 1 }	/* 31 */
 };
 
 /*
@@ -1880,6 +1887,14 @@ rl_set_paren_blink_timeout(usec)
 
 #endif /* (RL_READLINE_VERSION >= 0x0402) */
 
+# rl_get_termcap() is documented by readline-4.2 but it has been implemented 
+# from 2.2.1.
+
+char *
+rl_get_termcap(cap)
+	CONST char *cap
+	PROTOTYPE: $
+
 #
 #	2.4.12 Alternate Interface
 #
@@ -2432,17 +2447,22 @@ _rl_store_rl_line_buffer(pstr)
 
 	  ST(0) = sv_newmortal();
 	  if (pstr) {
-	    len = strlen(pstr) + 1;
+	    len = strlen(pstr);
 
 	    /*
 	     * Old manual did not document this function, but can be
 	     * used.
 	     */
-	    rl_extend_line_buffer(len);
+	    rl_extend_line_buffer(len + 1);
 
-	    Copy(pstr, rl_line_buffer, len, char);
+	    Copy(pstr, rl_line_buffer, len + 1, char);
 	    /* rl_line_buffer is not NULL here */
 	    sv_setpv(ST(0), rl_line_buffer);
+
+	    /* fix rl_end and rl_point */
+	    rl_end = len;
+	    if (rl_point > len)
+		    rl_point = len;
 	  }
 	}
 
