@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.55 1997-08-24 14:51:41 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.56 1998-03-26 15:29:49 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -106,26 +106,28 @@ static struct str_vars {
 static struct int_vars {
   int *var;
   int charp;
+  int read_only;
 } int_tbl[] = {
-  { &rl_point,					0 },	/* 0 */
-  { &rl_end,					0 },	/* 1 */
-  { &rl_mark,					0 },	/* 2 */
-  { &rl_done,					0 },	/* 3 */
-  { &rl_pending_input,				0 },	/* 4 */
+  { &rl_point,					0, 0 },	/* 0 */
+  { &rl_end,					0, 0 },	/* 1 */
+  { &rl_mark,					0, 0 },	/* 2 */
+  { &rl_done,					0, 0 },	/* 3 */
+  { &rl_pending_input,				0, 0 },	/* 4 */
 
-  { &rl_completion_query_items,			0 },	/* 5 */
-  { &rl_completion_append_character,		0 },	/* 6 */
-  { &rl_ignore_completion_duplicates,		0 },	/* 7 */
-  { &rl_filename_completion_desired,		0 },	/* 8 */
-  { &rl_filename_quoting_desired,		0 },	/* 9 */
-  { &rl_inhibit_completion,			0 },	/* 10 */
+  { &rl_completion_query_items,			0, 0 },	/* 5 */
+  { &rl_completion_append_character,		0, 0 },	/* 6 */
+  { &rl_ignore_completion_duplicates,		0, 0 },	/* 7 */
+  { &rl_filename_completion_desired,		0, 0 },	/* 8 */
+  { &rl_filename_quoting_desired,		0, 0 },	/* 9 */
+  { &rl_inhibit_completion,			0, 0 },	/* 10 */
 
-  { &history_base,				0 },	/* 11 */
-  { &history_length,				0 },	/* 12 */
-  { (int *)&history_expansion_char,		1 },	/* 13 */
-  { (int *)&history_subst_char,			1 },	/* 14 */
-  { (int *)&history_comment_char,		1 },	/* 15 */
-  { &history_quotes_inhibit_expansion,		0 }	/* 16 */
+  { &history_base,				0, 0 },	/* 11 */
+  { &history_length,				0, 0 },	/* 12 */
+  { &max_input_history,				0, 1 },	/* 13 */
+  { (int *)&history_expansion_char,		1, 0 },	/* 14 */
+  { (int *)&history_subst_char,			1, 0 },	/* 15 */
+  { (int *)&history_comment_char,		1, 0 },	/* 16 */
+  { &history_quotes_inhibit_expansion,		0, 0 }	/* 17 */
 };
 
 /*
@@ -722,7 +724,9 @@ rl_function_of_keyseq(keyseq, map = rl_get_keymap())
 	      sv_setref_pv(sv, "Keymap", (void*)p);
 	      break;
 	    case ISMACR:
-	      sv_setpv(sv, (char *)p);
+	      if (p) {
+		sv_setpv(sv, (char *)p);
+	      }
 	      break;
 	    default:
 	      warn("Gnu.xs:rl_function_of_keyseq: illegal type `%d'\n", type);
@@ -1034,6 +1038,24 @@ void
 using_history()
 	PROTOTYPE:
 
+#  history_get_history_state() and history_set_history_state() are useless
+#  and too dangerous
+# void
+# history_get_history_state()
+# 	PROTOTYPE:
+# 	PPCODE:
+# 	{
+# 	  HISTORY_STATE *state;
+#
+# 	  state = history_get_history_state();
+# 	  EXTEND(sp, 4);
+# 	  PUSHs(sv_2mortal(newSViv(state->offset)));
+# 	  PUSHs(sv_2mortal(newSViv(state->length)));
+# 	  PUSHs(sv_2mortal(newSViv(state->size)));
+# 	  PUSHs(sv_2mortal(newSViv(state->flags)));
+# 	  xfree((char *)state);
+# 	}
+
 #
 #	2.3.2 History List Management
 #
@@ -1097,6 +1119,10 @@ stifle_history(i)
 	RETVAL
 
 int
+unstifle_history()
+	PROTOTYPE:
+
+int
 history_is_stifled()
 	PROTOTYPE:
 
@@ -1112,8 +1138,9 @@ current_history()
 	  HIST_ENTRY *entry;
 	  entry = current_history();
 	  ST(0) = sv_newmortal();
-	  if (entry && entry->line)
+	  if (entry && entry->line) {
 	    sv_setpv(ST(0), entry->line);
+	  }
 	}
 
 void
@@ -1125,8 +1152,9 @@ history_get(offset)
 	  HIST_ENTRY *entry;
 	  entry = history_get(offset);
 	  ST(0) = sv_newmortal();
-	  if (entry && entry->line)
+	  if (entry && entry->line) {
 	    sv_setpv(ST(0), entry->line);
+	  }
 	}
 
 int
@@ -1149,8 +1177,9 @@ previous_history()
 	  HIST_ENTRY *entry;
 	  entry = previous_history();
 	  ST(0) = sv_newmortal();
-	  if (entry && entry->line)
+	  if (entry && entry->line) {
 	    sv_setpv(ST(0), entry->line);
+	  }
 	}
 
 void
@@ -1161,31 +1190,32 @@ next_history()
 	  HIST_ENTRY *entry;
 	  entry = next_history();
 	  ST(0) = sv_newmortal();
-	  if (entry && entry->line)
+	  if (entry && entry->line) {
 	    sv_setpv(ST(0), entry->line);
+	  }
 	}
 
 #
 #	2.3.5 Searching the History List
 #
 int
-history_search(string, direction = -1, pos = where_history())
+history_search(string, direction = -1)
 	char *string
 	int direction
-	int pos
-	PROTOTYPE: $;$$
-	CODE:
-	{	
-	  RETVAL = history_search_pos(string, direction, pos);
-	}
-	OUTPUT:
-	RETVAL
+	PROTOTYPE: $;$
 
 int
 history_search_prefix(string, direction = -1)
 	char *string
 	int direction
-	PROTOTYPE: $$
+	PROTOTYPE: $;$
+
+int
+history_search_pos(string, direction = -1, pos = where_history())
+	char *string
+	int direction
+	int pos
+	PROTOTYPE: $;$$
 
 #
 #	2.3.6 Managing the History File
@@ -1232,6 +1262,69 @@ history_expand(line)
 	  PUSHs(sv_2mortal(newSVpv(expansion, 0)));
 	  xfree(expansion);
 	}
+
+#define DALLAR '$'		/* define for xsubpp bug */
+
+char *
+_history_arg_extract(line, first = 0 , last = DALLAR)
+	char *line
+	int first
+	int last
+	PROTOTYPE: $;$$
+	CODE:
+	{
+	  RETVAL = history_arg_extract(first, last, line);
+	}
+	OUTPUT:
+	RETVAL
+
+void
+_get_history_event(string, cindex, qchar = 0)
+	char *string
+	int cindex
+	int qchar
+	PROTOTYPE: $$;$
+	PPCODE:
+	{
+	  char *text;
+
+	  text = get_history_event(string, &cindex, qchar);
+	  EXTEND(sp, 2);
+	  if (text) {		/* don't free `text' */
+	    PUSHs(sv_2mortal(newSVpv(text, 0)));
+	  } else {
+	    PUSHs(&sv_undef);
+	  }
+	  PUSHs(sv_2mortal(newSViv(cindex)));
+	}
+
+void
+history_tokenize(text)
+	char *text
+	PROTOTYPE: $
+	PPCODE:
+	{
+	  char **tokens;
+
+	  tokens = history_tokenize(text);
+	  if (tokens) {
+	    int i, count;
+
+	    /* count number of entries */
+	    for (count = 0; tokens[count]; count++)
+	      ;
+
+	    EXTEND(sp, count);
+	    for (i = 0; i < count; i++) {
+	      PUSHs(sv_2mortal(newSVpv(tokens[i], 0)));
+	      xfree(tokens[i]);
+	    }
+	    xfree((char *)tokens);
+	  } else {
+	    /* return null list */
+	  }
+	}
+
 
 #
 #	GNU Readline/History Library Variable Access Routines
@@ -1278,7 +1371,9 @@ _rl_store_str(pstr, id)
 	  Copy(pstr, *str_tbl[id].var, len, char);
 
 	  /* return variable value */
-	  sv_setpv(ST(0), *str_tbl[id].var);
+	  if (*str_tbl[id].var) {
+	    sv_setpv(ST(0), *str_tbl[id].var);
+	  }
 	}
 
 void
@@ -1301,6 +1396,7 @@ _rl_store_rl_line_buffer(pstr)
 	    rl_extend_line_buffer(len);
 
 	    Copy(pstr, rl_line_buffer, len, char);
+	    /* rl_line_buffer is not NULL here */
 	    sv_setpv(ST(0), rl_line_buffer);
 	  }
 	}
@@ -1315,7 +1411,9 @@ _rl_fetch_str(id)
 	  if (id < 0 || id >= sizeof(str_tbl)/sizeof(struct str_vars)) {
 	    warn("Gnu.xs:_rl_fetch_str: Illegal `id' value: `%d'", id);
 	  } else {
-	    sv_setpv(ST(0), *(str_tbl[id].var));
+	    if (*(str_tbl[id].var)) {
+	      sv_setpv(ST(0), *(str_tbl[id].var));
+	    }
 	  }
 	}
 
@@ -1329,6 +1427,11 @@ _rl_store_int(pint, id)
 	  ST(0) = sv_newmortal();
 	  if (id < 0 || id >= sizeof(int_tbl)/sizeof(struct int_vars)) {
 	    warn("Gnu.xs:_rl_store_int: Illegal `id' value: `%d'", id);
+	    XSRETURN_UNDEF;
+	  }
+
+	  if (int_tbl[id].read_only) {
+	    warn("Gnu.xs:_rl_store_int: store to read only variable");
 	    XSRETURN_UNDEF;
 	  }
 
