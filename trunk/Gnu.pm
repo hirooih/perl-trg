@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.44 1997-04-10 14:18:03 hayashi Exp $
+#	$Id: Gnu.pm,v 1.45 1997-04-10 15:42:08 hayashi Exp $
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
 #
@@ -143,17 +143,17 @@ sub new {
     # initialize the GNU Readline Library first for sanity
     $self->initialize();
 
-    $self->store_var('rl_readline_name', $name);
+    $Attribs{readline_name} = $name;
 
     if (!@_) {
 	my ($IN,$OUT) = $self->findConsole();
 	open(IN,"<$IN")   || croak "Cannot open $IN for read";
 	open(OUT,">$OUT") || croak "Cannot open $OUT for write";
-	$self->store_var('rl_instream', \*IN);
-	$self->store_var('rl_outstream', \*OUT);
+	$Attribs{instream} = \*IN;
+	$Attribs{outstream} = \*OUT;
     } else {
-	$self->store_var('rl_instream', shift);
-	$self->store_var('rl_outstream', shift);
+	$Attribs{instream} = shift;
+	$Attribs{outstream} = shift;
     }
     $Operate_Index = $Next_Operate_Index = undef; # for operate_and_get_next()
 
@@ -184,7 +184,7 @@ sub readline {			# should be ReadLine
     if (not $Term::ReadLine::registered and $Term::ReadLine::toloop
 	and defined &Tk::DoOneEvent) {
 	$self->register_Tk;
-	$self->Attribs->{getc_function} = \&Tk_getc;
+	$Attribs{getc_function} = \&Tk_getc;
     }
 
     # cf. operate_and_get_next()
@@ -199,14 +199,14 @@ sub readline {			# should be ReadLine
     my $line;
     if (defined $preput) {
 	$_Preput = $preput;
-	$_Saved_Startup_Hook = $self->fetch_var('rl_startup_hook');
-	$self->store_var('rl_startup_hook',
-		     sub { $self->rl_insert_text($_Preput);
-			   &$_Saved_Startup_Hook
-			       if defined $_Saved_Startup_Hook;
-		       });
+	$_Saved_Startup_Hook = $Attribs{startup_hook};
+	$Attribs{startup_hook} = sub {
+	    $self->rl_insert_text($_Preput);
+	    &$_Saved_Startup_Hook
+		if defined $_Saved_Startup_Hook;
+	};
 	$line = Term::ReadLine::Gnu::XS::rl_readline($prompt);
-	$self->store_var('rl_startup_hook', $_Saved_Startup_Hook);
+	$Attribs{startup_hook} = $_Saved_Startup_Hook;
     } else {
 	$line = Term::ReadLine::Gnu::XS::rl_readline($prompt);
     }
@@ -214,10 +214,10 @@ sub readline {			# should be ReadLine
     return undef unless defined $line;
 
     # history expansion
-    if ($self->Attribs->{do_expand}) {
+    if ($Attribs{do_expand}) {
 	my $result;
 	($result, $line) = $self->history_expand($line);
-	my $outstream = $self->fetch_var('rl_outstream');
+	my $outstream = $Attribs{outstream};
 	print $outstream "$line\n" if ($result);
      
 	# return without adding line into history
@@ -261,8 +261,8 @@ C<readline> input and output cannot be used for Perl.
 
 =cut
 
-sub IN  { shift->fetch_var('rl_instream'); }
-sub OUT { shift->fetch_var('rl_outstream'); }
+sub IN  { $Attribs{instream}; }
+sub OUT { $Attribs{outstream}; }
 
 =item C<MinLine([MAX])>
 
@@ -335,8 +335,8 @@ sub SetHistory {
 sub GetHistory {
     my $self = shift;
     my ($i, $history_base, $history_length, @d);
-    $history_base   = $self->fetch_var('history_base');
-    $history_length = $self->fetch_var('history_length');
+    $history_base   = $Attribs{history_base};
+    $history_length = $Attribs{history_length};
     for ($i = $history_base; $i < $history_base + $history_length; $i++) {
 	push(@d, $self->history_get($i));
     }
@@ -345,12 +345,12 @@ sub GetHistory {
 
 sub ReadHistory {
     my $self = shift;
-    ! &Term::ReadLine::Gnu::XS::read_history_range;
+    ! $self->read_history_range(@_);
 }
 
 sub WriteHistory {
     my $self = shift;
-    ! &Term::ReadLine::Gnu::XS::write_history;
+    ! $self->write_history(@_);
 }
 
 package Term::ReadLine::Gnu::XS;
@@ -446,7 +446,7 @@ sub rl_message {
 #	List Completion Function
 #
 
-BEGIN {
+{
     my $i;
 
     sub list_completion_function ( $$ ) {
@@ -473,12 +473,14 @@ sub operate_and_get_next {
     my ($count, $key) = @_;
 
     if (defined $Next_Operate_Index) {
-	history_set_pos($Next_Operate_Index - rl_fetch_var('history_base'));
+	history_set_pos($Next_Operate_Index
+			- $Term::ReadLine::Gnu::Attribs{history_base});
 	undef $Next_Operate_Index;
     }
     rl_call_function("accept-line", $count, $key);
 
-    $Operate_Index = rl_fetch_var('history_base') + where_history();
+    $Operate_Index
+	= $Term::ReadLine::Gnu::Attribs{history_base} + where_history();
 }
 
 rl_add_defun('operate-and-get-next', \&operate_and_get_next, ord "\co");
@@ -491,11 +493,15 @@ sub filename_list {
     my ($text) = @_;
     return completion_matches($text, \&filename_completion_function);
 }
-
+
 #
 #	Access Routines for GNU Readline/History Library Variables
 #
+package Term::ReadLine::Gnu::Var;
+use Carp;
+use strict;
 use vars qw(%_rl_vars);
+
 %_rl_vars
     = (
        rl_line_buffer				=> ['S', 0],
@@ -544,10 +550,19 @@ use vars qw(%_rl_vars);
        rl_binding_keymap			=> ['K', 1],
       );
 
-sub rl_fetch_var ($) {
+sub TIESCALAR {
+    my $class = shift;
     my $name = shift;
+    return bless \$name, $class;
+}
+
+sub FETCH {
+    my $self = shift;
+    confess "wrong type" unless ref $self;
+
+    my $name = $$self;
     if (! defined $_rl_vars{$name}) {
-	confess "Term::ReadLine::Gnu::rl_fetch_var: Unknown variable name `$name'\n";
+	confess "Term::ReadLine::Gnu::Var::FETCH: Unknown variable name `$name'\n";
 	return undef ;
     }
     
@@ -565,20 +580,18 @@ sub rl_fetch_var ($) {
     } elsif ($type eq 'K') {
 	return _rl_fetch_keymap($id);
     } else {
-	carp "Term::ReadLine::Gnu::rl_fetch_var: Illegal type `$type'\n";
+	carp "Term::ReadLine::Gnu::Var::FETCH: Illegal type `$type'\n";
 	return undef;
     }
 }
 
-#  sub FetchVar {
-#      my $self = shift;
-#      rl_fetch_var($_[0]);
-#  }
+sub STORE {
+    my $self = shift;
+    confess "wrong type" unless ref $self;
 
-sub rl_store_var ($$) {
-    my $name = shift;
+    my $name = $$self;
     if (! defined $_rl_vars{$name}) {
-	confess "Term::ReadLine::Gnu::rl_store_var: Unknown variable name `$name'\n";
+	confess "Term::ReadLine::Gnu::Var::STORE: Unknown variable name `$name'\n";
 	return undef ;
     }
     
@@ -599,42 +612,12 @@ sub rl_store_var ($$) {
     } elsif ($type eq 'IO') {
 	return _rl_store_iostream($value, $id);
     } elsif ($type eq 'K') {
-	carp "Term::ReadLine::Gnu::rl_store_var: read only variable `$name'\n";
+	carp "Term::ReadLine::Gnu::Var::STORE: read only variable `$name'\n";
 	return undef;
     } else {
-	carp "Term::ReadLine::Gnu::rl_store_var: Illegal type `$type'\n";
+	carp "Term::ReadLine::Gnu::Var::STORE: Illegal type `$type'\n";
 	return undef;
     }
-}
-
-#  sub StoreVar {
-#      my $self = shift;
-#      rl_store_var($_[0], $_[1]);
-#  }
-
-#
-#	Tie functions for Readline/History Library variables
-#
-package Term::ReadLine::Gnu::Var;
-use Carp;
-use strict;
-
-sub TIESCALAR {
-    my $class = shift;
-    my $name = shift;
-    return bless \$name, $class;
-}
-
-sub FETCH {
-    my $self = shift;
-    confess "wrong type" unless ref $self;
-    return Term::ReadLine::Gnu::XS::rl_fetch_var($$self);
-}
-
-sub STORE {
-    my $self = shift;
-    confess "wrong type" unless ref $self;
-    return Term::ReadLine::Gnu::XS::rl_store_var($$self, shift);
 }
 
 package Term::ReadLine::Gnu;
@@ -646,13 +629,10 @@ use strict;
 #
 
 #	Tie all Readline/History variables
-foreach (keys %Term::ReadLine::Gnu::XS::_rl_vars) {
-    # make $rl_foo : this interface is obsoleted.
-    eval "use vars '\$$_'; tie \$$_, 'Term::ReadLine::Gnu::Var', '$_';";
-    # tie $Attribs{foo}, 'Term::ReadLine::Gnu::Var', 'rl_foo';
+foreach (keys %Term::ReadLine::Gnu::Var::_rl_vars) {
     my $name;
     ($name = $_) =~ s/^rl_//;	# strip leading `rl_'
-    eval "tie \$Attribs{$name},  'Term::ReadLine::Gnu::Var', '$_';";
+    tie $Attribs{$name},  'Term::ReadLine::Gnu::Var', $_;
 }
 
 #	add reference to some functions
@@ -662,10 +642,14 @@ my @_rl_funcs = qw(rl_getc
 		   username_completion_function
 		   list_completion_function);
 
-foreach (@_rl_funcs) {
-    my $name;
-    ($name = $_) =~ s/^rl_//;	# strip leading `rl_'
-    eval "\$Attribs{'$name'} = \\&Term::ReadLine::Gnu::XS::$_";
+{
+    my ($name, $fname);
+    no strict 'refs';
+    foreach (@_rl_funcs) {
+	($name = $_) =~ s/^rl_//; # strip leading `rl_'
+	$fname = 'Term::ReadLine::Gnu::XS::' . $_;
+	$Attribs{$name} = \&$fname; # symbolic reference
+    }
 }
 
 #
@@ -688,7 +672,7 @@ sub AUTOLOAD {
     } else {
 	croak "Cannot do `$AUTOLOAD' in Term::ReadLine::Gnu";
     }
-    local $^W = 0;		# Why this line is necessary ?
+    local $^W = 0;		# Why is this line necessary ?
     *$AUTOLOAD = sub { shift; &$name(@_); };
     goto &$AUTOLOAD;
 }
@@ -1159,23 +1143,6 @@ F<~/.history>.  Returns true if successful, or false if not.
 
 =back
 
-=head2 Internal Variable Access
-
-These functions are only for internal use.  You should use C<Attribs>
-method to access GNU Readline/History Library variables.
-
-=over 4
-
-=item C<fetch_var(NAME)>
-
-	any	rl_fetch_var(str name)
-
-=item C<store_var(NAME, VAL)>
-
-	any	rl_store_var(str name, any val)
-
-=back
-
 =head1 Variables
 
 Following GNU Readline/History Library variables can be accessed from
@@ -1189,8 +1156,6 @@ Examples:
     $attribs = $term->Attribs;
     $v = $attribs->{library_version};	# rl_library_version
     $v = $attribs->{history_base};	# history_base
-
-    $v = Term::ReadLine::GNU::XS::rl_fetch_var('rl_library_version');
 
 =over 4
 
