@@ -1,6 +1,6 @@
 #! /usr/local/bin/perl
 #
-#	$Id: pftp,v 1.4 1997-03-26 16:06:47 hayashi Exp $
+#	$Id: pftp,v 1.5 1997-04-14 14:45:41 hayashi Exp $
 #
 #	Copyright (c) 1997 Hiroo Hayashi.  All Rights Reserved.
 #
@@ -9,32 +9,29 @@
 
 =head1 NAME
 
-pftp - a ftp client with GNU Readline support
+pftp - an ftp client with GNU Readline support
 
 =head1 SYNOPSIS
 
-B<pftp> [B<-d>] [B<-u>] [B<-g>] [B<-M>] [B<-h>] [I<host>]
+B<pftp> [B<-u>] [B<-g>] [B<-M>] [B<-h>] [B<-d>] [I<host>]
 
 =head1 DESCRIPTION
 
-=head1 BUGS
+This is an ftp client which has the GNU Readline support.  It can
+complete not only local file name but also remote file name and host
+name to which login. 
 
-command 'lcd' does not work.
-
-multicolum ls
-
-No document.
+This is a sample program of Perl Term::ReadLine::Gnu module.
 
 =cut
 
 use Term::ReadLine;
 use strict;
-#use Net::Config;
-use Net::Domain qw(hostdomain);
+use Net::Domain qw(hostdomain);	# libnet
 use Net::FTP;			# libnet-1.05 or later is recommended
-use File::Listing;		# for parse_dir
+use File::Listing;		# libwww (for parse_dir)
 use Getopt::Std;
-#use Cwd 'chdir';
+use Cwd;			# for getcwd
 
 use vars qw($AUTOLOAD
 	    $opt_d $opt_u $opt_g $opt_M $opt_h);
@@ -56,7 +53,9 @@ getopts('dugMh') or &usage;
 &man if $opt_M;
 &usage if $opt_h;
 
-# setup Term::ReadLine::GNU
+#
+#	setup Term::ReadLine::GNU
+#
 my $HOSTFILE = ($ENV{HOME} || (getpwuid($<))[7]) . "/.pftp_hosts";
 
 my $term = Term::ReadLine->new('PFTP');
@@ -72,11 +71,15 @@ if (@ARGV) {
     $attribs->{completion_entry_function} =
 	$attribs->{'list_completion_function'};
     $host = $term->readline('hostname> ');
+    $host =~ s/^\s+//;
+    $host =~ s/\s+$//;
     $attribs->{completion_append_character} = ' ';
     $attribs->{completion_entry_function} = undef;
 }
 
-# make ftp connection
+#
+#	make ftp connection
+#
 my $ftp = Net::FTP->new($host,
 			Debug => $opt_d);
 die "$0: cannot connect \`$host\'\n" unless $ftp;
@@ -84,17 +87,19 @@ die "$0: cannot connect \`$host\'\n" unless $ftp;
 print STDERR $ftp->message;
 write_hosts($HOSTFILE, $host, @hosts);
 
+#
+#	login
+#
+my $login = 'anonymous';
+my $password = (getpwuid($<))[0] . '@' . hostdomain;
 if ($opt_u) {
-    my $login = $term->readline('login name> ', 'anonymous');
+    $login = $term->readline('login name> ', $login);
     # Use Term::ReadKey!
-    my $password = $term->readline('password> ',
-				   (getpwuid($<))[0] . '@' . hostdomain);
-    $ftp->login($login, $password);
-    print STDERR $ftp->message;
-} else {
-    $ftp->login;
-    print STDERR $ftp->message;
+    $password = $term->readline('password> ', $password);
 }
+
+$ftp->login($login, $password);
+print STDERR $ftp->message;
 
 $ftp->binary;			# default binary
 print STDERR $ftp->message;
@@ -102,7 +107,10 @@ print STDERR $ftp->message;
 my $pwd = $ftp->pwd;
 print STDERR $ftp->message;
 
-my @ftp_cmd_list = qw(cwd cd pwd ls dir get mget put mput lcd);
+#
+#	setup completion function
+#
+my @ftp_cmd_list = qw(cwd cd pwd ls dir get mget put mput lcd help);
 
 $attribs->{attempted_completion_function} = sub {
     my ($text, $line, $start, $end) = @_;
@@ -121,10 +129,13 @@ $attribs->{attempted_completion_function} = sub {
     }
 };
 
+#
+#	Command loop
+#
 $SIG{INT} = 'IGNORE';		# ignore Control-C
 
-no strict 'refs';
-while (defined($_ = $term->readline('pftp> '))) {
+while (defined($_ = $term->readline("pftp\@$host:$pwd> "))) {
+    no strict 'refs';
     next if /^\s*$/;
     my ($cmd, @args) = split(' ', $_);
     if ($cmd eq 'quit' || $cmd eq 'bye') {
@@ -134,15 +145,15 @@ while (defined($_ = $term->readline('pftp> '))) {
     &$func(@args);
     $attribs->{completion_append_character} = ' ';
 }
-use strict 'refs';
 $ftp->quit;
 print STDERR $ftp->message;
 
 exit (0);
 
 ########################################################################
+#
 #	complete remote filename
-
+#
 sub ftp_filename_completion_function ( $$ ) {
     my($text, $state) = @_;
     ftp_completion_function($text, $state, 0);
@@ -153,7 +164,7 @@ sub ftp_dirname_completion_function ( $$ ) {
     ftp_completion_function($text, $state, 1);
 }
 
-BEGIN {
+{
     my ($i, $file, $dir, $fdir, $cw);
 
     sub ftp_completion_function ( $$$ ) {
@@ -202,7 +213,7 @@ sub rdir {		# get remote dir info and save it in %rdir
     my $d = $ftp->ls('-F', $dir);
     if ($d) {
 	foreach (@{$d}) {
-	    s|.*/(.)|\1|; # remove directory name  
+	    s|.*/(.)|$1|; # remove directory name  
 	    s/[*@]$//;
 	}
 	return $rdir{$dir} = $d;
@@ -244,13 +255,40 @@ sub cmd_ls {
     my $dir = shift || $pwd;
     my $d = rdir($dir);
     if (defined $d) {
-	foreach (sort @{$d}) {
-	    print STDERR "$_\n";
-	}
+	dump_list($d);
     } else {
 	print STDERR "ls failed\n";
     }
     print STDERR $ftp->message;
+}
+
+# from bash-2.0/lib/readline/complete.c:display_matches()
+sub dump_list {
+    use integer;
+    my @list = sort @{$_[0]};
+    my ($len, $max, $limit, $count, $i, $j, $l, $tmp);
+    my $screenwidth = $ENV{COLUMNS} || 80;
+    $max = 0;
+    foreach (@list) {
+	$len = length;
+	$max = $len if $len > $max;
+    }
+    $max += 2;
+    $limit = $screenwidth / $max;
+    $limit-- if ($limit != 1 && ($limit * $max == $screenwidth));
+    $limit = 1 if $limit == 0;
+    $count = (@list + ($limit - 1))/ $limit;
+    for $i (0..$count - 1) {
+	$l = $i;
+	for $j (0..$limit - 1) {
+	    $tmp = $list[$l];
+	    last if $l > @list || ! $tmp;
+	    print $tmp;
+	    print ' ' x ($max - length $tmp) if $j + 1 < $limit;
+	    $l += $count;
+	}
+	print "\n";
+    }
 }
 
 sub cmd_dir {
@@ -268,7 +306,7 @@ sub cmd_dir {
 	    my $info = (parse_dir($_, '+0000'))[0]; # GMT
 	    next unless $info;	# ignore if parse_dir() can not phase.
 	    next if $$info[0] =~ m|^\.\.?/$|; # ignore '.' and '..'
-	    $$info[0] =~ s|.*/(.)|\1|; # remove directory name
+	    $$info[0] =~ s|.*/(.)|$1|; # remove directory name
 	    $$info[0] =~ s/[*@]$//;
 	    push(@dir, $$info[0]);
 	}
@@ -315,10 +353,12 @@ sub cmd_mput {
 }
 
 sub cmd_lcd {
-    chdir @_;
-    chomp(my $pwd = `pwd`);
-    printf STDERR "local current directory is \`%s\'\n", $pwd;
+    chdir $_[0] or warn "cannot chdir to $_[0]: $!\n";
+    printf STDERR "local current directory is \`%s\'\n", getcwd();
+}
 
+sub cmd_help {
+    print STDERR "@ftp_cmd_list\n";
 }
 
 ################################################################
@@ -350,3 +390,61 @@ sub man {
     exec "pod2man $0|nroff -man|$pager";
     die "cannot exec pod2man, nroff, or $pager : $!\n";
 }
+
+__END__
+
+=pod
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-u>
+
+disable autologin.
+
+=item B<-g>
+
+turn off glob.
+
+=item B<-h>
+
+show usage.
+
+=item B<-M>
+
+show thie manual.
+
+=item B<-d>
+
+debug mode.
+
+=item I<host>
+
+remote host name.
+
+=back
+
+=head1 FILES
+
+=over 4
+
+=item I<~/.pftp_hosts>
+
+This file contains the list of host names.  These name are used for
+completing of remote host name.  If the host name which you login is
+not contained in this file, it will be added automatically.
+
+=back
+
+=head1 AUTHOR
+
+Hiroo Hayashi <hiroo.hayashi@toshiba.co.jp>
+
+=head1 BUGS
+
+Commands which the author does not use are not supported.
+
+Key inputs for password is visible.
+
+=cut
