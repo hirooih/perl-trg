@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.34 1997-02-01 17:40:22 hayashi Exp $
+#	$Id: Gnu.pm,v 1.35 1997-02-04 16:24:02 hayashi Exp $
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
 #
@@ -234,7 +234,8 @@ sub new {
     }
     $Operate_Index = $Next_Operate_Index = undef; # for operate_and_get_next()
 
-    # The following is here since it is mostly used for perl input:
+    # Comment out next line to be compatible with Term::ReadLine::Perl.
+    # By default compatible with GNU Readline.
 #    $rl_basic_word_break_characters .= '-:+/*,[])}';
 
     my $self = {
@@ -258,7 +259,7 @@ is in C<Features>.
 
 =cut
 
-use vars qw($_Preput);
+use vars qw($_Preput $_Saved_Startup_Hook);
 
 sub readline {			# should be ReadLine
     my $self = shift;
@@ -276,11 +277,14 @@ sub readline {			# should be ReadLine
     my $line;
     if (defined $preput) {
 	$_Preput = $preput;
-	my $save_hook = rl_fetch_var('rl_startup_hook');
-	#!!! add_hook
-	rl_store_var('rl_startup_hook', sub { rl_insert_text($_Preput) });
+	$_Saved_Startup_Hook = rl_fetch_var('rl_startup_hook');
+	rl_store_var('rl_startup_hook',
+		     sub { rl_insert_text($_Preput);
+			   &$_Saved_Startup_Hook
+			       if defined $_Saved_Startup_Hook;
+		       });
 	$line = rl_readline($prompt);
-	rl_store_var('rl_startup_hook', $save_hook);
+	rl_store_var('rl_startup_hook', $_Saved_Startup_Hook);
     } else {
 	$line = rl_readline($prompt);
     }
@@ -821,11 +825,11 @@ BEGIN {
 
 #
 #	a sample custom function
-#	defined in this module for the compatibility with Term::ReadLine::Perl
+#
+#	defined in this module for the compatibility with bash and
+#	Term::ReadLine::Perl
 #
 sub operate_and_get_next {
-    ## Operate - accept the current line and fetch from the
-    ## history the next line relative to current line for default.
     my ($count, $key) = @_;
 
     if (defined $Next_Operate_Index) {
@@ -1005,6 +1009,7 @@ Examples:
 	str	rl_copy_text(start = 0, end = rl_end)
 	int	rl_kill_text(start = 0, end = rl_end)
 	int	rl_read_key()
+	int	rl_getc(FILE *)
 	int	rl_stuff_char(int c)
 	int	rl_initialize()
 	int	rl_reset_terminal(str terminal_name = getenv($TERM))
@@ -1199,25 +1204,36 @@ Term::ReadLine
 
 Term::ReadLine::Perl (Term-ReadLine-xx.tar.gz)
 
-perl(1).
-
 =head1 AUTHOR
 
 Hiroo Hayashi, hayashi@pdcd.ilab.toshiba.co.jp
 
 =head1 TODO
 
-support TkRunning
+support TkRunning as Term::ReadLine::Perl
 
 =head1 BUGS
 
-rl_add_defun() can define up to 16 functions.
+rl_add_defun() can be defined up to 16 functions.
+
+rl_message() does not work.  See display_readline_version() in
+t/readline.t.
+
+Test routines for following variable and functions are required.
+
+	rl_read_key()
+	rl_stuff_char()
+
+	rl_callback_handler_install()
+	rl_callback_read_char()
+	rl_callback_handler_remove()
+
+	rl_complete_internal()
+
+	history_search()
+	history_search_prefix()
 
 Perl 5.002 and 5.003 cause segmentation fault if @histfn is added to
-%EXPORT_TAGS.  But Perl 5.003_08 does not.  Whose bug is this?
-
-rl_message() does not work.
-
-Some of functions are not tested yet.
+%EXPORT_TAGS.  But Perl 5.003_08 does not.  What's wrong?
 
 =cut
