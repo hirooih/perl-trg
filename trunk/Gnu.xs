@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.4 1996-11-11 15:25:02 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.5 1996-11-15 15:56:56 hayashi Exp $
  *
  *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
  *
@@ -141,15 +141,14 @@ attempted_completion_function_lapper(text, start, end)
 
 MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu
 
-char *
+void
 _rl_readline(prompt = (char *)NULL, preput = (char *)NULL)
 	char *prompt
 	char *preput
 	PROTOTYPE: ;$$
 	CODE:
 	{
-	  static char *line_read =  (char *)NULL;
-	  SV *sv;
+	  char *line_read;
 
 	  /*
 	   * set default input string using readline() hook
@@ -158,30 +157,19 @@ _rl_readline(prompt = (char *)NULL, preput = (char *)NULL)
 	  rl_startup_hook = rl_insert_preput;
 
 	  /*
-	   * set rl_basic_word_break_characters using the perl variable
-	   *	Should I use the `tie' mechanisim?
-	   */
-/*
- *	  if ((sv = perl_get_sv("rl_basic_word_break_characters", FALSE))
- *	      == NULL)
- *	    warn("$rl_basic_word_break_characters should be defined in Gnu.pm.\n");
- *	  rl_basic_word_break_characters = SvPV(sv, na);
- */
-	  /*
-	   * free previous input stings
-	   */
-	  if (line_read != NULL) {
-	    free(line_read);
-	    line_read = (char *)NULL;
-	  }
-
-	  /*
 	   * call readline()
 	   */
-	  RETVAL = line_read = readline(prompt);
+	  line_read = readline(prompt);
+
+	  /*
+	   * return undef if readline() returns NULL
+	   */
+	  ST(0) = sv_newmortal();
+	  if (line_read != (char *)NULL) {
+	    sv_setpv(ST(0), line_read);
+	    free(line_read);
+	  }
 	}
-	OUTPUT:
-	RETVAL
 
 void
 history_expand(line)
@@ -199,13 +187,25 @@ history_expand(line)
 	  free(expansion);
 	}
 
-void
-stifle_history(max)
-	int max;
+int
+_stifle_history(i)
+	SV *i
 	PROTOTYPE: $
+	CODE:
+	{
+	  if (SvOK(i)) {
+	    int max = SvIV(i);
+	    stifle_history(max);
+	    RETVAL = max;
+	  } else {
+	    RETVAL = unstifle_history();
+	  }
+	}
+	OUTPUT:
+	RETVAL
 
 void
-rl_add_history(...)
+_rl_add_history(...)
 	PROTOTYPE: @
 	CODE:
 	{
