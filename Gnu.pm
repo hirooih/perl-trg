@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.65 1999-03-16 15:51:50 hayashi Exp $
+#	$Id: Gnu.pm,v 1.66 1999-03-16 16:03:56 hayashi Exp $
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -72,8 +72,7 @@ require Term::ReadLine::Gnu::XS;
 
 #	Global Variables
 
-use vars qw(%Attribs %Features @rl_term_set
-	    $Operate_Index $Next_Operate_Index);
+use vars qw(%Attribs %Features @rl_term_set);
 
 %Attribs  = (
 	     do_expand => 0,
@@ -176,7 +175,6 @@ sub new {
 	$Attribs{instream} = shift;
 	$Attribs{outstream} = shift;
     }
-    $Operate_Index = $Next_Operate_Index = undef; # for operate_and_get_next()
 
     $self;
 }
@@ -198,8 +196,6 @@ characters, and C<RL_PROMPT_END_IGNORE> to end of such a sequence.
 
 =cut
 
-use vars qw($_Preput $_Saved_Startup_Hook);
-
 # to peacify -w
 $Term::ReadLine::registered = $Term::ReadLine::registered;
 
@@ -220,30 +216,20 @@ sub readline {			# should be ReadLine
 	$Attribs{getc_function} = $Attribs{Tk_getc};
     }
 
-    # cf. operate_and_get_next()
-    if (defined $Operate_Index) {
-	$Next_Operate_Index = $Operate_Index + 1;
-	my $next_line = $self->history_get($Next_Operate_Index);
-	$preput = $next_line if defined $next_line;
-	undef $Operate_Index;
-    }
-
     # call readline()
     my $line;
     if (defined $preput) {
-	$_Preput = $preput;
-	$_Saved_Startup_Hook = $Attribs{startup_hook};
+	my $saved_startup_hook = $Attribs{startup_hook};
 	$Attribs{startup_hook} = sub {
-	    $self->rl_insert_text($_Preput);
-	    &$_Saved_Startup_Hook
-		if defined $_Saved_Startup_Hook;
+	    $self->rl_insert_text($preput);
+	    &$saved_startup_hook
+		if defined $saved_startup_hook;
 	};
 	$line = $self->rl_readline($prompt);
-	$Attribs{startup_hook} = $_Saved_Startup_Hook;
+	$Attribs{startup_hook} = $saved_startup_hook;
     } else {
 	$line = $self->rl_readline($prompt);
     }
-    undef $Next_Operate_Index;
     return undef unless defined $line;
 
     # history expansion
