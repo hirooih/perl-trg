@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.8 1996-12-01 15:46:19 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.9 1996-12-03 16:28:54 hayashi Exp $
  *
  *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
  *
@@ -113,23 +113,6 @@ rl_insert_preput ()
   if (preput_str)
     rl_insert_text(preput_str);
   return 0;
-}
-
-void
-_rl_set_internal_variable(const char *str, char *var, char *int_var)
-{
-  size_t len;
-
-  /* save mortal perl variable value */
-  if (var != NULL) {
-    Safefree(var);
-    var = (char *)NULL;
-  }
-  len =  strlen(str)+1;
-  New(0, var, len, char);
-  Copy(str, var, len, char);
-
-  int_var = var;
 }
 
 /*
@@ -346,7 +329,7 @@ _rl_set_instream(fildes)
 	PROTOTYPE: $
 	CODE:
 	{
-	  register FILE *fd;
+	  FILE *fd;
 	  if ((fd = fdopen(fildes, "r")) == NULL)
 	    warn("Gnu.xs:rl_set_instream: cannot fdopen");
 	  else
@@ -359,7 +342,7 @@ _rl_set_outstream(fildes)
 	PROTOTYPE: $
 	CODE:
 	{
-	  register FILE *fd;
+	  FILE *fd;
 	  if ((fd = fdopen(fildes, "w")) == NULL)
 	    warn("Gnu.xs:rl_set_outstream: cannot fdopen");
 	  else
@@ -436,8 +419,6 @@ _rl_store_attempted_completion_function(fn)
 	  }
 	}
 
-MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine
-
 void
 completion_matches(text, fn)
 	char * text
@@ -478,8 +459,6 @@ completion_matches(text, fn)
 	    /* return null list */
 	  }
 	}
-
-MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu::Str
 
 void
 _rl_store_str(pstr, id)
@@ -530,8 +509,6 @@ _rl_fetch_str(id)
 	    sv_setpv(ST(0), *(str_tbl[id].var));
 	  }
 	}
-
-MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu::Int
 
 void
 _rl_store_int(pint, id)
