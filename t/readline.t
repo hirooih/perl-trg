@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.13 1997-02-04 16:22:42 hayashi Exp $
+#	$Id: readline.t,v 1.14 1997-02-05 17:51:24 hayashi Exp $
 #
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl t/readline.t'
@@ -12,11 +12,7 @@ END {print "not ok 1\n" unless $loaded;}
 $^W = 1;			# perl -w
 use strict;
 use vars qw($loaded);
-if ($] > 5.002) {
-    use ExtUtils::testlib;
-} else {
-    use lib './blib';
-}
+eval "use ExtUtils::testlib;" or eval "use lib './blib';";
 use Term::ReadLine;
 use Term::ReadLine::Gnu qw(:all);
 
