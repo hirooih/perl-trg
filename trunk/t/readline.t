@@ -1,9 +1,9 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.38 2000-04-01 09:59:02 hayashi Exp $
+#	$Id: readline.t,v 1.39 2000-12-05 15:36:00 hayashi Exp $
 #
-#	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -11,7 +11,7 @@
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl t/readline.t'
 
-BEGIN {print "1..89\n"; $n = 1;}
+BEGIN {print "1..92\n"; $n = 1;}
 END {print "not ok 1\tfail to loading\n" unless $loaded;}
 
 my $verbose = defined @ARGV && ($ARGV[0] eq 'verbose');
@@ -21,7 +21,7 @@ use strict;
 use vars qw($loaded $n);
 eval "use ExtUtils::testlib;" or eval "use lib './blib';";
 use Term::ReadLine;
-use Term::ReadLine::Gnu qw(ISKMAP ISMACR ISFUNC);
+use Term::ReadLine::Gnu qw(ISKMAP ISMACR ISFUNC RL_STATE_INITIALIZED);
 
 $loaded = 1;
 print "ok 1\tloading\n"; $n++;
@@ -99,7 +99,11 @@ $res = $a->{done} == 0;				ok;
 $res = $a->{pending_input} == 0;		ok('pending_input');
 $res = $a->{erase_empty_line} == 0;		ok;
 $res = ! defined($a->{prompt});			ok;
-$res = ! defined($a->{terminal_name});		ok;
+if ($version < 4.2) {
+    $res = ! defined($a->{terminal_name});	ok;
+} else {
+    $res = $a->{terminal_name} eq $ENV{TERM};	ok;
+}
 $res = $a->{readline_name} eq 'ReadLineTest';	ok('readline_name');
 
 # rl_instream, rl_outstream
@@ -107,11 +111,23 @@ $res = $a->{readline_name} eq 'ReadLineTest';	ok('readline_name');
 # The following variables will be tested later.
 #	rl_startup_hook, rl_pre_input_hook, rl_event_hook,
 #	rl_getc_function, rl_redisplay_function
+#	rl_prep_term_function, rl_deprep_term_function
 
 # not defined here
 $res = ! defined($a->{executing_keymap});	ok('executing_keymap');
 # anonymous keymap
 $res = defined($a->{binding_keymap});		ok('binding_keymap');
+
+if ($version > 4.2 - 0.01) {
+    $res = ! defined($a->{executing_macro});	ok('executing_macro');
+    $res = ($a->{readline_state} == RL_STATE_INITIALIZED);
+    ok('readline_state');
+} else {
+    print "ok $n # skipped because GNU Readline Library is older than 4.2.\n";
+    $n++;
+    print "ok $n # skipped because GNU Readline Library is older than 4.2.\n";
+    $n++;
+}
 
 ########################################################################
 # 2.4 Readline Convenience Functions
@@ -248,9 +264,14 @@ sub bind_my_function {
     $t->bind_key(ord "\cv", 'display-readline-version', 'emacs-ctlx');
     $t->parse_and_bind('"\C-xv": display-readline-version');
     $t->bind_key(ord "c", 'invert-case-line', 'emacs-meta');
-    $t->bind_key(ord "o", 'change-ornaments', 'emacs-meta');
+    if ($version > 4.2 - 0.1) {
+	# rl_set_key in introduced by GRL 4.2
+	$t->set_key("\eo", 'change-ornaments');
+    } else {
+	$t->bind_key(ord "o", 'change-ornaments', 'emacs-meta');
+    }
     
-    # make original map
+    # make an original map
     $helpmap = $t->make_bare_keymap();
     $t->bind_key(ord "f", 'dump-functions', $helpmap);
     $t->generic_bind(ISKMAP, "\e?", $helpmap);
@@ -258,7 +279,7 @@ sub bind_my_function {
     # 'dump-macros' is documented but not defined by GNU Readline 2.1
     $t->generic_bind(ISFUNC, "\e?m", 'dump-macros') if $version > 2.1;
     
-    # bind macro
+    # bind a macro
     $mymacro = "\ca[insert text from beginning of line]";
     $t->generic_bind(ISMACR, "\e?i", $mymacro);
 }
@@ -270,12 +291,12 @@ bind_my_function;		# do bind
     # check keymap binding
     ($fn, $ty) = $t->function_of_keyseq("\cX");
     $res = $t->get_keymap_name($fn) eq 'emacs-ctlx' && $ty == ISKMAP;
-    ok('binding keys');
+    ok('keymap binding');
 
     # check macro binding
     ($fn, $ty) = $t->function_of_keyseq("\e?i");
     $res = $fn eq $mymacro && $ty == ISMACR;
-    ok;
+    ok('macro binding');
 }
 
 # check function binding
@@ -287,7 +308,7 @@ $res = (is_boundp("\cT", 'reverse-line')
 	&& is_boundp("\e?f",   'dump-functions')
 	&& is_boundp("\e?v",   'dump-variables')
 	&& ($version <= 2.1 or is_boundp("\e?m",   'dump-macros')));
-ok;
+ok('function binding');
 
 # test rl_read_init_file
 $res = $t->read_init_file('t/inputrc') == 0;
@@ -324,6 +345,17 @@ my @keyseqs = ($t->invoking_keyseqs('reverse-line'),
 	       $t->invoking_keyseqs('dump-variables'));
 $res = scalar @keyseqs == 0; ok('unbind_key',"@keyseqs");
 
+if ($version > 4.2 - 0.1) {
+    $t->add_funmap_entry('foo_bar', 'reverse-line');
+# This does not work.  We need `equal' in Lisp.
+#    $res = ($t->named_function('reverse-line')
+#	    == $t->named_function('foo_bar'));
+    $res = defined $t->named_function('foo_bar');
+    ok('add_funmap_entry');
+} else {
+    print "ok $n # skipped because GNU Readline Library is older than 4.2.\n";
+    $n++;
+}
 ########################################################################
 # 2.4.4 Associating Function Names and Bindings
 
@@ -407,9 +439,14 @@ $a->{getc_function} = sub {
 sub is_boundp {
     my ($seq, $fname) = @_;
     my ($fn, $type) = $t->function_of_keyseq($seq);
-    die "no fn for seq $seq fname $fname" unless $fn;
-    return ($t->get_function_name($fn) eq $fname
-	    && $type == ISFUNC);
+    if ($fn) {
+	return ($t->get_function_name($fn) eq $fname
+		&& $type == ISFUNC);
+    } else {
+	warn ("No function is bound for sequence \`", toprint($seq),
+	      "\'.  \`$fname\' is expected,");
+	return 0;
+    }
 }
 
 $res = (is_boundp("\cM", 'accept-line')
@@ -669,7 +706,8 @@ $line = $t->readline("rl_pre_input_hook test>", "cursor is, <- here");
 if ($version > 4.0 - 0.1) {
     $res = $line eq 'cursor is,insert <- here'; ok('pre_input_hook', $line);
 } else {
-    print "ok $n # skipped because of old GNU Readline Library.\n"; $n++;
+    print "ok $n # skipped because GNU Readline Library is older than 4.0.\n";
+    $n++;
 }
 $a->{pre_input_hook} = undef;
 
@@ -694,7 +732,8 @@ if ($version > 4.0 - 0.1) {
     $t->parse_and_bind('set print-completions-horizontally off');
     print "ok $n\n"; $n++;
 } else {
-    print "ok $n # skipped because of old GNU Readline Library.\n"; $n++;
+    print "ok $n # skipped because GNU Readline Library is older than 4.0.\n";
+    $n++;
 }
 
 #########################################################################
@@ -715,7 +754,8 @@ if ($version > 4.0 - 0.1) {
     print "ok $n\n"; $n++;
     $t->parse_and_bind('set bell-style audible'); # resume to default style
 } else {
-    print "ok $n # skipped because of old GNU Readline Library.\n"; $n++;
+    print "ok $n # skipped because GNU Readline Library is older than 4.0.\n";
+    $n++;
 }
 
 ########################################################################
