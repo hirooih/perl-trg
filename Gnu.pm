@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.78 2000-04-02 15:57:51 hayashi Exp $
+#	$Id: Gnu.pm,v 1.79 2000-04-06 16:54:25 hayashi Exp $
 #
 #	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
 #
@@ -774,7 +774,7 @@ detail see 'GNU Readline Library Manual'.
 
 	void	rl_list_funmap_names()
 
-=item C<funmap_names> (undocumented)
+=item C<funmap_names>
 
 	(@str)	rl_funmap_names()
 
