@@ -1,9 +1,9 @@
 #
 #	Makefile.PL for Term::ReadLine::Gnu
 #
-#	$Id: Makefile.PL,v 1.22 2000-11-27 16:21:26 hayashi Exp $
+#	$Id: Makefile.PL,v 1.23 2001-10-26 03:45:39 hayashi Exp $
 #
-#	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
 #		<hiroo.hayashi@computer.org>
 #
 #	This program is free software; you can redistribute it and/or
@@ -63,6 +63,11 @@ if ($Config{osname} =~ /cygwin/i) {
 #
 # Check libreadline.a version
 #
+# Readline 4.2a introduced the macro
+#	RL_READLINE_VERSION
+#	RL_VERSION_MAJOR
+#	RL_VERSION_MINOR
+# Someday we don't need the following hack.
 $frlver = 'rlver.c';
 
 # make temp file
@@ -104,9 +109,14 @@ EOM
 # execute it and get version
 chomp($rlver = `./rlver`);
 print "It seems that you have the GNU Readline Library version $rlver.\n";
-# $rlver may be '8.21-beta3'
+# $rlver may be '8.21-beta3' or '4.2a'
 ($rlmajorver, $rlminorver) = $rlver =~ /(\d+)\.(\d+)/;
-$defs .= " -DRLMAJORVER=$rlmajorver -DRLMINORVER=$rlminorver";
+$rl_readline_version = sprintf("0x%02x%02x", $rlmajorver, $rlminorver);
+if ($rl_readline_version <= 0x0402) {
+    $defs .= " -DRL_READLINE_VERSION=$rl_readline_version";
+    $defs .= " -DRL_VERSION_MAJOR=$rlmajorver";
+    $defs .= " -DRL_VERSION_MINOR=$rlminorver";
+}
 
 # generate a Makefile
 WriteMakefile(

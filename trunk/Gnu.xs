@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.96 2001-10-26 03:15:00 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.97 2001-10-26 03:46:45 hayashi Exp $
  *
  *	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
  *
@@ -50,7 +50,7 @@ extern "C" {
 extern Function *rl_last_func;
 
 /* features introduced by GNU Readline 4.0 */
-#if (RLMAJORVER < 4)
+#if (RL_VERSION_MAJOR < 4)
 extern void rl_extend_line_buffer PARAMS((int));
 extern char **rl_funmap_names PARAMS((void));
 
@@ -76,17 +76,17 @@ extern void _rl_save_prompt PARAMS((void));
 extern void _rl_restore_prompt PARAMS((void));
 static void rl_save_prompt() { _rl_save_prompt(); }
 static void rl_restore_prompt() { _rl_restore_prompt(); }
-#endif /* (RLMAJORVER < 4) */
+#endif /* (RL_VERSION_MAJOR < 4) */
 
 /* features introduced by GNU Readline 4.1 */
-#if (RLMAJORVER < 4 || RLMAJORVER == 4 && RLMINORVER < 1)
+#if (RL_VERSION_MAJOR < 4 || RL_VERSION_MAJOR == 4 && RL_VERSION_MINOR < 1)
 static int rl_already_prompted = 0;
 static int rl_num_chars_to_read = 0;
 static int rl_gnu_readline_p = 0;
-#endif /* (RLMAJORVER < 4 || RLMAJORVER = 4 && RLMINORVER < 1) */
+#endif /* (RL_VERSION_MAJOR < 4 || RL_VERSION_MAJOR = 4 && RL_VERSION_MINOR < 1) */
 
 /* features introduced by GNU Readline 4.2 */
-#if (RLMAJORVER < 4 || RLMAJORVER == 4 && RLMINORVER < 2)
+#if (RL_VERSION_MAJOR < 4 || RL_VERSION_MAJOR == 4 && RL_VERSION_MINOR < 2)
 /* Provide backwards-compatible entry points for old function names
    which are rename from readline-4.2. */
 typedef int rl_command_func_t PARAMS((int, int));
@@ -111,14 +111,14 @@ rl_crlf ()
   return crlf ();
 }
 
-#if (RLMAJORVER >= 4)
+#if (RL_VERSION_MAJOR >= 4)
 static void
 rl_tty_set_default_bindings (keymap)
 Keymap keymap;
 {
   rltty_set_default_bindings (keymap);
 }
-#endif /* (RLMAJORVER >= 4) */
+#endif /* (RL_VERSION_MAJOR >= 4) */
 
 static int
 rl_ding ()
@@ -155,9 +155,9 @@ rl_filename_completion_function (s, i)
  * return values are now declared `const' where appropriate.
  */
 #define CONST
-#else  /* (RLMAJORVER < 4 || RLMAJORVER = 4 && RLMINORVER < 2) */
+#else  /* (RL_VERSION_MAJOR < 4 || RL_VERSION_MAJOR = 4 && RL_VERSION_MINOR < 2) */
 #define CONST const
-#endif /* (RLMAJORVER < 4 || RLMAJORVER = 4 && RLMINORVER < 2) */
+#endif /* (RL_VERSION_MAJOR < 4 || RL_VERSION_MAJOR = 4 && RL_VERSION_MINOR < 2) */
 
 /*
  * utility/dummy functions
@@ -299,7 +299,7 @@ static struct int_vars {
 
   { &history_base,				0, 0 },	/* 11 */
   { &history_length,				0, 0 },	/* 12 */
-#if (RLMAJORVER >= 4 && RLMINORVER >= 2 || RLMAJORVER > 4)
+#if (RL_VERSION_MAJOR >= 4 && RL_VERSION_MINOR >= 2 || RL_VERSION_MAJOR > 4)
   { &history_max_entries,			0, 1 },	/* 13 */
 #else
   { &max_input_history,				0, 1 },	/* 13 */
@@ -968,7 +968,7 @@ history_inhibit_expansion_function_wrapper(text, index)
 static int
 pre_input_hook_wrapper() { return voidfunc_wrapper(PRE_INPUT_HOOK); }
 
-#if (RLMAJORVER >= 4)
+#if (RL_VERSION_MAJOR >= 4)
 /*
  * call a perl function as rl_completion_display_matches_hook
  */
@@ -1009,7 +1009,7 @@ completion_display_matches_hook_wrapper(matches, len, max)
 
   perl_call_sv(fn_tbl[COMP_DISP_HOOK].callback, G_DISCARD);
 }
-#else /* (RLMAJORVER < 4) */
+#else /* (RL_VERSION_MAJOR < 4) */
 static void
 completion_display_matches_hook_wrapper(matches, len, max)
      char **matches;
@@ -1018,7 +1018,7 @@ completion_display_matches_hook_wrapper(matches, len, max)
 {
   /* dummy */
 }
-#endif /* (RLMAJORVER < 4) */
+#endif /* (RL_VERSION_MAJOR < 4) */
 
 static int
 prep_term_function_wrapper(meta_flag)
@@ -1281,7 +1281,7 @@ _rl_unbind_key(key, map = rl_get_keymap())
 	OUTPUT:
 	RETVAL
 
-#if (RLMAJORVER >= 2 && RLMINORVER >= 2 || RLMAJORVER > 2)
+#if (RL_VERSION_MAJOR >= 2 && RL_VERSION_MINOR >= 2 || RL_VERSION_MAJOR > 2)
 
 # rl_unbind_function_in_map() and rl_unbind_command_in_map() are introduced
 # by readline-2.2.
@@ -1312,7 +1312,7 @@ _rl_unbind_command(command, map = rl_get_keymap())
 
 #endif /* readline-2.2 and later */
 
-#if (RLMAJORVER >= 4 && RLMINORVER >= 2 || RLMAJORVER > 4)
+#if (RL_VERSION_MAJOR >= 4 && RL_VERSION_MINOR >= 2 || RL_VERSION_MAJOR > 4)
 # rl_set_key() is introduced by readline-4.2 and equivalent with
 # rl_generic_bind(ISFUNC, keyseq, (char *)function, map).
 int
@@ -1528,7 +1528,7 @@ rl_funmap_names()
 	  }
 	}
 
-#if (RLMAJORVER >= 4 && RLMINORVER >= 2 || RLMAJORVER > 4)
+#if (RL_VERSION_MAJOR >= 4 && RL_VERSION_MINOR >= 2 || RL_VERSION_MAJOR > 4)
 # rl_add_funmap_entry() is introduced by readline-4.2.
 int
 _rl_add_funmap_entry(name, function)
@@ -1596,7 +1596,7 @@ int
 rl_on_new_line()
 	PROTOTYPE:
 
-#if (RLMAJORVER >= 4 && RLMINORVER >= 1 || RLMAJORVER > 4)
+#if (RL_VERSION_MAJOR >= 4 && RL_VERSION_MINOR >= 1 || RL_VERSION_MAJOR > 4)
 int
 rl_on_new_line_with_prompt()
 	PROTOTYPE:
@@ -1643,13 +1643,13 @@ int
 rl_expand_prompt(prompt)
 	char *prompt
 
-#if (RLMAJORVER > 4 || RLMAJORVER == 4 && RLMINORVER >= 2)
+#if (RL_VERSION_MAJOR > 4 || RL_VERSION_MAJOR == 4 && RL_VERSION_MINOR >= 2)
 
 int
 rl_set_prompt(prompt)
 	const char *prompt
 
-#endif /* (RLMAJORVER > 4 || RLMAJORVER == 4 && RLMINORVER >= 2) */
+#endif /* (RL_VERSION_MAJOR > 4 || RL_VERSION_MAJOR == 4 && RL_VERSION_MINOR >= 2) */
 
 #
 #	2.4.7 Modifying Text
@@ -1706,15 +1706,15 @@ rl_stuff_char(c)
 	int c
 	PROTOTYPE: $
 
-#if (RLMAJORVER >= 4)
+#if (RL_VERSION_MAJOR >= 4)
 
 int
 rl_execute_next(c)
 	int c
 	PROTOTYPE: $
 
-#endif /* (RLMAJORVER >= 4) */
-#if (RLMAJORVER > 4 || RLMAJORVER == 4 && RLMINORVER >= 2)
+#endif /* (RL_VERSION_MAJOR >= 4) */
+#if (RL_VERSION_MAJOR > 4 || RL_VERSION_MAJOR == 4 && RL_VERSION_MINOR >= 2)
 
 int
 rl_clear_pending_input()
@@ -1725,13 +1725,13 @@ rl_set_keyboard_input_timeout(usec)
 	int usec
 	PROTOTYPE: $
 
-#endif /* (RLMAJORVER > 4 || RLMAJORVER == 4 && RLMINORVER >= 2) */
+#endif /* (RL_VERSION_MAJOR > 4 || RL_VERSION_MAJOR == 4 && RL_VERSION_MINOR >= 2) */
 
 #
 #	2.4.9 Terminal Management
 #
 
-#if (RLMAJORVER >= 4)
+#if (RL_VERSION_MAJOR >= 4)
 
 void
 rl_prep_terminal(meta_flag)
@@ -1751,7 +1751,7 @@ _rl_tty_set_default_bindings(kmap = rl_get_keymap())
 	  rl_tty_set_default_bindings(kmap);
 	}
 
-#endif /* (RLMAJORVER >= 4) */
+#endif /* (RL_VERSION_MAJOR >= 4) */
 
 int
 rl_reset_terminal(terminal_name = NULL)
@@ -1769,16 +1769,16 @@ int
 rl_ding()
 	PROTOTYPE:
 
-#if (RLMAJORVER > 4 || RLMAJORVER == 4 && RLMINORVER >= 2)
+#if (RL_VERSION_MAJOR > 4 || RL_VERSION_MAJOR == 4 && RL_VERSION_MINOR >= 2)
 
 int
 rl_alphabetic(c)
 	int c
 	PROTOTYPE: $
 
-#endif /* (RLMAJORVER > 4 || RLMAJORVER == 4 && RLMINORVER >= 2) */
+#endif /* (RL_VERSION_MAJOR > 4 || RL_VERSION_MAJOR == 4 && RL_VERSION_MINOR >= 2) */
 
-#if (RLMAJORVER >= 4)
+#if (RL_VERSION_MAJOR >= 4)
 
 void
 rl_display_match_list(pmatches, plen = -1, pmax = -1)
@@ -1823,7 +1823,7 @@ rl_display_match_list(pmatches, plen = -1, pmax = -1)
 	  xfree(matches);
 	}
 
-#endif /* (RLMAJORVER < 4) */
+#endif /* (RL_VERSION_MAJOR < 4) */
 
 #
 #	2.4.11 Miscellaneous Functions
@@ -1871,14 +1871,14 @@ rl_variable_dumper(readable = 0)
 	int readable
 	PROTOTYPE: ;$
 
-#if (RLMAJORVER > 4 || RLMAJORVER == 4 && RLMINORVER >= 2)
+#if (RL_VERSION_MAJOR > 4 || RL_VERSION_MAJOR == 4 && RL_VERSION_MINOR >= 2)
 
 int
 rl_set_paren_blink_timeout(usec)
 	int usec
 	PROTOTYPE: $
 
-#endif /* (RLMAJORVER > 4 || RLMAJORVER == 4 && RLMINORVER >= 2) */
+#endif /* (RL_VERSION_MAJOR > 4 || RL_VERSION_MAJOR == 4 && RL_VERSION_MINOR >= 2) */
 
 #
 #	2.4.12 Alternate Interface
@@ -1941,7 +1941,7 @@ void
 rl_resize_terminal()
 	PROTOTYPE:
 
-#if (RLMAJORVER > 4 || RLMAJORVER == 4 && RLMINORVER >= 2)
+#if (RL_VERSION_MAJOR > 4 || RL_VERSION_MAJOR == 4 && RL_VERSION_MINOR >= 2)
 
 void
 rl_set_screen_size(rows, cols)
@@ -1961,7 +1961,7 @@ rl_get_screen_size()
 	  PUSHs(sv_2mortal(newSViv(cols)));
 	}
 
-#endif /* (RLMAJORVER > 4 || RLMAJORVER == 4 && RLMINORVER >= 2) */
+#endif /* (RL_VERSION_MAJOR > 4 || RL_VERSION_MAJOR == 4 && RL_VERSION_MINOR >= 2) */
 
 int
 rl_set_signals()
