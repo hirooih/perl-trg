@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	callback.t - Test script for Term::ReadLine:GNU callback function
 #
-#	$Id: callback.t,v 1.1 1999-04-03 15:32:33 hayashi Exp $
+#	$Id: callback.t,v 1.2 1999-04-04 11:24:44 hayashi Exp $
 #
 #	Copyright (c) 1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -54,7 +54,6 @@ if (eval "use Tk; 1") {
     print "ok $n\t# skipped since Tk is not installed.\n"; $n++;
     exit 0;
 }
-use Tk;
 my $mw;
 $mw = MainWindow->new();
 $mw->protocol('WM_DELETE_WINDOW' => \&quit);
