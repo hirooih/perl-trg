@@ -1,38 +1,45 @@
-$Id: README,v 1.18 1999-12-30 05:14:10 hayashi Exp $
+	-*- Indented-text -*-
+$Id: README,v 1.19 2000-04-03 17:56:07 hayashi Exp $
 
 Term::ReadLine::Gnu --- GNU Readline Library Wrapper Module
 
-	Copyright (c) 1999 Hiroo Hayashi.  All rights reserved.
+	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
 
 	This program is free software; you can redistribute it and/or
 	modify it under the same terms as Perl itself.
 
 Description:
 
-	This is an implementation of the interface to the GNU Readline
-	Library.  This module gives you input line editing facility,
-	input history management facility, word completion facility,
-	etc.  It uses the real GNU Readline Library.  And this module
-	has the interface with the almost all variables and functions
-	which are documented in the GNU Readline/History Library.  So
-	you can program your custom editing function, your custom
-	completion function, and so on with Perl.  This may be useful
-	for prototyping before programming with C.
+	Term::ReadLine::Gnu (TRG) is an implementation of the
+	interface to the GNU Readline Library.  This module gives you
+	input line editing facility, input history management
+	facility, word completion facility, etc.  It uses the real GNU
+	Readline Library and has the interface with the almost all
+	variables and functions which are documented in the GNU
+	Readline/History Library.  So you can program your custom
+	editing function, your custom completion function, and so on
+	with Perl.  TRG may be useful for prototyping before
+	programming with C.
 
-	Ilya Zakharevich distributes his implementation, which bases
-	on Jeffrey Friedl's readline.pl.  His module works very well,
-	and is easy to install because it is written by only Perl.  I
-	am trying to make my module compatible with his.  He gives
-	useful advises for me.
+	TRG is upper compatible with Term::ReadLine included in Perl
+	distribution.  Term::ReadLine uses TRG automatically when TRG
+	is available.  You can enjoy full line editing feature with
+	Perl debugger which use Term::ReadLine with no patch.
 
-	Unfortunately readline.pl simulates old GNU Readline library.
-	For example, it is not 8 bit clean and it warns to the
-	variables in ~/.inputrc which it does not know yet.  We
-	Japanese usually use 8 bit characters, so this is bad feature
-	for me.  And I had interest with C interface facility and
+	Ilya Zakharevich distributes his implementation,
+	Term::ReadLine::Perl, which bases on Jeffrey Friedl's
+	readline.pl.  His module works very well, and is easy to
+	install because it is written by only Perl.  I am trying to
+	make my module compatible with his.  He gives useful advises
+	for me.  Unfortunately readline.pl simulated old GNU Readline
+	library before TRG was born.  For example, it was not 8 bit
+	clean and it warns to the variables in ~/.inputrc which it did
+	not know yet.  We Japanese usually use 8 bit characters, so
+	this was bad feature for me.  I could make a patch for these
+	problems but I had interest with C interface facility and
 	dynamic loading facility of Perl, so I thought it was a good
-	chance for me to study them.  I made this module instead of
-	fixing his module.
+	chance for me to study them.  Then I made this module instead
+	of fixing his module.
 
 Prerequisites:
 	You must have GNU Readline Library Version 2.1 or later.  See
@@ -45,17 +52,25 @@ How to build/install:
 	See INSTALL.
 
 Bugs:
-	The GNU Readline Library is very stable.  But this is my first
-	XS programming, my first Perl module programming, and my first
-	object oriented programming, and...  There must be many bugs
-	in both programs and documents (especially in English
-	grammar).  Comments and bug reports are very welcome.
+	There must be many bugs in both programs and documents
+	(especially in English grammar).  Comments and bug reports are
+	very welcome.
 
 Author:
 	Hiroo Hayashi <hiroo.hayashi@computer.org>
 
 
 Revision History:
+
+1.09  2000-04-04
+	- Perl-5.6 now does not warn without `POLLUTE=1' during `perl
+          Makefile.PL'.  (Thanks to PPPort.)
+	- change the default terminal escape sequence to stop
+          underline.
+	- support rl_already_prompted and rl_on_new_line_with_prompt()
+	  which are introduced by readline-4.1-beta.
+	- support rl_fumap_names() and rl_last_func.
+	- update documentation.
 
 1.08  1999-12-30
 	- fix Makefile.PL to search libreadline.* correctly even if it
