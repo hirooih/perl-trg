@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	history.t --- Term::ReadLine:GNU History Library Test Script
 #
-#	$Id: history.t,v 1.4 1999-04-03 09:34:20 hayashi Exp $
+#	$Id: history.t,v 1.5 2001-03-10 05:06:42 hayashi Exp $
 #
 #	Copyright (c) 1998 Hiroo Hayashi.  All rights reserved.
 #
@@ -11,7 +11,7 @@
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl t/history.t'
 
-BEGIN {print "1..81\n"; $n = 1}
+BEGIN {print "1..82\n"; $n = 1}
 END {print "not ok $n\n" unless $loaded;}
 
 $^W = 1;			# perl -w
@@ -23,6 +23,23 @@ sub show_indices;
 
 $loaded = 1;
 print "ok $n\n"; $n++;
+
+# Perl-5.005 and later has Test.pm, but I define this here to support
+# older version.
+my $res;
+my $ok = 1;
+sub ok {
+    my $what = shift || '';
+
+    if ($res) {
+	print "ok $n\t$what\n";
+    } else {
+	print "not ok $n\t$what";
+	print @_ ? "\t@_\n" : "\n";
+	$ok = 0;
+    }
+    $n++;
+}
 
 ########################################################################
 # test new method
@@ -51,12 +68,16 @@ use vars qw($attribs);
 $attribs = $t->Attribs;
 print defined $attribs ? "ok $n\n" : "not ok $n\n"; $n++;
 
+my ($version) = $attribs->{library_version} =~ /(\d+\.\d+)/;
+
 ########################################################################
 # 2.3.1 Initializing History and State Management
 
 # test using_history
 # This is verbose since 'new' has already initialized the GNU history library.
 $t->using_history;
+
+# history_get_history_state!!!, history_set_history_state!!!
 
 # check the values of initialized variables
 print $attribs->{history_base} == 1
@@ -71,6 +92,13 @@ print $attribs->{history_subst_char} eq '^'
     ? "ok $n\n" : "not ok $n\n"; $n++;
 print $attribs->{history_comment_char} eq "\0"
     ? "ok $n\n" : "not ok $n\n"; $n++;
+if ($version > 4.2 - 0.01) {
+    $res = $attribs->{history_word_delimiters} eq " \t\n;&()|<>";
+    ok('history_word_delimiters');
+} else {
+    print "ok $n # skipped because GNU Readline Library is older than 4.2.\n";
+    $n++;
+}
 print $attribs->{history_no_expand_chars} eq " \t\n\r="
     ? "ok $n\n" : "not ok $n\n"; $n++;
 print ! defined $attribs->{history_search_delimiter_chars}
@@ -385,6 +413,9 @@ print $ret eq $exp ? "ok $n\n" : "not ok $n\n"; $n++;
 
 # history_base, history_length, max_input_history are tested above
 
+# history_expansion_char!!!, history_subst_char!!!, history_comment_char!!!,
+# history_word_delimiters!!!, history_no_expand_chars!!!
+
 # history_inhibit_expansion_function
 @list_set = ('red yellow', 'blue red', 'yellow blue', 'green blue');
 $t->SetHistory(@list_set);
@@ -408,6 +439,7 @@ exit 0;
 ########################################################################
 # subroutines
 
+# compare lists
 sub cmp_list {
     ($a, $b) = @_;
     my @a = @$a;
@@ -419,6 +451,7 @@ sub cmp_list {
     return 1;
 }
 
+# debugging support
 sub show_indices {
     return;
     printf("where_history: %d ",	$t->where_history);
