@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.86 2000-04-02 15:58:09 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.87 2000-11-22 15:40:29 hayashi Exp $
  *
  *	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
  *
@@ -50,6 +50,48 @@ extern void rl_extend_line_buffer __P((int));
 extern char **rl_funmap_names __P((void));
 #endif
 
+#if (RLMAJORVER < 4 || RLMAJORVER == 4 && RLMINORVER < 2)
+/* Provide backwards-compatible entry points for old function names
+   which are rename from readline-4.2. */
+typedef char *rl_compentry_func_t __P((const char *, int));
+
+static void
+rl_free_undo_list ()
+{
+  free_undo_list ();
+}
+
+static int
+rl_ding ()
+{
+  return ding ();
+}
+
+static char **
+rl_completion_matches (s, f)
+     char *s;
+     rl_compentry_func_t *f;
+{
+  return completion_matches (s, (CPFunction *)f);
+}
+
+char *
+rl_username_completion_function (s, i)
+     const char *s;
+     int i;
+{
+  return username_completion_function ((char *)s, i);
+}
+
+char *
+rl_filename_completion_function (s, i)
+     const char *s;
+     int i;
+{
+  return filename_completion_function ((char *)s, i);
+}
+#endif
+
 /*
  * Using xfree() in GNU Readline Library causes problem with Solaris
  * 2.5.  It seems that the DLL mechanism of Solaris 2.5 links another
@@ -89,7 +131,7 @@ dupstr(s)			/* duplicate string */
 /*
  * should be defined in readline/bind.c ?
  */
-static char *
+static const char *
 rl_get_function_name (function)
      Function *function;
 {
@@ -99,7 +141,7 @@ rl_get_function_name (function)
 
   for (i = 0; funmap[i]; i++)
     if (funmap[i]->function == function)
-      return (funmap[i]->name);
+      return ((const char *)funmap[i]->name); /* cast is for oldies */
   return NULL;
 }
 
@@ -159,16 +201,16 @@ static struct str_vars {
      rl_extend_line_buffer().  See _rl_store_rl_line_buffer() */
   { &rl_line_buffer,				0, 0 },	/* 0 */
   { &rl_prompt,					0, 1 },	/* 1 */
-  { &rl_library_version,			0, 1 },	/* 2 */
-  { &rl_terminal_name,				0, 0 },	/* 3 */
-  { &rl_readline_name,				0, 0 },	/* 4 */
+  { (char **)&rl_library_version,		0, 1 },	/* 2 */
+  { (char **)&rl_terminal_name,			0, 0 },	/* 3 */
+  { (char **)&rl_readline_name,			0, 0 },	/* 4 */
   
-  { &rl_basic_word_break_characters,		0, 0 },	/* 5 */
-  { &rl_basic_quote_characters,			0, 0 },	/* 6 */
-  { &rl_completer_word_break_characters,	0, 0 },	/* 7 */
-  { &rl_completer_quote_characters,		0, 0 },	/* 8 */
-  { &rl_filename_quote_characters,		0, 0 },	/* 9 */
-  { &rl_special_prefixes,			0, 0 },	/* 10 */
+  { (char **)&rl_basic_word_break_characters,		0, 0 },	/* 5 */
+  { (char **)&rl_basic_quote_characters,		0, 0 },	/* 6 */
+  { (char **)&rl_completer_word_break_characters,	0, 0 },	/* 7 */
+  { (char **)&rl_completer_quote_characters,		0, 0 },	/* 8 */
+  { (char **)&rl_filename_quote_characters,		0, 0 },	/* 9 */
+  { (char **)&rl_special_prefixes,			0, 0 },	/* 10 */
   
   { &history_no_expand_chars,			0, 0 },	/* 11 */
   { &history_search_delimiter_chars,		0, 0 }	/* 12 */
@@ -229,7 +271,7 @@ static int startup_hook_wrapper __P((void));
 static int event_hook_wrapper __P((void));
 static int getc_function_wrapper __P((FILE *));
 static void redisplay_function_wrapper __P((void));
-static char *completion_entry_function_wrapper __P((char *, int));
+static char *completion_entry_function_wrapper __P((const char *, int));;
 static char **attempted_completion_function_wrapper __P((char *, int, int));
 static char *filename_quoting_function_wrapper __P((char *text, int match_type,
 						    char *quote_pointer));
@@ -394,7 +436,7 @@ void_arg_func_wrapper(type)
 
 static char *
 completion_entry_function_wrapper(text, state)
-     char *text;
+     const char *text;
      int state;
 {
   dSP;
@@ -1213,7 +1255,7 @@ rl_named_function(name)
 	char *name
 	PROTOTYPE: $
 
-char *
+const char *
 rl_get_function_name(function)
 	Function *function
 	PROTOTYPE: $
@@ -1314,9 +1356,10 @@ rl_funmap_names()
 	PROTOTYPE:
 	PPCODE:
 	{
-	  char **funmap;
+	  const char **funmap;
 
-	  funmap = rl_funmap_names(); /* don't free returned memory */
+	  /* don't free returned memory */
+	  funmap = (const char **)rl_funmap_names();/* cast is for oldies */
 
 	  if (funmap) {
 	    int i, count;
@@ -1358,7 +1401,7 @@ rl_add_undo(what, start, end, text)
 	}
 
 void
-free_undo_list()
+rl_free_undo_list()
 	PROTOTYPE:
 
 int
@@ -1473,7 +1516,7 @@ rl_reset_terminal(terminal_name = NULL)
 	PROTOTYPE: ;$
 
 int
-ding()
+rl_ding()
 	PROTOTYPE:
 
 #if (RLMAJORVER >= 4)
@@ -1602,7 +1645,7 @@ rl_complete_internal(what_to_do = TAB)
 	PROTOTYPE: ;$
 
 void
-completion_matches(text, fn = NULL)
+rl_completion_matches(text, fn = NULL)
 	char *text
 	SV *fn
 	PROTOTYPE: $;$
@@ -1616,14 +1659,14 @@ completion_matches(text, fn = NULL)
 	    SV *callback_save = fn_tbl[CMP_ENT].callback;
 	    fn_tbl[CMP_ENT].callback = newSVsv(fn);
 
-	    matches = completion_matches(text,
-					 completion_entry_function_wrapper);
+	    matches = rl_completion_matches(text,
+					    completion_entry_function_wrapper);
 
 	    SvREFCNT_dec(fn_tbl[CMP_ENT].callback);
 	    fn_tbl[CMP_ENT].callback = callback_save;
 	    *(fn_tbl[CMP_ENT].rlfuncp) = rlfunc_save;
 	  } else
-	    matches = completion_matches(text, NULL);
+	    matches = rl_completion_matches(text, NULL);
 
 	  /*
 	   * Without the next line the Perl internal stack is broken
@@ -1651,13 +1694,13 @@ completion_matches(text, fn = NULL)
 	}
 
 void
-filename_completion_function(text, state)
-	char *text
+rl_filename_completion_function(text, state)
+	const char *text
 	int state
 	PROTOTYPE: $$
 	CODE:
 	{
-	  char *str = filename_completion_function(text, state);
+	  char *str = rl_filename_completion_function(text, state);
 	  ST(0) = sv_newmortal();
 	  if (str) {
 	    sv_setpv(ST(0), str);
@@ -1666,13 +1709,13 @@ filename_completion_function(text, state)
 	}
 
 void
-username_completion_function(text, state)
-	char *text
+rl_username_completion_function(text, state)
+	const char *text
 	int state
 	PROTOTYPE: $$
 	CODE:
 	{
-	  char *str = username_completion_function(text, state);
+	  char *str = rl_username_completion_function(text, state);
 	  ST(0) = sv_newmortal();
 	  if (str) {
 	    sv_setpv(ST(0), str);
