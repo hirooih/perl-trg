@@ -2,7 +2,7 @@
 #
 #	XS.pm : perl function definition for Term::ReadLine::Gnu
 #
-#	$Id: XS.pm,v 1.17 2001-10-28 03:53:54 hayashi Exp $
+#	$Id: XS.pm,v 1.18 2002-03-30 04:12:28 hiroo Exp $
 #
 #	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
 #
@@ -54,6 +54,8 @@ my $rl_term_set = ',,,';
 # other purpose.
 my $_i;
 my @_matches;
+my @_tstrs;
+my $_tstrs_init = 0;
 
 1;
 
@@ -406,14 +408,29 @@ sub Tk_getc {
 #	$a->{redisplay_function} = $a->{shadow_redisplay};
 #	$line = $t->readline("password> ");
 sub shadow_redisplay {
+    @_tstrs = _tgetstrs() unless $_tstrs_init;
     my $OUT = $Attribs{outstream};
     my $oldfh = select($OUT); $| = 1; select($oldfh);
-    print $OUT (tgetstr('cr'), # carriage return
-		tgetstr('ce'), # clear to EOL
+    print $OUT ($_tstrs[0],	# carriage return
+		$_tstrs[1],	# clear to EOL
 		$Attribs{prompt}, '*' x length($Attribs{line_buffer}));
-    print $OUT (tgetstr('le') # cursor left
+    print $OUT ($_tstrs[2]	# cursor left
 		x (length($Attribs{line_buffer}) - $Attribs{point}));
     $oldfh = select($OUT); $| = 0; select($oldfh);
+}
+
+sub _tgetstrs {
+    my @s = (tgetstr('cr'),	# carriage return
+	     tgetstr('ce'),	# clear to EOL
+	     tgetstr('le'));	# cursor left
+    warn <<"EOM" unless (defined($s[0]) && defined($s[1]) && defined($s[2]));
+Your terminal 'TERM=$ENV{TERM}' does not support enough function.
+Check if your environment variable 'TERM' is set correctly.
+EOM
+    # suppress warning "Use of uninitialized value in print at ..."
+    $s[0] = $s[0] || ''; $s[1] = $s[1] || ''; $s[2] = $s[2] || '';
+    $_tstrs_init = 1;
+    return @s;
 }
 
 # callback handler wrapper function for CallbackHandlerInstall method
