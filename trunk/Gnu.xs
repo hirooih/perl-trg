@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.32 1997-01-09 16:59:51 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.33 1997-01-12 15:25:05 hayashi Exp $
  *
  *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
  *
@@ -691,13 +691,6 @@ rl_bind_key(key, function = NULL, map = NULL)
 	  Function *fn;
 	  struct fnnode *np;
 
-	  if (!function) {	/* unbind_key */
-	    RETVAL = rl_unbind_key_in_map(key, keymap);
-	    unbind_myfun(key, keymap); /* do nothing for C function */
-	    return;
-	  }
-
-	  /* bind_key */
 	  if ((fn = rl_named_function(function)) == NULL) {
 	    warn ("Gnu.xs:rl_bind_key: undefined function `%s'\n", function);
 	    RETVAL = -1;
@@ -708,6 +701,21 @@ rl_bind_key(key, function = NULL, map = NULL)
 
 	  if (RETVAL == 0 && (np = lookup_myfun(function)) != NULL)
 	    bind_myfun(key, np->fn, keymap); /* perl function */
+	}
+
+int
+rl_unbind_key(key, map = NULL)
+	int key
+	char *map
+	PROTOTYPE: $;$
+	CODE:
+	{
+	  /* add code for custom function !!! */
+	  Keymap keymap = map ? my_get_keymap_by_name(map) : rl_get_keymap();
+
+	  RETVAL = rl_unbind_key_in_map(key, keymap);
+	  unbind_myfun(key, keymap); /* do nothing for C function */
+	  return;
 	}
 
 # add code for perl function !!!
