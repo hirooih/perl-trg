@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- GNU Readline wrapper module
 #
-#	$Id: Gnu.pm,v 1.6 1996-11-23 13:29:28 hayashi Exp $
+#	$Id: Gnu.pm,v 1.7 1996-11-24 13:54:48 hayashi Exp $
 #
 #	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
 #
@@ -416,12 +416,52 @@ sub STORE {
     return $$self;
 }
 
-#	End of Term::ReadLine::Gnu::CEF
+#	End of Term::ReadLine::Gnu::CWBC
+
+=item C<$Term::ReadLine::rl_completer_word_break_characters>
+
+The list of characters that signal a break between words for
+C<rl_complete_internal ()>.  The default list is the value of
+C<$Term::ReadLine::rl_basic_word_break_characters>, i.e.,
+C<" \t\n\"\\'`\@\$><=;|&{(">.
+
+=cut
+
+#
+#	access methods for $rl_completer_word_break_characters
+#
+package Term::ReadLine::Gnu::CWBC;
+use Carp;
+use strict;
+
+sub TIESCALAR {
+    my $class = shift;
+    my $self = shift;
+    Term::ReadLine::Gnu::_rl_store_completer_word_break_characters($self);
+    return bless \$self, $class;
+}
+
+sub FETCH {
+    my $self = shift;
+    confess "wrong type" unless ref $self;
+    return $$self;
+}
+
+sub STORE {
+    my $self = shift;
+    confess "wrong type" unless ref $self;
+    $$self = shift;
+    Term::ReadLine::Gnu::_rl_store_completer_word_break_characters($$self);
+    return $$self;
+}
+
+#	End of Term::ReadLine::Gnu::CWBC
 
 package Term::ReadLine;
 
 use vars qw($rl_completion_entry_function $rl_attempted_completion_function
 	    @completion_word_list $rl_basic_word_break_characters
+	    $rl_completer_word_break_characters
 	    %EXPORT_TAGS @EXPORT_OK);
 
 %EXPORT_TAGS = (custom_completion => [qw($rl_completion_entry_function
@@ -429,13 +469,16 @@ use vars qw($rl_completion_entry_function $rl_attempted_completion_function
 					 completion_matches
 					 @completion_word_list
 					 list_completion_function
-					 $rl_basic_word_break_characters)]);
+					 $rl_basic_word_break_characters
+					 $rl_completer_word_break_characters)]);
 Exporter::export_ok_tags('custom_completion');
 
 tie $rl_completion_entry_function, 'Term::ReadLine::Gnu::CEF', undef;
 tie $rl_attempted_completion_function, 'Term::ReadLine::Gnu::ACF', undef;
 tie $rl_basic_word_break_characters, 'Term::ReadLine::Gnu::BWBC',
-    " \t\n\"\\'`\@\$><=;|&{(";	# default value of GNU readline
+    " \t\n\"\\'`\@\$><=;|&{(";	# default value of the GNU Readline Library
+tie $rl_completer_word_break_characters, 'Term::ReadLine::Gnu::CWBC',
+    " \t\n\"\\'`\@\$><=;|&{(";	# default value of the GNU Readline Library
 
 BEGIN {
     my $i;
@@ -492,7 +535,7 @@ my %Features = (appname => 1, minline => 1, autohistory => 1,
 		preput => 1, do_expand => 1, stifleHistory => 1,
 		getHistory => 1, setHistory => 1, addHistory => 1,
 		readHistory => 1, writeHistory => 1, parseAndBind => 1,
-		tkRunning => 0);
+		customCompletion => 1, tkRunning => 0);
 
 sub Features { \%Features; }
 
@@ -544,6 +587,7 @@ By default none.  Following names can be exported explicitly.
 	@completion_word_list
 	list_completion_function
 	$rl_basic_word_break_characters
+	$rl_completer_word_break_characters
 
 And export tag, C<custom_comption>, is defined for these names.
 
@@ -560,5 +604,11 @@ perl(1).
 =head1 AUTHOR
 
 Hiroo Hayashi, hayashi@pdcd.ilab.toshiba.co.jp
+
+=head1 TODO
+
+support OperateAndGetNext command
+
+Merge TIE functions by using inheritance.  (How can I do this?)
 
 =cut
