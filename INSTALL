@@ -1,4 +1,4 @@
-#	$Id: INSTALL,v 1.13 1998-05-13 14:58:11 hayashi Exp $
+#	$Id: INSTALL,v 1.14 1998-05-13 15:04:48 hayashi Exp $
 
 1. How to Install Term::ReadLine::Gnu
 
@@ -22,7 +22,7 @@
 
 	If you have any troubles during using this module, please let
 	me (hiroo.hayashi@computer.org) know them by E-Mail.  It may
-	help poeple who has same problem.  I'm sorry that I cannot
+	help people who has same problem.  I'm sorry that I cannot
 	watch all articles on comp.lang.perl.modules.
 
 	When you report me your trouble, send me the result of `perl
@@ -40,7 +40,7 @@ Note that some free Unix distribution and Cygwin32-b19 include the GNU
 Readline Library 2.0 which is not supported by this module.  (I can
 make readline-2.2 by ordinary configure and make process even on
 Window 95 with Cygwin32 environment.  But my perl for Windows 95/NT
-does not work with it.  Your suggention will be welcome.)
+does not work with it.  Your suggestion will be welcome.)
 
 In following example, the install prefix directory is
 `/usr/local/gnu'.  If you install the library and header files in
@@ -49,18 +49,19 @@ Makefile.PL.
 
 You DON'T have to build the library as shared library.  If you want,
 you can do.  I don't know about building shared library.  But Masahito
-Yamaga <yamaga@ipc.chiba-u.ac.jp> contribued me a patch which adds the
+Yamaga <yamaga@ipc.chiba-u.ac.jp> contributed me a patch which adds the
 definitions for shared library on Makefile.in of readline-2.2.  With
 this patch I can build a shared library easily on my Linux box, and it
 works with Term::ReadLine::Gnu.
 
 Since the GNU Readline Library is 8 bit clean, I use Japanese
-characters without any patch.  If you want to handle Japanese
-charactors better, check the following URL.
+characters without any patch.  But I have to hit Backspace key twice
+to erase a Japanese character.  If you want to handle Japanese
+characters better, check the following URL.
 
       ftp://ftp.yynet.tama.tokyo.jp/pub/misc/readline/
 
-I've not try it, but it should work with my module.
+I've not tried it, but it should work with my module.
 
 2.1. readline-2.2.tar.gz
 
