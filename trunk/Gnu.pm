@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.23 1997-01-12 17:37:34 hayashi Exp $
+#	$Id: Gnu.pm,v 1.24 1997-01-16 15:19:53 hayashi Exp $
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
 #
@@ -89,9 +89,12 @@ my @miscfn = qw( rl_begin_undo_group	rl_end_undo_group	rl_add_undo
 		 rl_read_key		rl_stuff_char		rl_initialize
 		 rl_reset_terminal	ding
 
-		 $rl_line_buffer	$rl_buffer_len		$rl_prompt
+		 $rl_line_buffer	$rl_buffer_len
 		 $rl_point		$rl_end			$rl_mark
-		 $rl_done		$rl_pending_input
+		 $rl_done		$rl_pending_input	$rl_prompt
+		 $rl_instream		$rl_outstream
+		 $rl_startup_hook	$rl_event_hook
+		 $rl_getc_function	$rl_redisplay_function
 		 );
 
 my @cbfn   = qw( rl_callback_handler_install
@@ -195,16 +198,15 @@ sub new {
     my $name = shift;
     rl_store_var('rl_readline_name', $name);
 
-    my ($instream, $outstream);
     if (!@_) {
 	my ($IN,$OUT) = Term::ReadLine::Stub::findConsole();
 	open(IN,"<$IN")   || croak "Cannot open $IN for read";
 	open(OUT,">$OUT") || croak "Cannot open $OUT for write";
-	_rl_set_instream (fileno($instream  = \*IN));
-	_rl_set_outstream(fileno($outstream = \*OUT));
+	rl_store_var('rl_instream', \*IN);
+	rl_store_var('rl_outstream', \*OUT);
     } else {
-	_rl_set_instream (fileno($instream  = shift));
-	_rl_set_outstream(fileno($outstream = shift));
+	rl_store_var('rl_instream', shift);
+	rl_store_var('rl_outstream', shift);
     }
     $Operate_Index = $Next_Operate_Index = undef; # for F_OperateAndGetNext()
 
@@ -212,8 +214,6 @@ sub new {
 #    $rl_basic_word_break_characters .= '-:+/*,[])}';
 
     my $self = {
-		IN		=> $instream,
-		OUT		=> $outstream,
 		AppName		=> $name,
 		MinLength	=> 1,
 		DoExpand	=> 0,
@@ -266,7 +266,7 @@ sub readline {			# should be ReadLine
     if ($self->{DoExpand}) {
 	my $result;
 	($result, $line) = history_expand($line);
-	my $outstream = $self->{OUT};
+	my $outstream = rl_fetch_var('rl_outstream');
 	print $outstream "$line\n" if ($result);
      
 	# return without adding line into history
@@ -458,8 +458,8 @@ C<readline> input and output cannot be used for Perl.
 
 =cut
 
-sub IN  { shift->{IN}; }
-sub OUT { shift->{OUT}; }
+sub IN  { rl_fetch_var('rl_instream'); }
+sub OUT { rl_fetch_var('rl_outstream'); }
 
 =item C<findConsole>
 
@@ -538,6 +538,9 @@ my %_rl_vars
        rl_redisplay_function			=> ['F', 3],
        rl_completion_entry_function		=> ['F', 4],
        rl_attempted_completion_function		=> ['F', 5],
+
+       rl_instream				=> ['IO', 0],
+       rl_outstream				=> ['IO', 1],
       );
 
 sub FetchVar {
@@ -561,6 +564,8 @@ sub rl_fetch_var ($) {
 	return chr(_rl_fetch_int($id));
     } elsif ($type eq 'F') {
 	return _rl_fetch_function($id);
+    } elsif ($type eq 'IO') {
+	return _rl_fetch_iostream($id);
     } else {
 	carp "Term::ReadLine::Gnu::FetchVar: Illegal type `$type'\n";
 	return undef;
@@ -592,11 +597,34 @@ sub rl_store_var ($$) {
 	return chr(_rl_store_int(ord($value), $id));
     } elsif ($type eq 'F') {
 	return _rl_store_function($value, $id);
+    } elsif ($type eq 'IO') {
+	return _rl_store_iostream($value, $id);
     } else {
 	carp "Term::ReadLine::Gnu::StoreVar: Illegal type `$type'\n";
 	return undef;
     }
 }
+
+BEGIN {
+    my @IOS = (\*STDIN, \*STDOUT);	# default value of GNU Readline Library
+
+    sub _rl_fetch_iostream ($) {
+	$IOS[$_[0]];
+    }
+
+    sub _rl_store_iostream ($$) {
+  	my ($value, $id) = @_;
+
+  	$IOS[$id] = $value;
+	if ($id == 0) {
+	    _rl_store_instream(fileno($value));
+	} elsif ($id == 1) {
+	    _rl_store_outstream(fileno($value));
+	} else {
+	    croak "Internal Error (\$id:$id)";
+	}
+    }
+}    
 
 #
 #	Tie functions for Readline/History Library variables
@@ -736,6 +764,8 @@ Examples:
 	rl_done		
 	rl_pending_input
 	rl_prompt
+	rl_instream
+	rl_outstream
 	rl_startup_hook
 	rl_event_hook
 	rl_getc_function
