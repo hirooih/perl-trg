@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.13 1996-12-26 16:01:25 hayashi Exp $
+#	$Id: Gnu.pm,v 1.14 1996-12-28 14:56:55 hayashi Exp $
 #
 #	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
 #
@@ -77,6 +77,8 @@ should be globs.
 =cut
 
 my @Completion_Word_List;	# used by list_completion_function()
+my $Operate_Index;
+my $Next_Operate_Index;
 
 # The origin of this function is Term::ReadLine::Perl.pm by Ilya Zakharevich.
 sub new {
@@ -97,6 +99,7 @@ sub new {
 	_rl_set_instream (fileno($instream  = shift));
 	_rl_set_outstream(fileno($outstream = shift));
     }
+    $Operate_Index = $Next_Operate_Index = undef; # for F_OperateAndGetNext()
     # The following is here since it is mostly used for perl input:
 #    $rl_basic_word_break_characters .= '-:+/*,[])}';
 
@@ -126,9 +129,20 @@ is in C<Features>.
 
 sub readline {
     my $self = shift;
+    my ($prompt, $preput) = @_;
+
+    # cf. F_OperateAndGetNext()
+    if (defined $Operate_Index) {
+	$Next_Operate_Index = $Operate_Index + 1;
+	my $next_line = history_get($Next_Operate_Index);
+	$preput = $next_line if defined $next_line;
+	undef $Operate_Index;
+    }
 
     # call readline()
-    my $line = _rl_readline(@_);
+    $preput = defined $preput ? $preput : '';
+    my $line = _rl_readline($prompt, $preput);
+    undef $Next_Operate_Index;
     return undef unless defined $line;
 
     # history expansion
@@ -160,7 +174,7 @@ the actual C<readline> is present.
 
 sub addhistory {		# Why not AddHistory ?
     shift;
-    _rl_add_history(@_);
+    add_history(@_);
 }
 
 =item C<StifleHistory(MAX)>
@@ -287,20 +301,18 @@ sub UnbindKey {
 #	a sample custom function
 #	defined in this module for compatibility with Term::ReadLine::Perl
 #
-sub F_OperateAndGetNext {
+sub operate_and_get_next {
     ## Operate - accept the current line and fetch from the
     ## history the next line relative to current line for default.
     my ($count, $key) = @_;
 
+    if (defined $Next_Operate_Index) {
+	history_set_pos($Next_Operate_Index - rl_fetch_var('history_base'));
+	undef $Next_Operate_Index;
+    }
     rl_do_named_function("accept-line", $count, $key);
 
-    # are there cleaner way?
-    my $history_base   = rl_fetch_var('history_base');
-    my $history_length = rl_fetch_var('history_length');
-    my $history_offset = rl_fetch_var('history_offset');
-    warn ("[$history_base,$history_length,$history_offset]\n");
-    # check if we have a next history entry
-    #$rl_Operate = ++$rl_HistoryIndex < $#rl_History;
+    $Operate_Index = rl_fetch_var('history_base') + where_history();
 }
 
 =item C<FetchVar(VARIABLE_NAME), StoreVar(VARIABLE_NAME)>
@@ -420,6 +432,7 @@ sub rl_store_var ($$) {
 #
 #	Custom Completion Support
 #
+
 =item C<completion_matches(TEXT, ENTRY_FUNC)>
 
 Returns an array of strings which is a list of completions for TEXT.
