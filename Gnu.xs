@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.18 1996-12-30 15:58:30 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.19 1996-12-30 16:54:22 hayashi Exp $
  *
  *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
  *
@@ -23,6 +23,7 @@ extern "C" {
 #include <readline/readline.h>
 #include <readline/history.h>
 
+extern char *rl_prompt;		/* should be defined in readline.h */
 /*
  *	string variable table for _rl_store_str(), _rl_fetch_str()
  */
@@ -34,25 +35,28 @@ static struct str_vars {
   /* When you change length of rl_line_buffer, change
      rl_line_buffer_len also. */
   &rl_line_buffer,				0, 0,	/* 0 */
-  &rl_library_version,				0, 1,	/* 1 */
-  &rl_readline_name,				0, 0,	/* 2 */
+  &rl_prompt,					0, 1,	/* 1 */
+  &rl_library_version,				0, 1,	/* 2 */
+  &rl_terminal_name,				0, 0,	/* 3 */
+  &rl_readline_name,				0, 0,	/* 4 */
   
-  &rl_basic_word_break_characters,		0, 0,	/* 3 */
-  &rl_basic_quote_characters,			0, 0,	/* 4 */
-  &rl_completer_word_break_characters,		0, 0,	/* 5 */
-  &rl_completer_quote_characters,		0, 0,	/* 6 */
-  &rl_filename_quote_characters,		0, 0,	/* 7 */
-  &rl_special_prefixes,				0, 0,	/* 8 */
+  &rl_basic_word_break_characters,		0, 0,	/* 5 */
+  &rl_basic_quote_characters,			0, 0,	/* 6 */
+  &rl_completer_word_break_characters,		0, 0,	/* 7 */
+  &rl_completer_quote_characters,		0, 0,	/* 8 */
+  &rl_filename_quote_characters,		0, 0,	/* 9 */
+  &rl_special_prefixes,				0, 0,	/* 10 */
   
-  &history_no_expand_chars,			0, 0,	/* 9 */
-  &history_search_delimiter_chars,		0, 0	/* 10 */
+  &history_no_expand_chars,			0, 0,	/* 11 */
+  &history_search_delimiter_chars,		0, 0	/* 12 */
 };
 
 /*
  *	integer variable table for _rl_store_int(), _rl_fetch_int()
  */
-extern int rl_completion_query_items;
-extern int rl_ignore_completion_duplicates;
+
+extern int rl_completion_query_items; /* should be defined in readline.h */
+extern int rl_ignore_completion_duplicates; /* should be defined in readline.h */
 extern int rl_line_buffer_len;
 
 static struct int_vars {
@@ -286,7 +290,7 @@ MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu
 #
 ########################################################################
 #
-#	readline()
+#	2.1 Basic Behavior
 #
 void
 _rl_readline(prompt = NULL, preput = NULL)
@@ -316,43 +320,9 @@ _rl_readline(prompt = NULL, preput = NULL)
 	}
 
 #
-#	I/O stream
+#	2.4 Readline Convenience Functions
 #
-
-void
-_rl_set_instream(fildes)
-	int	fildes
-	PROTOTYPE: $
-	CODE:
-	{
-	  FILE *fd;
-	  if ((fd = fdopen(fildes, "r")) != NULL)
-	    rl_instream = fd;
-	  else
-	    warn("Gnu.xs:rl_set_instream: cannot fdopen");
-	}
-
-void
-_rl_set_outstream(fildes)
-	int	fildes
-	PROTOTYPE: $
-	CODE:
-	{
-	  FILE *fd;
-	  if ((fd = fdopen(fildes, "w")) != NULL)
-	    rl_outstream = fd;
-	  else
-	    warn("Gnu.xs:rl_set_outstream: cannot fdopen");
-	}
-
-#
-#	Custom Function Support
-#
-void
-rl_parse_and_bind(line)
-	char *line
-	PROTOTYPE: $
-
+#	2.4.1 Naming a Function
 int
 rl_add_defun(fn, key, name = "")
 	SV *	fn
@@ -373,6 +343,9 @@ rl_add_defun(fn, key, name = "")
 	    dismiss_defun(key);
 	}
 
+#	2.4.2 Selection a Keymap
+
+#	2.4.3 Binding Keys
 int
 rl_unbind_key(key)
 	int	key
@@ -383,6 +356,17 @@ rl_unbind_key(key)
 	  rl_unbind_key(key);
 	}
 
+void
+rl_parse_and_bind(line)
+	char *line
+	PROTOTYPE: $
+
+int
+rl_read_init_file(filename = NULL)
+	char *filename
+	PROTOTYPE: ;$
+
+#	2.4.4 Associating Function Names and Bindings
 int
 rl_do_named_function(name, count = 1, key = -1)
 	char	*name
@@ -401,9 +385,14 @@ rl_do_named_function(name, count = 1, key = -1)
 	  }
 	}
 
-#
-# from "Allowing Undoing"
-#
+void
+rl_function_dumper(readable)
+	int	readable
+
+void
+rl_list_funmap_names()
+
+#	2.4.5 Allowing Undoing
 int
 rl_begin_undo_group()
 
@@ -428,9 +417,28 @@ rl_modifying(start, end)
 	int	start
 	int	end
 
-#
-# from "Modifying Text"
-#
+#	2.4.6 Redisplay
+# in info : int rl_redisplay()
+void
+rl_redisplay()
+
+int
+rl_forced_update_display()
+
+int
+rl_on_new_line()
+
+int
+rl_reset_line_state()
+
+int
+rl_message(text)
+	char *text
+
+int
+rl_clear_message()
+
+#	2.4.7 Modifying Tex
 int
 rl_insert_text(text)
 	char	*text
@@ -450,8 +458,26 @@ rl_kill_text(start, end)
 	int	start
 	int	end
 
+#	2.4.8 Utility Functions
+int
+rl_read_key()
+
+int
+rl_stuff_char(c)
+	int	c
+
+int
+rl_initialize()
+
+int
+rl_reset_terminal(terminal_name)
+	char *terminal_name
+
+int
+ding()
+
 #
-# completion
+#	2.5 Custom Completers
 #
 void
 _rl_store_completion_entry_function(fn)
@@ -738,6 +764,7 @@ history_expand(line)
 #
 #	Readline/History Library Variable Access Routines
 #
+
 void
 _rl_store_str(pstr, id)
 	const char *	pstr
@@ -835,4 +862,30 @@ _rl_fetch_int(id)
 		     int_tbl[id].charp ? (int)*((char *)(int_tbl[id].var))
 		     : *(int_tbl[id].var));
 	  }
+	}
+
+void
+_rl_set_instream(fildes)
+	int	fildes
+	PROTOTYPE: $
+	CODE:
+	{
+	  FILE *fd;
+	  if ((fd = fdopen(fildes, "r")) != NULL)
+	    rl_instream = fd;
+	  else
+	    warn("Gnu.xs:rl_set_instream: cannot fdopen");
+	}
+
+void
+_rl_set_outstream(fildes)
+	int	fildes
+	PROTOTYPE: $
+	CODE:
+	{
+	  FILE *fd;
+	  if ((fd = fdopen(fildes, "w")) != NULL)
+	    rl_outstream = fd;
+	  else
+	    warn("Gnu.xs:rl_set_outstream: cannot fdopen");
 	}
