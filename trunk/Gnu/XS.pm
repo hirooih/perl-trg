@@ -2,7 +2,7 @@
 #
 #	XS.pm : perl function definition for Term::ReadLine::Gnu
 #
-#	$Id: XS.pm,v 1.10 2000-04-02 15:58:32 hayashi Exp $
+#	$Id: XS.pm,v 1.11 2000-11-22 15:42:01 hayashi Exp $
 #
 #	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
 #
@@ -317,7 +317,7 @@ sub change_ornaments {
     } elsif ($c =~ /v/i) {
 	ornaments('vb,,,');
     } else {
-	ding;
+	rl_ding;
     }
     rl_restore_prompt;
     rl_clear_message;
