@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.16 1996-12-29 15:56:07 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.17 1996-12-29 17:59:38 hayashi Exp $
  *
  *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
  *
@@ -24,28 +24,28 @@ extern "C" {
 #include <readline/history.h>
 
 /*
- *	string variable table for _rl_store_int(), _rl_fetch_int()
+ *	string variable table for _rl_store_str(), _rl_fetch_str()
  */
 static struct str_vars {
-  char *buf;
   char **var;
+  int accessed;
   int readonly;
 } str_tbl[] = {
   /* When you change length of rl_line_buffer, change
      rl_line_buffer_len also. */
-  NULL,	&rl_line_buffer,			0,	/* 0 */
-  NULL,	&rl_library_version,			1,	/* 1 */
-  NULL,	&rl_readline_name,			0,	/* 2 */
-
-  NULL,	&rl_basic_word_break_characters,	0,	/* 3 */
-  NULL, &rl_basic_quote_characters,		0,	/* 4 */
-  NULL,	&rl_completer_word_break_characters,	0,	/* 5 */
-  NULL,	&rl_completer_quote_characters,		0,	/* 6 */
-  NULL,	&rl_filename_quote_characters,		0,	/* 7 */
-  NULL,	&rl_special_prefixes,			0,	/* 8 */
-
-  NULL,	&history_no_expand_chars,		0,	/* 9 */
-  NULL,	&history_search_delimiter_chars,	0	/* 10 */
+  &rl_line_buffer,				0, 0,	/* 0 */
+  &rl_library_version,				0, 1,	/* 1 */
+  &rl_readline_name,				0, 0,	/* 2 */
+  
+  &rl_basic_word_break_characters,		0, 0,	/* 3 */
+  &rl_basic_quote_characters,			0, 0,	/* 4 */
+  &rl_completer_word_break_characters,		0, 0,	/* 5 */
+  &rl_completer_quote_characters,		0, 0,	/* 6 */
+  &rl_filename_quote_characters,		0, 0,	/* 7 */
+  &rl_special_prefixes,				0, 0,	/* 8 */
+  
+  &history_no_expand_chars,			0, 0,	/* 9 */
+  &history_search_delimiter_chars,		0, 0	/* 10 */
 };
 
 /*
@@ -59,27 +59,26 @@ static struct int_vars {
   int *var;
   int charp;
 } int_tbl[] = {
-  &rl_line_buffer_len, 0,				/* 0 */
-  &rl_point, 0,						/* 1 */
-  &rl_end, 0,						/* 2 */
-  &rl_mark, 0,						/* 3 */
-  &rl_done, 0,						/* 4 */
-  &rl_pending_input, 0,					/* 5 */
+  &rl_line_buffer_len,				0,	/* 0 */
+  &rl_point,					0,	/* 1 */
+  &rl_end,					0,	/* 2 */
+  &rl_mark,					0,	/* 3 */
+  &rl_done,					0,	/* 4 */
+  &rl_pending_input,				0,	/* 5 */
 
-  &rl_completion_query_items, 0,			/* 6 */
-  &rl_completion_append_character, 0,			/* 7 : int */
-  &rl_ignore_completion_duplicates, 0,			/* 8 */
-  &rl_filename_completion_desired, 0,			/* 9 */
-  &rl_filename_quoting_desired, 0,			/* 10 */
-  &rl_inhibit_completion, 0,				/* 11 */
+  &rl_completion_query_items,			0,	/* 6 */
+  &rl_completion_append_character,		0,	/* 7 : int */
+  &rl_ignore_completion_duplicates,		0,	/* 8 */
+  &rl_filename_completion_desired,		0,	/* 9 */
+  &rl_filename_quoting_desired,			0,	/* 10 */
+  &rl_inhibit_completion,			0,	/* 11 */
 
-  &history_base, 0,					/* 12 */
-  &history_length, 0,					/* 13 */
-  (int *)&history_expansion_char, 1,			/* 14 */
-  (int *)&history_subst_char, 1,			/* 15 */
-  (int *)&history_comment_char, 1,			/* 16 */
-  &history_quotes_inhibit_expansion, 0			/* 17 */
-  &history_length, 0,					/* 18 */
+  &history_base,				0,	/* 12 */
+  &history_length,				0,	/* 13 */
+  (int *)&history_expansion_char,		1,	/* 14 */
+  (int *)&history_subst_char,			1,	/* 15 */
+  (int *)&history_comment_char,			1,	/* 16 */
+  &history_quotes_inhibit_expansion,		0	/* 17 */
 };
 
 /* from GNU Readline:xmalloc.c */
@@ -752,20 +751,27 @@ _rl_store_str(pstr, id)
 	    return;
 	  }
 
-	  /* save mortal perl variable value */
-	  if (str_tbl[id].buf != NULL) {
-	    Safefree(str_tbl[id].buf);
-	    str_tbl[id].buf = NULL;
+#	  warn("\n[%d;%d;var:%p,%p]\n", id, str_tbl[id].accessed,
+#	       *str_tbl[id].var, str_tbl[id].var);
+	  /*
+	   * Use xmalloc() instead of New(),
+	   * because this block may be reallocated by readline library.
+	   */
+	  if (str_tbl[id].accessed && *str_tbl[id].var) {
+	    xfree(*str_tbl[id].var); /* don't free static area */
+	    *str_tbl[id].var = NULL;
 	  }
-	  len =  strlen(pstr)+1;
-	  New(0, str_tbl[id].buf, len, char);
-	  Copy(pstr, str_tbl[id].buf, len, char);
+	  str_tbl[id].accessed = 1;
 
-	  /* set C variable */
-	  *(str_tbl[id].var) = str_tbl[id].buf;
+	  len = strlen(pstr)+1;
+	  *str_tbl[id].var = xmalloc(len);
+	  Copy(pstr, *str_tbl[id].var, len, char);
+
+#	  warn("[%d;%d;var:%p,%p]\n", id, str_tbl[id].accessed,
+#	       *str_tbl[id].var, str_tbl[id].var);
 
 	  /* return variable value */
-	  sv_setpv(ST(0), str_tbl[id].buf);
+	  sv_setpv(ST(0), *str_tbl[id].var);
 	}
 
 void
