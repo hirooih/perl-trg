@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.5 1996-12-03 16:31:25 hayashi Exp $
+#	$Id: readline.t,v 1.6 1997-01-19 15:13:27 hayashi Exp $
 #
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl t/readline.t'
@@ -13,7 +13,7 @@ $^W = 1;			# perl -w
 use strict;
 use vars qw($loaded);
 use Term::ReadLine;
-#import Term::ReadLine::Gnu qw(:custom_completion);
+use Term::ReadLine::Gnu qw(:all);
 
 $loaded = 1;
 print "ok 1\n";
@@ -50,13 +50,43 @@ if (%features) {
     print "not ok 4\n";
 }
 
+# goto short_cut;
+# goto end_of_test;
+
 ########################################################################
 # test history expansion
+
+print $OUT "GNU Readline Library version: $rl_library_version\n";
+
+rl_bind_key(ord "\ct", 'operate-and-get-next');
+rl_bind_key(ord "\ct", 'operate-and-get-next', 'emacs-ctlx');
+rl_generic_bind(ISMACR, "\cx\co", "\c[insert from beginning of line]");
+
+my ($fn, $type);
+($fn, $type) = rl_function_of_keyseq("\co");
+print "C-o: $fn,$type\n";
+($fn, $type) = rl_function_of_keyseq("\ct");
+print "C-t: $fn,$type\n";
+($fn, $type) = rl_function_of_keyseq("\cx");
+print "C-x: $fn,$type\n";
+($fn, $type) = rl_function_of_keyseq("\cx\ct");
+print "C-xC-t: $fn,$type\n";
+($fn, $type) = rl_function_of_keyseq("\cx\co");
+print "C-xC-o: $fn,$type\n";
+my @keyseqs;
+@keyseqs = rl_invoking_keyseqs('operate-and-get-next');
+print "operate-and-get-next is bound to :", join(',',@keyseqs), "\n";
+@keyseqs = rl_invoking_keyseqs('operate-and-get-next', 'emacs-ctlx');
+print "operate-and-get-next is bound to \C-x :", join(',',@keyseqs), "\n";
+#@keyseqs = rl_invoking_keyseqs('emacs-ctlx', '', &ISKMAP);
+#print "emacs-ctlx is bound to :", join(',',@keyseqs), "\n";
+#rl_parse_and_bind('"\C-o\C-t": debug');
+#rl_generic_bind(0, "\\C-o\\C-o", 'debug');
 
 print $OUT "\n# history expansion test\n";
 print $OUT "# quit by EOF (\\C-d)\n";
 $term->MinLine(1);
-$term->StifleHistory(3);
+$term->StifleHistory(5);
 $term->{DoExpand} = 1;
 my ($nline, $line);
 for ($nline = 0;
@@ -67,22 +97,24 @@ for ($nline = 0;
 print $OUT "\n";
 print "ok 5\n";
 
+$term->UnbindKey("\co");
+
+# goto end_of_test;
+
 ########################################################################
 # test custom completion function
 
 $term->readline("filename completion (default)>", "this is default string");
 
-$term->StoreVar('rl_completion_entry_function', 'username');
+$rl_completion_entry_function = \&username_completion_function;
 $term->readline("username completion>");
 
 @{$term->{CompletionWordList}} =
     qw(list of words which you want to use for completion);
-#$term->StoreVar('rl_completion_entry_function', \&list_completion_function);
-$term->StoreVar('rl_completion_entry_function',
-		\&Term::ReadLine::Gnu::list_completion_function);
+$rl_completion_entry_function = \&list_completion_function;
 $term->readline("custom completion>");
 
-$term->StoreVar('rl_completion_entry_function', 'filename');
+$rl_completion_entry_function = \&filename_completion_function;
 $term->readline("filename completion>");
 
 sub sample_completion {
@@ -90,26 +122,26 @@ sub sample_completion {
 #    print $OUT "\n[$text:$line:$start:$end]\n";
     # If first word then username completion, else filename completion
     if (substr($line, 0, $start) =~ /^\s*$/) {
-	return Term::ReadLine::Gnu::completion_matches($text, 'username');
+	return completion_matches($text, \&username_completion_function);
     } else {
 	return ();
     }
 }
 
-$term->StoreVar('rl_attempted_completion_function', \&sample_completion);
+$rl_attempted_completion_function = \&sample_completion;
 $term->readline("username filename completion>");
-$term->StoreVar('rl_attempted_completion_function', undef);
+$rl_attempted_completion_function = undef;
 
 print "ok 6\n";
 ########################################################################
 # test ParseAndBind()
 
-$term->StoreVar('rl_inhibit_completion', 1);
+$rl_inhibit_completion = 1;
 $term->readline('disable completion>');
-$term->StoreVar('rl_inhibit_completion', 0);
-$term->StoreVar('rl_completion_append_character', ':');
+$rl_inhibit_completion = 0;
+$rl_completion_append_character = ':';
 $term->readline('enable completion>');
-$term->StoreVar('rl_completion_append_character', ' ');
+$rl_completion_append_character = ' ';
 
 print "ok 7\n";
 ########################################################################
@@ -117,6 +149,21 @@ print "ok 7\n";
 
 $term->ParseAndBind('"\C-i": self-insert');
 $term->readline('bind "\C-i" to self-insert>');
+
+short_cut:
+
+$term->AddDefun('reverse-line', \&reverse_line, "\co");
+$term->readline('bind "\C-o" to reverse-line>');
+
+$term->UnbindKey("\co");
+$term->readline('unbind "\C-o">');
+
+sub reverse_line {
+    my($count, $key) = @_;
+    my $line = $rl_line_buffer;
+    #rl_modifying;
+    $rl_line_buffer = reverse $line;
+}
 
 print "ok 8\n";
 ########################################################################
@@ -148,4 +195,5 @@ sub equal_list {
     return 1;
 }
 
+end_of_test:
 exit 0;
