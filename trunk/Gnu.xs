@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.84 2000-04-01 14:48:25 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.85 2000-04-02 14:03:18 hayashi Exp $
  *
  *	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
  *
@@ -46,7 +46,8 @@ extern "C" {
 extern char *xmalloc __P((int));
 extern char *tgetstr __P((const char *, char **));
 #if (RLMAJORVER < 4)
-void rl_extend_line_buffer __P((int));
+extern void rl_extend_line_buffer __P((int));
+extern char **rl_funmap_names __P((void));
 #endif
 
 /*
@@ -254,6 +255,11 @@ enum void_arg_func_type { STARTUP_HOOK, EVENT_HOOK, GETC_FN, REDISPLAY_FN,
 static Function *rl_pre_input_hook;
 static VFunction *rl_completion_display_matches_hook;
 #endif /* (RLMAJORVER < 4) */
+
+/*
+ * rl_last_func support (yes, it's undocumented YET)
+ */
+extern Function *rl_last_func;
 
 static struct fn_vars {
   Function **rlfuncp;		/* GNU Readline Library variable */
@@ -1303,6 +1309,31 @@ rl_get_all_function_names()
 	  }
 	}
 
+void
+rl_funmap_names()
+	PROTOTYPE:
+	PPCODE:
+	{
+	  char **funmap;
+
+	  funmap = rl_funmap_names(); /* don't free returned memory */
+
+	  if (funmap) {
+	    int i, count;
+
+	    /* count number of entries */
+	    for (count = 0; funmap[count]; count++)
+	      ;
+
+	    EXTEND(sp, count);
+	    for (i = 0; i < count; i++) {
+	      PUSHs(sv_2mortal(newSVpv(funmap[i], 0)));
+	    }
+	  } else {
+	    /* return null list */
+	  }
+	}
+
 #
 #	2.4.5 Allowing Undoing
 #
@@ -2230,6 +2261,16 @@ _rl_fetch_function(id)
 	    sv_setsv(ST(0), fn_tbl[id].callback);
 	  }
 	}
+
+Function *
+_rl_fetch_last_func()
+	PROTOTYPE:
+	CODE:
+	{
+	  RETVAL = rl_last_func;
+	}
+	OUTPUT:
+	RETVAL
 
 MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu::XS
 
