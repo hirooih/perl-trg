@@ -1,10 +1,11 @@
 use ExtUtils::MakeMaker;
-# See lib/ExtUtils/MakeMaker.pm for details of how to influence
-# the contents of the Makefile that is written.
+
+# Modify 'LIBS' and/or 'INC' if you need.
 WriteMakefile(
     'NAME'	=> 'Term::ReadLine::Gnu',
-    'VERSION_FROM' => 'Gnu.pm', # finds $VERSION
-    'LIBS'	=> [''],   # e.g., '-lm' 
-    'DEFINE'	=> '',     # e.g., '-DHAVE_SOMETHING' 
-    'INC'	=> '',     # e.g., '-I/usr/include/other' 
+    'VERSION_FROM' => 'Gnu.pm',
+    'LIBS'	=> ['-L/usr/local/gnu/lib -lreadline -ltermcap'],
+    'DEFINE'	=> '',
+    'INC'	=> '-I/usr/local/gnu/include',
+    'dist'	=> {COMPRESS=>'gzip -9f', SUFFIX=>'gz'},
 );
