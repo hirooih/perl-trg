@@ -1,0 +1,115 @@
+#	$Id: INSTALL,v 1.1 1996-11-13 15:54:36 hayashi Exp $
+
+1. How to Install Term::ReadLine::Gnu
+
+1.1 If you are using dynamic linking
+
+	0. install GNU readline library and its header files
+		see the section `How to Install GNU readline'
+	1. edit Makefile.PL if you need
+	2. make and install
+		$ perl Makefile.PL
+		$ make
+		$ make test
+		$ make install
+
+1.2 If you are NOT using dynamic linking
+	!!! I have no experience of this method. !!!
+
+	0. install GNU readline library and its header files
+		see the section `How to Install GNU readline'
+	1. Extract this tar in the ext/ subdirectory of the perl
+	   source directory.
+	2. edit Makefile.PL if you need
+	3. Run normal "make" in the perl source directory.
+
+2. How to Install GNU readline
+
+There is two kind of GNU readline distributions.  One is stand-alone
+library "readline-2.0.tar.gz" and the other is included in bash
+distribution.
+
+If you can get both, I RECOMMEND YOU TO USE BASH DISTRIBUTION.
+Because
+	It is newer than readline-2.0 (some bugs are fixed).
+	On my Linux-1.2.13 box, username completion does not work.
+
+In following example, the install prefix directory is
+`/usr/local/gnu'.  If you want to install in another directory, edit
+`LIBS' and/or `INC' section in Makefile.PL.
+
+2.1. libreadline.a in bash-1.14.7.tar.gz
+
+	The libreadline.a which is made when you make bash does not
+	work as stand-alone library.  You must make it without defining
+	a CPP macro `SHELL'.
+
+	1. get and extract bash-1.14.7.tar.gz
+	2. add following patch
+
+========================================================================
+*** lib/readline/Makefile.orig	Thu Jun  8 03:17:29 1995
+--- lib/readline/Makefile	Sun Nov 10 01:23:47 1996
+***************
+*** 87,98 ****
+  	${INSTALL_DATA} readline.h keymaps.h chardefs.h history.h \
+  		$(incdir)/readline
+  	-${MV} $(libdir)/libreadline.a $(libdir)/libreadline.old
+! 	${INSTALL_DATA} libreadline.a $(bindir)/libreadline.a
+! 	-[ -n "$(RANLIB)" ] && $(RANLIB) -t $(bindir)/libreadline.a
+  
+  installdirs:
+! 	[ ! -d $(incdir)/readline ] && { \
+! 	  mkdir $(incdir)/readline && chmod chmod 755 $(incdir)/readline; }
+  
+  uninstall:
+  	cd $(incdir)/readline && ${RM} -f ${INSTALLED_HEADERS}
+--- 87,98 ----
+  	${INSTALL_DATA} readline.h keymaps.h chardefs.h history.h \
+  		$(incdir)/readline
+  	-${MV} $(libdir)/libreadline.a $(libdir)/libreadline.old
+! 	${INSTALL_DATA} libreadline.a $(libdir)/libreadline.a
+! 	-[ -n "$(RANLIB)" ] && $(RANLIB) -t $(libdir)/libreadline.a
+  
+  installdirs:
+! 	-[ ! -d $(incdir)/readline ] && { \
+! 	  mkdir $(incdir)/readline && chmod 755 $(incdir)/readline; }
+  
+  uninstall:
+  	cd $(incdir)/readline && ${RM} -f ${INSTALLED_HEADERS}
+========================================================================
+
+	3. make a Makefile
+		$ make bash-Makefile
+	4. make library
+		$ make -f bash-Makefile CFLAGS='-O -g -USHELL' lib/readline/libreadline.a
+	5. install
+		$ cd lib/readline
+		$ make install incdir=/usr/local/gnu/include libdir=/usr/local/gnu/lib
+
+2.2. readline-2.0.tar.gz
+
+	1. get and extract readline-2.0.tar.gz
+	2. add following patch
+
+========================================================================
+*** Makefile.in-dist    Thu Jul 21 05:35:13 1994
+--- Makefile.in Sun Nov 10 00:21:35 1996
+***************
+*** 22,27 ****
+--- 22,28 ----
+  exec_prefix = $(prefix)
+  bindir = $(exec_prefix)/bin
+  libdir = $(exec_prefix)/lib
++ incdir = $(prefix)/include
+  mandir = $(prefix)/man/man1
+  
+  SHELL = /bin/sh
+========================================================================
+
+	3. configure
+		$ ./configure --prefix=/usr/local/gnu
+	4. make and install
+		$ make install
+
+EOF
