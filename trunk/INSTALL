@@ -1,4 +1,4 @@
-#	$Id: INSTALL,v 1.14 1998-05-13 15:04:48 hayashi Exp $
+#	$Id: INSTALL,v 1.15 1998-08-13 15:04:17 hayashi Exp $
 
 1. How to Install Term::ReadLine::Gnu
 
@@ -13,10 +13,10 @@
 
 1.3 Make and install
 
-	$ perl Makefile.PL
-	$ make
-	$ make test
-	$ make install
+	% perl Makefile.PL
+	% make
+	% make test
+	% make install
 
 1.4 Trouble Shooting
 
@@ -26,134 +26,60 @@
 	watch all articles on comp.lang.perl.modules.
 
 	When you report me your trouble, send me the result of `perl
-	-V' and compiler which you use for compiling the GNU Readline
+	-V' and which compiler you use to compile the GNU Readline
 	Library (libreadline.a).
 
 
 2. How to Install GNU Readline Library
 
-Now this module supports only GNU Readline Library 2.1 and 2.2.
-(readline-2.[12].tar.gz or a library which is included in the GNU Bash
-version 2.0 or later)
+	Now this module supports only GNU Readline Library 2.1 and
+	2.2.1. (readline-2.[12].tar.gz or libraries which are included
+	in the GNU Bash version 2.0 or later) Executing `perl
+	Makefile.PL` detects which version of the GNU Readline Library
+	is already installed and warns you if you have the unsupported
+	version.
 
-Note that some free Unix distribution and Cygwin32-b19 include the GNU
-Readline Library 2.0 which is not supported by this module.  (I can
-make readline-2.2 by ordinary configure and make process even on
-Window 95 with Cygwin32 environment.  But my perl for Windows 95/NT
-does not work with it.  Your suggestion will be welcome.)
+	Note that some free Unix distribution and Cygwin32-b19 include
+	the GNU Readline Library 2.0 which is not supported by this
+	module.  (I can make readline-2.2 by ordinary configure and
+	make process even on Window 95 with Cygwin32 environment.  But
+	my perl for Windows 95/NT does not work with it.  Your
+	suggestion will be welcome.)
 
-In following example, the install prefix directory is
-`/usr/local/gnu'.  If you install the library and header files in
-another directory, you must edit `LIBS' and/or `INC' section in
-Makefile.PL.
+	In following example, the install prefix directory is
+	`/usr/local/gnu'.  If you install the library and header files
+	in another directory, you must edit `LIBS' and/or `INC'
+	section in Makefile.PL.
 
-You DON'T have to build the library as shared library.  If you want,
-you can do.  I don't know about building shared library.  But Masahito
-Yamaga <yamaga@ipc.chiba-u.ac.jp> contributed me a patch which adds the
-definitions for shared library on Makefile.in of readline-2.2.  With
-this patch I can build a shared library easily on my Linux box, and it
-works with Term::ReadLine::Gnu.
+	You DON'T have to build the library as shared library.  If you
+	want, you can do.  I don't know about building shared library
+	well.  But Masahito Yamaga <yamaga@ipc.chiba-u.ac.jp>
+	contributed me a patch which adds the definitions for shared
+	library on Makefile.in of readline-2.2.  With this patch I can
+	build a shared library easily on my Linux box, and it works
+	with Term::ReadLine::Gnu.  If you have interested with it, try
+	the patch atteched at the end of this file.
 
-Since the GNU Readline Library is 8 bit clean, I use Japanese
-characters without any patch.  But I have to hit Backspace key twice
-to erase a Japanese character.  If you want to handle Japanese
-characters better, check the following URL.
+	Since the GNU Readline Library is 8 bit clean, I use Japanese
+	characters without any patch.  But I have to hit Backspace key
+	twice to erase a Japanese character.  If you want to handle
+	Japanese characters better, check the following URL.
 
-      ftp://ftp.yynet.tama.tokyo.jp/pub/misc/readline/
+		ftp://ftp.yynet.tama.tokyo.jp/pub/misc/readline/
 
-I've not tried it, but it should work with my module.
+	I've not tried it, but it should work with my module.
 
-2.1. readline-2.2.tar.gz
+2.1. readline-2.2.1.tar.gz
 
-	1. get and extract readline-2.2.tar.gz
+	readline-2.2.tar.gz has some bugs, so I strongly recommend you
+	to use readline-2.2.1.tar.gz instead.
 
-	2. add following patch.  This patch
-		o add definition for shared library
-		o fix the problems that 'make install' renames
-		  installed libreadline.a as libhistory.old.
-		o fix the problems on the long line with invisible
-		  characters.
+	1. get and extract readline-2.2.1.tar.gz
 
-*** Makefile.in.orig	Sat Apr  4 01:23:01 1998
---- Makefile.in	Fri May  8 01:48:52 1998
-***************
-*** 94,99 ****
---- 94,133 ----
-  SHARED_HISTORY = libhistory.so.$(MAJOR)$(MINOR)
-  SHARED_LIBS = $(SHARED_READLINE) $(SHARED_HISTORY)
-  
-+ # uncomment the proper one of the followings to build a shared library
-+ 
-+ # (Solaris2.x gcc, SunOS4.1.x gcc, NetBSD, FreeBSD, Linux)
-+ #CC=	gcc
-+ #PICFLAG=        -fpic
-+ #LD=	gcc
-+ #SHLIB_OPTS=	-shared
-+ 
-+ # (Solaris2.x /opt/SUNWspro/bin/cc)
-+ #CC=	/opt/SUNWspro/bin/cc
-+ #PICFLAG=	-KPIC
-+ #LD=	/usr/ccs/bin/ld
-+ #SHLIB_OPTS=	-G -z text
-+ 
-+ # (SunOS4.1.x cc)
-+ #CC=	cc
-+ #PICFLAG=	-pic
-+ #LD=	ld
-+ #SHLIB_OPTS=
-+ 
-+ # (IRIX 5.x, 6.x)
-+ #CC=	cc
-+ #PICFLAG=	-KPIC
-+ #LD=	ld
-+ #SHLIB_OPTS=	-shared
-+ 
-+ # (HP-UX)
-+ #CC=	cc
-+ #PICFLAG=	+z
-+ #LD=	ld
-+ #SHLIB_OPTS=	-b
-+ #SHARED_READLINE = libreadline.sl
-+ #SHARED_HISTORY = libhistory.sl
-+ 
-  # The C code source files for this library.
-  CSOURCES = $(srcdir)/readline.c $(srcdir)/funmap.c $(srcdir)/keymaps.c \
-  	   $(srcdir)/vi_mode.c $(srcdir)/parens.c $(srcdir)/rltty.c \
-***************
-*** 203,209 ****
-  	-$(MV) $(libdir)/libreadline.a $(libdir)/libreadline.old
-  	$(INSTALL_DATA) libreadline.a $(libdir)/libreadline.a
-  	-test -n "$(RANLIB)" && $(RANLIB) -t $(libdir)/libreadline.a
-! 	-$(MV) $(libdir)/libreadline.a $(libdir)/libhistory.old
-  	$(INSTALL_DATA) libhistory.a $(libdir)/libhistory.a
-  	-test -n "$(RANLIB)" && $(RANLIB) -t $(libdir)/libhistory.a
-  	-( if test -d doc ; then \
---- 237,243 ----
-  	-$(MV) $(libdir)/libreadline.a $(libdir)/libreadline.old
-  	$(INSTALL_DATA) libreadline.a $(libdir)/libreadline.a
-  	-test -n "$(RANLIB)" && $(RANLIB) -t $(libdir)/libreadline.a
-! 	-$(MV) $(libdir)/libhistory.a $(libdir)/libhistory.old
-  	$(INSTALL_DATA) libhistory.a $(libdir)/libhistory.a
-  	-test -n "$(RANLIB)" && $(RANLIB) -t $(libdir)/libhistory.a
-  	-( if test -d doc ; then \
-*** display.c	Mon Aug  4 15:54:23 1997
---- display.c	Fri Apr 24 14:23:35 1998
-***************
-*** 424,428 ****
---- 424,435 ----
-    while (lpos >= screenwidth)
-      {
-+ #if 0
-        temp = ((newlines + 1) * screenwidth) - ((newlines == 0) ? wrap_offset : 0);
-+ #else
-+       /* XXX - possible fix from Darin Johnson <darin@acuson.com> for prompt
-+ 	 string with invisible characters that is longer than the screen
-+ 	 width. */
-+       temp = ((newlines + 1) * screenwidth) + ((newlines == 0) ? wrap_offset : 0);
-+ #endif
-        inv_lbreaks[++newlines] = temp;
-        lpos -= screenwidth;
-
+	2. configure
+		% ./configure --prefix=/usr/local/gnu
+	3. make and install
+		% make install
 
 2.2. readline-2.1.tar.gz
 
@@ -183,9 +109,9 @@ I've not tried it, but it should work with my module.
 ========================================================================
 
 	3. configure
-		$ ./configure --prefix=/usr/local/gnu
+		% ./configure --prefix=/usr/local/gnu
 	4. make and install
-		$ make install
+		% make install
 
 2.3. libreadline.a in bash-2.0.tar.gz
 
@@ -196,7 +122,7 @@ I've not tried it, but it should work with my module.
 # install:
 #        @echo "This version of the readline library should not be installed."
 #
-# Get readline-2.2.tar.gz and install it.
+# Get readline-2.2.1.tar.gz and install it.
 
 	The libreadline.a which is made when you make bash does not
 	work as stand-alone library.  You must make it without defining
@@ -248,15 +174,65 @@ I've not tried it, but it should work with my module.
 ========================================================================
 
 	3. configure
-		$ ./configure --prefix=/usr/local/gnu
+		% ./configure --prefix=/usr/local/gnu
 	4. change directory to the Readline Library directory
-		$ cd lib/readline
+		% cd lib/readline
 	5. remove *.a and *.o, if you made libreadline.a for bash in
 	   the directory
-		$ make clean
+		% make clean
 	6. make
-		$ make
+		% make
 	7. install
-		$ make install
+		% make install
+
+------------------------------------------------------------------------
+3. Patch to build shared GNU Readline library
+
+*** Makefile.in.orig	Sat Apr  4 01:23:01 1998
+--- Makefile.in	Fri May  8 01:48:52 1998
+***************
+*** 94,99 ****
+--- 94,133 ----
+  SHARED_HISTORY = libhistory.so.$(MAJOR)$(MINOR)
+  SHARED_LIBS = $(SHARED_READLINE) $(SHARED_HISTORY)
+  
++ # uncomment the proper one of the followings to build a shared library
++ 
++ # (Solaris2.x gcc, SunOS4.1.x gcc, NetBSD, FreeBSD, Linux)
++ #CC=	gcc
++ #PICFLAG=        -fpic
++ #LD=	gcc
++ #SHLIB_OPTS=	-shared
++ 
++ # (Solaris2.x /opt/SUNWspro/bin/cc)
++ #CC=	/opt/SUNWspro/bin/cc
++ #PICFLAG=	-KPIC
++ #LD=	/usr/ccs/bin/ld
++ #SHLIB_OPTS=	-G -z text
++ 
++ # (SunOS4.1.x cc)
++ #CC=	cc
++ #PICFLAG=	-pic
++ #LD=	ld
++ #SHLIB_OPTS=
++ 
++ # (IRIX 5.x, 6.x)
++ #CC=	cc
++ #PICFLAG=	-KPIC
++ #LD=	ld
++ #SHLIB_OPTS=	-shared
++ 
++ # (HP-UX)
++ #CC=	cc
++ #PICFLAG=	+z
++ #LD=	ld
++ #SHLIB_OPTS=	-b
++ #SHARED_READLINE = libreadline.sl
++ #SHARED_HISTORY = libhistory.sl
++ 
+  # The C code source files for this library.
+  CSOURCES = $(srcdir)/readline.c $(srcdir)/funmap.c $(srcdir)/keymaps.c \
+  	   $(srcdir)/vi_mode.c $(srcdir)/parens.c $(srcdir)/rltty.c \
+
 
 EOF
