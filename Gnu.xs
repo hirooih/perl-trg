@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.24 1997-01-03 17:07:22 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.25 1997-01-04 18:00:06 hayashi Exp $
  *
  *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
  *
@@ -24,6 +24,14 @@ extern "C" {
 #include <readline/history.h>
 
 extern char *rl_prompt;		/* should be defined in readline.h */
+extern int rl_completion_query_items; /* should be defined in readline.h */
+extern int rl_ignore_completion_duplicates; /* should be defined in readline.h */
+extern int rl_line_buffer_len;
+
+/* from GNU Readline:xmalloc.c */
+extern char *xmalloc (int);
+extern char *xfree (char *);
+
 /*
  *	string variable table for _rl_store_str(), _rl_fetch_str()
  */
@@ -55,10 +63,6 @@ static struct str_vars {
  *	integer variable table for _rl_store_int(), _rl_fetch_int()
  */
 
-extern int rl_completion_query_items; /* should be defined in readline.h */
-extern int rl_ignore_completion_duplicates; /* should be defined in readline.h */
-extern int rl_line_buffer_len;
-
 static struct int_vars {
   int *var;
   int charp;
@@ -85,10 +89,6 @@ static struct int_vars {
   &history_quotes_inhibit_expansion,		0	/* 17 */
 };
 
-/* from GNU Readline:xmalloc.c */
-extern char *xmalloc (int);
-extern char *xfree (char *);
-
 static char *
 dupstr (s)			/* duplicate string */
      char *s;
@@ -109,7 +109,7 @@ rl_insert_preput ()
     rl_insert_text(preput_str);
   return 0;
 }
-
+
 /*
  *	custom function support routines
  */
@@ -361,6 +361,95 @@ custom_function_lapper(int count, int key)
 
   return;
 }
+
+/*
+ * Perl function lapper
+ */
+
+static int startup_hook_lapper(void);
+static int event_hook_lapper(void);
+static int getc_function_lapper(FILE *);
+static void redisplay_function_lapper(void);
+static void callback_handler_lapper(char *);
+static char *completion_entry_function_lapper(char *, int);
+static char **attempted_completion_function_lapper(char *, int, int);
+
+enum void_arg_func_type { STARTUP_HOOK, EVENT_HOOK, GETC_FN, REDISPLAY_FN,
+			  CALLBACK, CMP_ENT, ATMPT_COMP };
+
+static struct fn_vars {
+  Function **rlfuncp;		/* Readline Library variable */
+  Function *lapper;		/* lapper function */
+  SV *callback;			/* Perl function */
+} fn_tbl[] = {
+  { &rl_startup_hook,		startup_hook_lapper,		NULL },
+  { &rl_event_hook,		event_hook_lapper,		NULL },
+  { &rl_getc_function,		getc_function_lapper,		NULL },
+  {								
+    (Function **)&rl_redisplay_function,
+    (Function *)redisplay_function_lapper,
+    NULL
+  },
+  {
+    NULL,
+    (Function *)callback_handler_lapper,
+    NULL
+  },
+  {
+    (Function **)&rl_completion_entry_function,
+    (Function *)completion_entry_function_lapper,		
+    NULL
+  },
+  {
+    (Function **)&rl_attempted_completion_function,
+    (Function *)attempted_completion_function_lapper,
+    NULL
+  }
+};
+
+static int void_arg_func_lapper(int);
+
+static int  startup_hook_lapper()	{ void_arg_func_lapper(STARTUP_HOOK); }
+static int  event_hook_lapper()		{ void_arg_func_lapper(EVENT_HOOK); }
+/* ignore *fp. rl_getc() should be called from Perl function */
+static int  getc_function_lapper(FILE *fp) { void_arg_func_lapper(GETC_FN); }
+static void redisplay_function_lapper()	{ void_arg_func_lapper(REDISPLAY_FN); }
+
+static int
+void_arg_func_lapper(int type)
+{
+  dSP;
+  int count;
+  int ret;
+
+  PUSHMARK(sp);
+  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+  SPAGAIN;
+
+  if (count != 1)
+    croak("Gnu.xs:void_arg_func_lapper: Internal error\n");
+
+  ret = POPi;
+  PUTBACK;
+  FREETMPS;
+  LEAVE;
+  return ret;
+}
+
+
+static void
+callback_handler_lapper(char *line)
+{
+  dSP;
+  int count;
+  int ret;
+
+  PUSHMARK(sp);
+  XPUSHs(sv_2mortal(newSVpv(line, 0)));
+  PUTBACK;
+
+  perl_call_sv(fn_tbl[CALLBACK].callback, G_DISCARD);
+}
 
 /*
  * call a perl function as rl_completion_entry_function
@@ -451,7 +540,7 @@ attempted_completion_function_lapper(char *text, int start, int end)
 
   return matches;
 }
-
+
 MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu
 
 ########################################################################
@@ -571,6 +660,7 @@ rl_discard_keymap(name)
 	  
 void
 rl_get_keymap()
+	PROTOTYPE:
 	CODE:
 	{
 	  char *keymap_name = rl_get_keymap_name(rl_get_keymap());
@@ -583,6 +673,7 @@ rl_get_keymap()
 void
 rl_set_keymap(keymap_name)
 	char *keymap_name
+	PROTOTYPE: $
 	CODE:
 	{
 	  Keymap keymap = my_get_keymap_by_name(keymap_name);
@@ -745,16 +836,20 @@ rl_invoking_keyseqs(fn, map = NULL)
 void
 rl_function_dumper(readable)
 	int	readable
+	PROTOTYPE: $
 
 void
 rl_list_funmap_names()
+	PROTOTYPE:
 
 #	2.4.5 Allowing Undoing
 int
 rl_begin_undo_group()
+	PROTOTYPE:
 
 int
 rl_end_undo_group()
+	PROTOTYPE:
 
 void
 rl_add_undo(what, start, end, text)
@@ -762,69 +857,86 @@ rl_add_undo(what, start, end, text)
 	int	start
 	int	end
 	char	*text
+	PROTOTYPE: $$$$
 
 void
 free_undo_list()
+	PROTOTYPE:
 
 int
 rl_do_undo()
+	PROTOTYPE:
 
 int
 rl_modifying(start, end)
 	int	start
 	int	end
+	PROTOTYPE: $$
 
 #	2.4.6 Redisplay
 # in info : int rl_redisplay()
 void
 rl_redisplay()
+	PROTOTYPE:
 
 int
 rl_forced_update_display()
+	PROTOTYPE:
 
 int
 rl_on_new_line()
+	PROTOTYPE:
 
 int
 rl_reset_line_state()
+	PROTOTYPE:
 
 int
 rl_message(text)
 	char *text
+	PROTOTYPE: $
 
 int
 rl_clear_message()
+	PROTOTYPE:
 
 #	2.4.7 Modifying Tex
 int
 rl_insert_text(text)
 	char	*text
+	PROTOTYPE: $
 
 int
 rl_delete_text(start, end)
 	int	start
 	int	end
+	PROTOTYPE: $$
 
 char *
 rl_copy_text(start, end)
 	int	start
 	int	end
+	PROTOTYPE: $$
 
 int
 rl_kill_text(start, end)
 	int	start
 	int	end
+	PROTOTYPE: $$
 
 #	2.4.8 Utility Functions
 int
 rl_read_key()
+	PROTOTYPE:
 
 int
 rl_stuff_char(c)
 	int	c
+	PROTOTYPE: $
 
 int
 rl_initialize()
+	PROTOTYPE:
 
 int
 rl_reset_terminal(terminal_name = NULL)
@@ -833,6 +945,7 @@ rl_reset_terminal(terminal_name = NULL)
 
 int
 ding()
+	PROTOTYPE:
 
 #
 #	2.4.9 Alternate Interface
@@ -860,6 +973,7 @@ rl_callback_handler_remove()
 void
 _rl_store_completion_entry_function(fn)
 	SV *	fn
+	PROTOTYPE: $
 	CODE:
 	{
 	  if (! SvTRUE(fn)
@@ -888,6 +1002,7 @@ _rl_store_completion_entry_function(fn)
 void
 _rl_store_attempted_completion_function(fn)
 	SV *	fn
+	PROTOTYPE: $
 	CODE:
 	{
 	  if (! SvTRUE(fn)) {
@@ -914,6 +1029,7 @@ void
 completion_matches(text, fn)
 	char * text
 	SV * fn
+	PROTOTYPE: $$
 	PPCODE:
 	{
 	  char **matches;
@@ -991,6 +1107,7 @@ username_completion_function(text, state)
 #
 void
 using_history()
+	PROTOTYPE:
 
 #
 #	2.3.2 History List Management
@@ -1008,6 +1125,7 @@ add_history(...)
 void
 remove_history(which)
 	int which
+	PROTOTYPE: $
 	CODE:
 	{
 	  HIST_ENTRY *entry;
@@ -1025,6 +1143,7 @@ replace_history_entry(which, line, data = NULL)
 	int which
 	char *line
 	char *data
+	PROTOTYPE: $$;$
 	CODE:
 	{
 	  HIST_ENTRY *entry;
@@ -1039,6 +1158,7 @@ replace_history_entry(which, line, data = NULL)
 
 void
 clear_history()
+	PROTOTYPE:
 
 int
 stifle_history(i)
@@ -1059,6 +1179,7 @@ stifle_history(i)
 
 int
 history_is_stifled()
+	PROTOTYPE:
 
 void
 _rl_SetHistory(...)
@@ -1077,9 +1198,11 @@ _rl_SetHistory(...)
 #
 int
 where_history()
+	PROTOTYPE:
 
 void
 current_history()
+	PROTOTYPE:
 	CODE:
 	{
 	  HIST_ENTRY *entry;
@@ -1092,6 +1215,7 @@ current_history()
 void
 history_get(offset)
 	int offset
+	PROTOTYPE: $
 	CODE:
 	{
 	  HIST_ENTRY *hist;
@@ -1105,6 +1229,7 @@ history_get(offset)
 
 int
 history_total_bytes()
+	PROTOTYPE:
 
 void
 _rl_GetHistory()
@@ -1128,9 +1253,11 @@ _rl_GetHistory()
 int
 history_set_pos(pos)
 	int pos
+	PROTOTYPE: $
 
 void
 previous_history()
+	PROTOTYPE:
 	CODE:
 	{
 	  HIST_ENTRY *entry;
@@ -1142,6 +1269,7 @@ previous_history()
 
 void
 next_history()
+	PROTOTYPE:
 	CODE:
 	{
 	  HIST_ENTRY *entry;
@@ -1158,17 +1286,20 @@ int
 history_search(string, direction)
 	char *string
 	int direction
+	PROTOTYPE: $$
 
 int
 history_search_prefix(string, direction)
 	char *string
 	int direction
+	PROTOTYPE: $$
 
 int
 history_search_pos(string, direction, pos)
 	char *string
 	int direction
 	int pos
+	PROTOTYPE: $$$
 
 #
 #	2.3.6 Managing the History File
@@ -1317,6 +1448,41 @@ _rl_fetch_int(id)
 		     int_tbl[id].charp ? (int)*((char *)(int_tbl[id].var))
 		     : *(int_tbl[id].var));
 	  }
+	}
+
+void
+_rl_store_function(fn, id)
+	SV *	fn
+	int	id
+	PROTOTYPE: $$
+	CODE:
+	{
+	  if (! SvTRUE(fn)) {
+	    *(fn_tbl[id].rlfuncp) = NULL;
+	  } else {
+	    /*
+	     * Don't remove braces. The definition of SvSetSV() of
+	     * Perl 5.003 has a problem.
+	     */
+	    if (fn_tbl[id].callback) {
+	      SvSetSV(fn_tbl[id].callback, fn);
+	    } else {
+	      fn_tbl[id].callback = newSVsv(fn);
+	    }
+
+	    *(fn_tbl[id].rlfuncp) = fn_tbl[id].lapper;
+	  }
+	}
+
+void
+_rl_fetch_function(id)
+	int	id
+	PROTOTYPE: $
+	CODE:
+	{
+	  ST(0) = sv_newmortal();
+	  if (fn_tbl[id].callback)
+	    sv_setsv(ST(0), fn_tbl[id].callback);
 	}
 
 void
