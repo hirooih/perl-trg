@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.80 2000-11-22 15:22:10 hayashi Exp $
+#	$Id: Gnu.pm,v 1.81 2000-11-27 17:02:40 hayashi Exp $
 #
 #	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
 #
@@ -443,6 +443,7 @@ use vars qw(%_rl_vars);
        rl_special_prefixes			=> ['S', 10],
        history_no_expand_chars			=> ['S', 11],
        history_search_delimiter_chars		=> ['S', 12],
+       rl_executing_macro			=> ['S', 13], # GPL4.2
        
        rl_point					=> ['I', 0],
        rl_end					=> ['I', 1],
@@ -462,10 +463,11 @@ use vars qw(%_rl_vars);
        history_subst_char			=> ['C', 15],
        history_comment_char			=> ['C', 16],
        history_quotes_inhibit_expansion		=> ['I', 17],
-       rl_erase_empty_line			=> ['I', 18], # added GRL 4.0
-       rl_catch_signals				=> ['I', 19], # added GRL 4.0
-       rl_catch_sigwinch			=> ['I', 20], # added GRL 4.0
-       rl_already_prompted			=> ['I', 21], # added GRL 4.1
+       rl_erase_empty_line			=> ['I', 18], # GPL 4.0
+       rl_catch_signals				=> ['I', 19], # GPL 4.0
+       rl_catch_sigwinch			=> ['I', 20], # GPL 4.0
+       rl_already_prompted			=> ['I', 21], # GPL 4.1
+       rl_readline_state			=> ['I', 22], # GPL 4.2
 
        rl_startup_hook				=> ['F', 0],
        rl_event_hook				=> ['F', 1],
@@ -479,8 +481,10 @@ use vars qw(%_rl_vars);
        rl_ignore_some_completions_function	=> ['F', 9],
        rl_directory_completion_hook		=> ['F', 10],
        history_inhibit_expansion_function	=> ['F', 11],
-       rl_pre_input_hook			=> ['F', 12], # added GRL 4.0
-       rl_completion_display_matches_hook	=> ['F', 13], # added GRL 4.0
+       rl_pre_input_hook			=> ['F', 12], # GPL 4.0
+       rl_completion_display_matches_hook	=> ['F', 13], # GPL 4.0
+       rl_prep_term_function			=> ['F', 14], # GPL 4.2
+       rl_deprep_term_function			=> ['F', 15], # GPL 4.2
 
        rl_instream				=> ['IO', 0],
        rl_outstream				=> ['IO', 1],
@@ -723,6 +727,11 @@ Bind C<KEY> to the null function.  Returns non-zero in case of error.
 	int	rl_unbind_command(str command,
 				  Keymap|str map = rl_get_keymap())
 
+=item C<set_key(KEYSEQ, FUNCTION [,MAP])>
+
+	int	rl_set_key(str keyseq, FunctionPtr|str function,
+				  Keymap|str map = rl_get_keymap())
+
 =item C<generic_bind(TYPE, KEYSEQ, DATA, [,MAP])>
 
 	int	rl_generic_bind(int type, str keyseq,
@@ -777,6 +786,10 @@ detail see 'GNU Readline Library Manual'.
 =item C<funmap_names>
 
 	(@str)	rl_funmap_names()
+
+=item C<add_funmap_entry(NAME, FUNCTION)
+
+	int	rl_add_funmap_entry(char *name, FunctionPtr|str function)
 
 =back
 
