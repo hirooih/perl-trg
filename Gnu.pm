@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.42 1997-03-22 14:25:16 hayashi Exp $
+#	$Id: Gnu.pm,v 1.43 1997-03-22 17:45:25 hayashi Exp $
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
 #
@@ -653,7 +653,9 @@ foreach (keys %Term::ReadLine::Gnu::XS::_rl_vars) {
     eval "tie \$Attribs{$name},  'Term::ReadLine::Gnu::Var', '$_';";
 }
 
+#	add reference to some functions
 my @_rl_funcs = qw(rl_getc
+		   rl_callback_read_char
 		   filename_completion_function
 		   username_completion_function
 		   list_completion_function);
@@ -698,9 +700,9 @@ All these GNU Readline/History Library functions are callable via
 method interface and have names which conform to standard conventions
 with the leading C<rl_> stripped.
 
-Almost methods have lower level functions in Term::ReadLine::Gnu::XS
-package.  To use them full qualified name is required.  Using method
-interface is preferred.
+Almost methods have lower level functions in
+C<Term::ReadLine::Gnu::XS> package.  To use them full qualified name
+is required.  Using method interface is preferred.
 
 =head2 Readline Convenience Functions
 
@@ -712,8 +714,9 @@ interface is preferred.
 
 =item C<add_defun(NAME, FUNC [,KEY=-1])>
 
-Add name to the Perl function FUNC.  If optional argument KEY is
-specified, bind it to the FUNC.  Returns reference of FunctionPtr.
+Add name to the Perl function C<FUNC>.  If optional argument C<KEY> is
+specified, bind it to the C<FUNC>.  Returns reference to
+C<FunctionPtr>.
 
   Example:
 	# name name `reverse-line' to a function reverse_line(),
@@ -769,15 +772,15 @@ specified, bind it to the FUNC.  Returns reference of FunctionPtr.
 	int	rl_bind_key(int key, FunctionPtr|str function,
 			    Keymap|str map = rl_get_keymap())
 
-Bind KEY to the FUNCTION.  FUNCTION is the name added by the
-C<add_defun> method.  If optional argument MAP is specified, binds
-in MAP.  Returns non-zero in case of error.
+Bind C<KEY> to the C<FUNCTION>.  C<FUNCTION> is the name added by the
+C<add_defun> method.  If optional argument C<MAP> is specified, binds
+in C<MAP>.  Returns non-zero in case of error.
 
 =item C<unbind_key(KEY [,MAP])>
 
 	int	rl_unbind_key(int key, Keymap|str map = rl_get_keymap())
 
-Bind KEY to the null function.  Returns non-zero in case of error.
+Bind C<KEY> to the null function.  Returns non-zero in case of error.
 
 =item C<generic_bind(TYPE, KEYSEQ, DATA, [,MAP])>
 
@@ -789,7 +792,7 @@ Bind KEY to the null function.  Returns non-zero in case of error.
 
 	void	rl_parse_and_bind(str line)
 
-Parse LINE as if it had been read from the F<~/.inputrc> file and
+Parse C<LINE> as if it had been read from the F<~/.inputrc> file and
 perform any key bindings and variable assignments found.  For more
 detail see 'GNU Readline Library Manual'.
 
@@ -1022,7 +1025,7 @@ detail see 'GNU Readline Library Manual'.
 	int	stifle_history(int max|undef)
 
 stifles the history list, remembering only the last C<MAX> entries.
-If MAX is undef,  remembers all entries.
+If C<MAX> is undef,  remembers all entries.
 
 =item C<SetHistory(LINE1 [, LINE2, ...])>
 
@@ -1156,8 +1159,8 @@ F<~/.history>.  Returns true if successful, or false if not.
 
 =head2 Internal Variable Access
 
-Attribs method is preferred to access GNU Readline/History Library
-variables.  These functions are only for internal use.
+These functions are only for internal use.  You should use C<Attribs>
+method to access GNU Readline/History Library variables.
 
 =over 4
 
@@ -1173,11 +1176,11 @@ variables.  These functions are only for internal use.
 
 =head1 Variables
 
-Following GNU Readline Library variables can be accessed from Perl
-program.  See 'GNU Readline Library Manual' and ' GNU History Library
-Manual' for each variable.  You can access them with C<Attribs>
-methods.  Names of keys in this hash conform to standard conventions
-with the leading C<rl_> stripped.
+Following GNU Readline/History Library variables can be accessed from
+Perl program.  See 'GNU Readline Library Manual' and ' GNU History
+Library Manual' for each variable.  You can access them with
+C<Attribs> methods.  Names of keys in this hash conform to standard
+conventions with the leading C<rl_> stripped.
 
 Examples:
 
@@ -1244,6 +1247,19 @@ Examples:
 	str history_search_delimiter_chars
 	int history_quotes_inhibit_expansion
 
+=item Function References
+
+	rl_getc
+	rl_callback_read_char
+	filename_completion_function
+	username_completion_function
+	list_completion_function
+
+=item C<Term::ReadLine::Gnu> Specific Variables
+
+	do_expand		# if true history expansion is enabled
+	completion_word		# for list_completion_function
+
 =back
 
 =head2 Custom Completion
@@ -1263,9 +1279,9 @@ C<completion_matches()>.
 
 A generator function is called repeatedly from
 C<completion_matches()>, returning a string each time.  The arguments
-to the generator function are TEXT and STATE.  TEXT is the partial
-word to be completed.  STATE is zero the first time the function is
-called, allowing the generator to perform any necessary
+to the generator function are C<TEXT> and C<STATE>.  C<TEXT> is the
+partial word to be completed.  C<STATE> is zero the first time the
+function is called, allowing the generator to perform any necessary
 initialization, and a positive non-zero integer for each subsequent
 call.  When the generator function returns C<undef> this signals
 C<completion_matches()> that there are no more possibilities left.
@@ -1294,9 +1310,10 @@ See also C<completion_matches>.
 
 A reference to an alternative function to create matches.
 
-The function is called with TEXT, LINE_BUFFER, START, and END.
-LINE_BUFFER is a current input buffer string.  START and END are
-indices in LINE_BUFFER saying what the boundaries of TEXT are.
+The function is called with C<TEXT>, C<LINE_BUFFER>, C<START>, and
+C<END>.  C<LINE_BUFFER> is a current input buffer string.  C<START>
+and C<END> are indices in C<LINE_BUFFER> saying what the boundaries of
+C<TEXT> are.
 
 If this function exists and returns null list or C<undef>, or if this
 variable is set to C<undef>, then an internal function
@@ -1326,18 +1343,18 @@ The default value of this variable is C<undef>.  You can use it as follows;
 
 =item C<completion_matches(TEXT, ENTRY_FUNC)>
 
-Returns an array of strings which is a list of completions for TEXT.
-If there are no completions, returns C<undef>.  The first entry
-in the returned array is the substitution for TEXT.  The remaining
-entries are the possible completions.
+Returns an array of strings which is a list of completions for
+C<TEXT>.  If there are no completions, returns C<undef>.  The first
+entry in the returned array is the substitution for C<TEXT>.  The
+remaining entries are the possible completions.
 
-ENTRY_FUNC is a generator function which has two arguments, and
-returns a string.  The first argument is TEXT.  The second is a state
-argument; it is zero on the first call, and non-zero on subsequent
-calls.  ENTRY_FUNC returns a C<undef> to the caller when there are no
-more matches.
+C<ENTRY_FUNC> is a generator function which has two arguments, and
+returns a string.  The first argument is C<TEXT>.  The second is a
+state argument; it is zero on the first call, and non-zero on
+subsequent calls.  C<ENTRY_FUNC> returns a C<undef> to the caller when
+there are no more matches.
 
-If the value of ENTRY_FUNC is undef, built-in
+If the value of C<ENTRY_FUNC> is undef, built-in
 C<filename_completion_function> is used.
 
 C<completion_matches> is a Perl wrapper function of an internal
@@ -1403,12 +1420,7 @@ Term::ReadLine::Perl (Term-ReadLine-xx.tar.gz)
 
 Hiroo Hayashi, hayashi@pdcd.ilab.toshiba.co.jp
 
-=head1 BUGS
-
-rl_add_defun() can define up to 16 functions.
-
-rl_message() does not work.  See display_readline_version() in
-t/readline.t.
+=head1 TODO
 
 Test routines for following variable and functions are required.
 
@@ -1423,5 +1435,12 @@ Test routines for following variable and functions are required.
 
 	history_search()
 	history_search_prefix()
+
+=head1 BUGS
+
+rl_add_defun() can define up to 16 functions.
+
+rl_message() does not work.  See display_readline_version() in
+t/readline.t.
 
 =cut
