@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.22 1997-01-12 16:51:42 hayashi Exp $
+#	$Id: Gnu.pm,v 1.23 1997-01-12 17:37:34 hayashi Exp $
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
 #
@@ -89,6 +89,9 @@ my @miscfn = qw( rl_begin_undo_group	rl_end_undo_group	rl_add_undo
 		 rl_read_key		rl_stuff_char		rl_initialize
 		 rl_reset_terminal	ding
 
+		 $rl_line_buffer	$rl_buffer_len		$rl_prompt
+		 $rl_point		$rl_end			$rl_mark
+		 $rl_done		$rl_pending_input
 		 );
 
 my @cbfn   = qw( rl_callback_handler_install
