@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- GNU Readline wrapper module
 #
-#	$Id: Gnu.pm,v 1.4 1996-11-19 15:52:41 hayashi Exp $
+#	$Id: Gnu.pm,v 1.5 1996-11-20 15:22:11 hayashi Exp $
 #
 #	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
 #
@@ -43,7 +43,7 @@ require Exporter;
 require DynaLoader;
 
 @ISA = qw(Term::ReadLine::Stub Exporter DynaLoader);
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 bootstrap Term::ReadLine::Gnu $VERSION;
 
