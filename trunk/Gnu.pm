@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.18 1997-01-06 15:11:14 hayashi Exp $
+#	$Id: Gnu.pm,v 1.19 1997-01-06 15:58:43 hayashi Exp $
 #
 #	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
 #
@@ -183,7 +183,10 @@ the actual C<readline> is present.
 
 sub addhistory {		# Why not AddHistory ?
     shift;
-    add_history(@_);
+    local($_);
+    foreach (@_) {
+	add_history($_);
+    }
 }
 
 =item C<StifleHistory(MAX)>
@@ -207,7 +210,11 @@ C<readline> is present.
 
 sub SetHistory {
     shift;
-    _rl_SetHistory(@_);
+    local($_);
+    clear_history();
+    foreach (@_) {
+	add_history($_);
+    }
 }
 
 =item C<GetHistory>
@@ -217,7 +224,14 @@ returns the history of input as a list, if actual C<readline> is present.
 =cut
 
 sub GetHistory {
-    _rl_GetHistory();
+#    _rl_GetHistory();
+    my ($i, $history_base, $history_length, @d);
+    $history_base   = rl_fetch_var('history_base');
+    $history_length = rl_fetch_var('history_length');
+    for ($i = $history_base; $i < $history_base + $history_length; $i++) {
+	push(@d, history_get($i));
+    }
+    @d;
 }
 
 =item C<ReadHistory(FILENAME [,FROM [,TO]])>
