@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	history.t --- Term::ReadLine:GNU History Library Test Script
 #
-#	$Id: history.t,v 1.8 2002-07-28 04:05:09 hiroo Exp $
+#	$Id: history.t,v 1.9 2003-03-16 05:22:39 hiroo Exp $
 #
 #	Copyright (c) 2002 Hiroo Hayashi.  All rights reserved.
 #
@@ -11,12 +11,11 @@
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl t/history.t'
 
-BEGIN {print "1..82\n"; $n = 1}
-END {print "not ok $n\n" unless $loaded;}
-if ($ENV{PERL_RL}) {
-    warn "You must unset the environment variable \`PERL_RL\'.\n";
-    exit 1;
+BEGIN {
+    print "1..82\n"; $n = 1;
+    $ENV{PERL_RL} = 'Gnu';	# force to use Term::ReadLine::Gnu
 }
+END {print "not ok $n\n" unless $loaded;}
 
 $^W = 1;			# perl -w
 use strict;

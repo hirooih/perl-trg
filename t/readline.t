@@ -1,9 +1,9 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.43 2002-03-30 18:13:16 hiroo Exp $
+#	$Id: readline.t,v 1.44 2003-03-16 05:22:39 hiroo Exp $
 #
-#	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 2002 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -11,12 +11,11 @@
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl t/readline.t'
 
-BEGIN {print "1..104\n"; $n = 1;}
-END {print "not ok 1\tfail to loading\n" unless $loaded;}
-if ($ENV{PERL_RL}) {
-    warn "You must unset the environment variable \`PERL_RL\'.\n";
-    exit 1;
+BEGIN {
+    print "1..104\n"; $n = 1;
+    $ENV{PERL_RL} = 'Gnu';	# force to use Term::ReadLine::Gnu
 }
+END {print "not ok 1\tfail to loading\n" unless $loaded;}
 
 my $verbose = defined @ARGV && ($ARGV[0] eq 'verbose');
 
@@ -58,7 +57,7 @@ $res =  defined $t; ok('new');
 
 my $OUT;
 if ($verbose) {
-    $OUT = $t->Attribs->{outstream};
+    $OUT = $t->OUT;
 } else {
     open(NULL, '>/dev/null') or die "cannot open \`/dev/null\': $!\n";
     $OUT = \*NULL;

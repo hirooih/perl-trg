@@ -1,19 +1,18 @@
 # -*- perl -*-
 #	callback.t - Test script for Term::ReadLine:GNU callback function
 #
-#	$Id: callback.t,v 1.5 2002-03-30 18:10:01 hiroo Exp $
+#	$Id: callback.t,v 1.6 2003-03-16 05:22:39 hiroo Exp $
 #
 #	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
 
-BEGIN {print "1..7\n"; $n = 1;}
-END {print "not ok 1\tfail to loading\n" unless $loaded;}
-if ($ENV{PERL_RL}) {
-    warn "You must unset the environment variable \`PERL_RL\'.\n";
-    exit 1;
+BEGIN {
+    print "1..7\n"; $n = 1;
+    $ENV{PERL_RL} = 'Gnu';	# force to use Term::ReadLine::Gnu
 }
+END {print "not ok 1\tfail to loading\n" unless $loaded;}
 
 my $verbose = defined @ARGV && ($ARGV[0] eq 'verbose');
 
