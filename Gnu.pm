@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.27 1997-01-18 16:28:27 hayashi Exp $
+#	$Id: Gnu.pm,v 1.28 1997-01-19 16:29:16 hayashi Exp $
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
 #
@@ -67,7 +67,8 @@ my @basefn = qw( rl_fetch_var		rl_store_var
 
 my @bindfn = qw( rl_add_defun		rl_make_bare_keymap	rl_copy_keymap
 		 rl_make_keymap		rl_discard_keymap	rl_get_keymap
-		 rl_set_keymap		rl_bind_key		rl_unbind_key
+		 rl_set_keymap		rl_get_keymap_by_name
+		 rl_bind_key		rl_unbind_key
 		 rl_generic_bind	rl_parse_and_bind
 		 rl_read_init_file	rl_do_named_function
 		 rl_function_of_keyseq	rl_invoking_keyseqs
@@ -825,7 +826,8 @@ Examples:
 	rl_make_keymap(name)
 	rl_discard_keymap(name)
 	rl_get_keymap()
-	rl_set_keymap(keymap_name)
+	rl_set_keymap(map)
+	rl_get_keymap_by_name(map)
 	rl_bind_key(key [,function [,map]])
 	rl_unbind_key(key [,map])
 	rl_generic_bind(type, keyseq, data [,map])
