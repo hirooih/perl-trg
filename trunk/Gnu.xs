@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.105 2003-10-01 02:19:32 hiroo Exp $
+ *	$Id: Gnu.xs,v 1.106 2004-10-15 05:27:05 hiroo Exp $
  *
  *	Copyright (c) 2003 Hiroo Hayashi.  All rights reserved.
  *
@@ -174,6 +174,9 @@ static int rl_completion_mark_symlink_dirs;
 #if (RL_VERSION_MAJOR < 5)
 /* features introduced by GNU Readline 5.0 */
 static int history_write_timestamps;
+static int rl_completion_quote_character;
+static int rl_completion_suppress_quote;
+static int rl_completion_found_quote;
 #endif /* (RL_VERSION_MAJOR < 5) */
 
 /*
@@ -353,7 +356,10 @@ static struct int_vars {
   { &rl_completion_type,			0, 0 },	/* 31 */
   { &rl_readline_version,			0, 1 },	/* 32 */
   { &rl_completion_suppress_append,		0, 0 },	/* 33 */
-  { &rl_completion_mark_symlink_dirs,		0, 0 }	/* 34 */
+  { &rl_completion_quote_character,		0, 0 },	/* 34 */
+  { &rl_completion_suppress_quote,		0, 0 },	/* 35 */
+  { &rl_completion_found_quote,			0, 0 },	/* 36 */
+  { &rl_completion_mark_symlink_dirs,		0, 0 }	/* 37 */
 };
 
 /*
@@ -378,6 +384,7 @@ static int history_inhibit_expansion_function_wrapper PARAMS((char *str, int i))
 static int pre_input_hook_wrapper PARAMS((void));
 static void completion_display_matches_hook_wrapper PARAMS((char **matches,
 							 int len, int max));
+static char *completion_word_break_hook_wrapper PARAMS((void));
 static int prep_term_function_wrapper PARAMS((int meta_flag));
 static int deprep_term_function_wrapper PARAMS((void));
 static int directory_rewrite_hook_wrapper PARAMS((char **));
@@ -386,7 +393,8 @@ enum { STARTUP_HOOK, EVENT_HOOK, GETC_FN, REDISPLAY_FN,
        CMP_ENT, ATMPT_COMP,
        FN_QUOTE, FN_DEQUOTE, CHAR_IS_QUOTEDP,
        IGNORE_COMP, DIR_COMP, HIST_INHIBIT_EXP,
-       PRE_INPUT_HOOK, COMP_DISP_HOOK, PREP_TERM, DEPREP_TERM, DIR_REWRITE
+       PRE_INPUT_HOOK, COMP_DISP_HOOK, COMP_WD_BRK_HOOK,
+       PREP_TERM, DEPREP_TERM, DIR_REWRITE
 };
 
 static struct fn_vars {
@@ -460,19 +468,25 @@ static struct fn_vars {
     NULL
   },
   {
-    (Function **)&rl_prep_term_function,			/* 14 */
+    (Function **)&rl_completion_word_break_hook,		/* 14 */
+    NULL,
+    (Function *)completion_word_break_hook_wrapper,
+    NULL
+  },
+  {
+    (Function **)&rl_prep_term_function,			/* 15 */
     (Function *)rl_prep_terminal,
     (Function *)prep_term_function_wrapper,
     NULL
   },
   {
-    (Function **)&rl_deprep_term_function,			/* 15 */
+    (Function **)&rl_deprep_term_function,			/* 16 */
     (Function *)rl_deprep_terminal,
     (Function *)deprep_term_function_wrapper,
     NULL
   },
   {
-    (Function **)&rl_directory_rewrite_hook,			/* 16 */
+    (Function **)&rl_directory_rewrite_hook,			/* 17 */
     NULL,
     (Function *)directory_rewrite_hook_wrapper,
     NULL
@@ -483,6 +497,9 @@ static struct fn_vars {
  * Perl function wrappers
  */
 
+/*
+ * for rl_voidfunc_t : void fn(void)
+ */
 static int
 voidfunc_wrapper(type)
      int type;
@@ -510,6 +527,9 @@ voidfunc_wrapper(type)
   return ret;
 }
 
+/*
+ * for rl_vintfunc_t : void fn(int)
+ */
 static int
 vintfunc_wrapper(type, arg)
      int type;
@@ -540,6 +560,9 @@ vintfunc_wrapper(type, arg)
   return ret;
 }
 
+/*
+ * for rl_icppfunc_t : int fn(char **)
+ */
 static int
 icppfunc_wrapper(type, arg)
      int type;
@@ -586,6 +609,114 @@ icppfunc_wrapper(type, arg)
   return ret;
 }
 
+#if 0
+/*
+ * for rl_icpfunc_t : int fn(char *)
+ */
+static int
+icpfunc_wrapper(type, text)
+     int type;
+     char *text;
+{
+  dSP;
+  int count;
+  int ret;
+  
+  ENTER;
+  SAVETMPS;
+
+  PUSHMARK(sp);
+  if (text) {
+    XPUSHs(sv_2mortal(newSVpv(text, 0)));
+  } else {
+    XPUSHs(&PL_sv_undef);
+  }
+  PUTBACK;
+
+  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+
+  SPAGAIN;
+
+  if (count != 1)
+    croak("Gnu.xs:icpfunc_wrapper: Internal error\n");
+
+  ret = POPi;			/* warns unless integer */
+  PUTBACK;
+  FREETMPS;
+  LEAVE;
+  return ret;
+}
+#endif
+
+/*
+ * for rl_cpvfunc_t : (char *)fn(void)
+ */
+static char *
+cpvfunc_wrapper(type)
+     int type;
+{
+  dSP;
+  int count;
+  char *str;
+  SV *svret;
+  
+  ENTER;
+  SAVETMPS;
+
+  PUSHMARK(sp);
+  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+  SPAGAIN;
+
+  if (count != 1)
+    croak("Gnu.xs:cpvfunc_wrapper: Internal error\n");
+
+  svret = POPs;
+  str = SvOK(svret) ? dupstr(SvPV(svret, PL_na)) : NULL;
+  PUTBACK;
+  FREETMPS;
+  LEAVE;
+  return str;
+}
+
+/*
+ * for rl_linebuf_func_t : int fn(char *, int)
+ */
+static int
+icpintfunc_wrapper(type, text, index)
+     int type;
+     char *text;
+     int index;
+{
+  dSP;
+  int count;
+  int ret;
+  
+  ENTER;
+  SAVETMPS;
+
+  PUSHMARK(sp);
+  if (text) {
+    XPUSHs(sv_2mortal(newSVpv(text, 0)));
+  } else {
+    XPUSHs(&PL_sv_undef);
+  }
+  XPUSHs(sv_2mortal(newSViv(index)));
+  PUTBACK;
+
+  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+
+  SPAGAIN;
+
+  if (count != 1)
+    croak("Gnu.xs:icpintfunc_wrapper: Internal error\n");
+
+  ret = POPi;			/* warns unless integer */
+  PUTBACK;
+  FREETMPS;
+  LEAVE;
+  return ret;
+}
+
 static int
 startup_hook_wrapper()		{ return voidfunc_wrapper(STARTUP_HOOK); }
 static int
@@ -607,6 +738,7 @@ redisplay_function_wrapper()	{ voidfunc_wrapper(REDISPLAY_FN); }
 
 /*
  * call a perl function as rl_completion_entry_function
+ * for rl_compentry_func_t : (char *)fn(const char *, int)
  */
 
 static char *
@@ -649,6 +781,7 @@ completion_entry_function_wrapper(text, state)
 
 /*
  * call a perl function as rl_attempted_completion_function
+ * for rl_completion_func_t : (char **)fn(const char *, int, int)
  */
 
 static char **
@@ -734,6 +867,7 @@ attempted_completion_function_wrapper(text, start, end)
 
 /*
  * call a perl function as rl_filename_quoting_function
+ * for rl_quote_func_t : (char *)fn(char *, int, char *)
  */
 
 static char *
@@ -782,6 +916,7 @@ filename_quoting_function_wrapper(text, match_type, quote_pointer)
 
 /*
  * call a perl function as rl_filename_dequoting_function
+ * for rl_dequote_func_t : (char *)fn(char *, int)
  */
 
 static char *
@@ -831,38 +966,12 @@ char_is_quoted_p_wrapper(text, index)
      char *text;
      int index;
 {
-  dSP;
-  int count;
-  int ret;
-  
-  ENTER;
-  SAVETMPS;
-
-  PUSHMARK(sp);
-  if (text) {
-    XPUSHs(sv_2mortal(newSVpv(text, 0)));
-  } else {
-    XPUSHs(&PL_sv_undef);
-  }
-  XPUSHs(sv_2mortal(newSViv(index)));
-  PUTBACK;
-
-  count = perl_call_sv(fn_tbl[CHAR_IS_QUOTEDP].callback, G_SCALAR);
-
-  SPAGAIN;
-
-  if (count != 1)
-    croak("Gnu.xs:char_is_quoted_p_wrapper: Internal error\n");
-
-  ret = POPi;			/* warns unless integer */
-  PUTBACK;
-  FREETMPS;
-  LEAVE;
-  return ret;
+  return icpintfunc_wrapper(CHAR_IS_QUOTEDP, text, index);
 }
 
 /*
  * call a perl function as rl_ignore_some_completions_function
+ * for rl_compignore_func_t : int fn(char **)
  */
 
 static void
@@ -968,34 +1077,7 @@ history_inhibit_expansion_function_wrapper(text, index)
      char *text;
      int index;
 {
-  dSP;
-  int count;
-  int ret;
-  
-  ENTER;
-  SAVETMPS;
-
-  PUSHMARK(sp);
-  if (text) {
-    XPUSHs(sv_2mortal(newSVpv(text, 0)));
-  } else {
-    XPUSHs(&PL_sv_undef);
-  }
-  XPUSHs(sv_2mortal(newSViv(index)));
-  PUTBACK;
-
-  count = perl_call_sv(fn_tbl[HIST_INHIBIT_EXP].callback, G_SCALAR);
-
-  SPAGAIN;
-
-  if (count != 1)
-    croak("Gnu.xs:history_inhibit_expansion_function_wrapper: Internal error\n");
-
-  ret = POPi;			/* warns unless integer */
-  PUTBACK;
-  FREETMPS;
-  LEAVE;
-  return ret;
+  return icpintfunc_wrapper(HIST_INHIBIT_EXP, text, index);
 }
 
 static int
@@ -1004,6 +1086,7 @@ pre_input_hook_wrapper() { return voidfunc_wrapper(PRE_INPUT_HOOK); }
 #if (RL_VERSION_MAJOR >= 4)
 /*
  * call a perl function as rl_completion_display_matches_hook
+ * for rl_compdisp_func_t : void fn(char **, int, int)
  */
 
 static void
@@ -1052,6 +1135,12 @@ completion_display_matches_hook_wrapper(matches, len, max)
   /* dummy */
 }
 #endif /* (RL_VERSION_MAJOR < 4) */
+
+static char *
+completion_word_break_hook_wrapper()
+{
+  return cpvfunc_wrapper(COMP_WD_BRK_HOOK);
+}
 
 static int
 prep_term_function_wrapper(meta_flag)
