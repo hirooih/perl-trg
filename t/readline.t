@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.22 1998-04-14 16:35:15 hayashi Exp $
+#	$Id: readline.t,v 1.23 1998-05-05 14:14:38 hayashi Exp $
 #
 #	Copyright (c) 1996,1997,1998 Hiroo Hayashi.  All rights reserved.
 #
@@ -128,9 +128,9 @@ sub invert_case_line {
 #	These functions may be obsoleted in the future.
 sub change_ornaments {
     my($count, $key) = @_;	# ignored in this sample function
-    $t->_rl_save_prompt;	# undocumented function
-    $t->rl_message("[S]tandout, [U]nderlining, [B]old, [R]everse, [V]isible bell");
-    my $c = chr $t->rl_read_key;
+    $t->save_prompt;		# undocumented function
+    $t->message("[S]tandout, [U]nderlining, [B]old, [R]everse, [V]isible bell");
+    my $c = chr $t->read_key;
     if ($c =~ /s/i) {
 	$t->ornaments('so,me,,');
     } elsif ($c =~ /u/i) {
@@ -144,8 +144,8 @@ sub change_ornaments {
     } else {
 	$t->ding;
     }
-    $t->_rl_restore_prompt;	# undocumented function
-    $t->rl_clear_message;
+    $t->restore_prompt;		# undocumented function
+    $t->clear_message;
 }
 
 $t->add_defun('reverse-line', \&reverse_line, ord "\ct");
@@ -165,8 +165,8 @@ my $helpmap = $t->make_bare_keymap();
 $t->bind_key(ord "f", 'dump-functions', $helpmap);
 $t->generic_bind(ISKMAP, "\e?", $helpmap);
 $t->bind_key(ord "v", 'dump-variables', $helpmap);
-# documented but not defined by GNU Readline 2.1
-#$t->generic_bind(ISFUNC, "\e?m", 'dump-macros');
+# 'dump-macros' is documented but not defined by GNU Readline 2.1
+$t->generic_bind(ISFUNC, "\e?m", 'dump-macros') if $a->{library_version} > 2.1;
 
 # bind macro
 $t->generic_bind(ISMACR, "\e?i", "\ca[insert text from beginning of line]");
@@ -221,9 +221,11 @@ print "ok 8\n";
 ########################################################################
 # test key unbinding functions
 
-print $OUT "unbind \\C-t and \\C-xv\n";
+print $OUT "unbind \\C-t, \\M-?f, \\M-?v, \\C-xv, and \\C-x\\C-v\n";
 $t->unbind_key(ord "\ct");
-$t->unbind_key(ord "v", 'emacs-ctlx');
+$t->unbind_key(ord "f", $helpmap);
+$t->unbind_command_in_map('display-readline-version', 'emacs-ctlx');
+$t->unbind_function_in_map($t->named_function('dump-variables'), $helpmap);
 
 @keyseqs = $t->invoking_keyseqs('reverse-line');
 print $OUT "reverse-line is bound to ", join(', ',@keyseqs), "\n";
@@ -294,9 +296,11 @@ print "ok 11\n";
 ########################################################################
 # test rl_startup_hook
 
-sub insert_string { $t->insert_text('insert text'); };
-$a->{startup_hook} = \&insert_string;
-print $OUT "\n" unless defined $t->readline("rl_startup_hook test>");
+#sub move_cursor { $a->{point} = 10; };
+#$a->{startup_hook} = \&move_cursor;
+$a->{startup_hook} = sub { $a->{point} = 10; };
+print $OUT "\n" unless defined $t->readline("rl_startup_hook test>",
+					    "cursor is, <- here");
 $a->{startup_hook} = undef;
 
 print "ok 12\n";
