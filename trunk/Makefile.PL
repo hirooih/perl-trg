@@ -1,7 +1,7 @@
 #
 #	Makefile.PL for Term::ReadLine::Gnu
 #
-#	$Id: Makefile.PL,v 1.21 2000-04-02 15:59:42 hayashi Exp $
+#	$Id: Makefile.PL,v 1.22 2000-11-27 16:21:26 hayashi Exp $
 #
 #	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
 #		<hiroo.hayashi@computer.org>
@@ -13,7 +13,7 @@
 #		<ilya@math.ohio-state.edu>
 #
 # Usage: perl Makefile.PL [--prefix=...] [--includedir=...] [--libdir=...]
-
+#		[OPTIMIZE=...]
 ########################################################################
 use ExtUtils::MakeMaker;
 use Config;
