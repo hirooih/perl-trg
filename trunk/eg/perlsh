@@ -1,6 +1,6 @@
 #! /usr/local/bin/perl
 #
-#	$Id: perlsh,v 1.7 1997-01-12 17:49:42 hayashi Exp $	
+#	$Id: perlsh,v 1.8 1997-03-17 17:39:15 hayashi Exp $	
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi. All Rights Reserved.
 #
@@ -33,7 +33,6 @@ package PerlSh;
 
 use strict;
 use Term::ReadLine;
-use Term::ReadLine::Gnu ':all';
 
 use vars qw($PS1 $PS2 $HISTFILE $HISTSIZE $INPUTRC $STRICT
 	    $HOSTNAME $LOGNAME);
@@ -56,20 +55,20 @@ if (-f $PerlSh::INPUTRC) {
 
 package PerlSh;
 
-use vars qw($T);
+my $term = new Term::ReadLine 'PerlSh';
+my $attribs = $term->Attribs;
 
 &toplevel;			# never returns
 
 sub toplevel {
-    $T = new Term::ReadLine 'PerlSh';
-    $T->StifleHistory($HISTSIZE);
+    $term->StifleHistory($HISTSIZE);
     if (-f $HISTFILE) {
-	$T->ReadHistory($HISTFILE)
+	$term->ReadHistory($HISTFILE)
 	    or warn "perlsh: cannot read history file: $!\n";
     }
-    $rl_completion_entry_function = \&perl_symbol_completion_function;
+    $attribs->{completion_entry_function} = \&perl_symbol_completion_function;
 
-    $rl_special_prefixes = '$@';
+    $attribs->{special_prefixes} = '$@';
 
     $SIG{'INT'} = \&quit;
 
@@ -85,7 +84,7 @@ sub toplevel {
 }
 
 sub quit {
-    $T->WriteHistory($HISTFILE)
+    $term->WriteHistory($HISTFILE)
 	or warn "perlsh: cannot write history file: $!\n";
     exit (0);
 }
@@ -94,7 +93,7 @@ sub reader {
     my ($line, $command);
     $command = '';
     while (1) {
-	$line = $T->readline($command ? $PS2 : prompt($PS1));
+	$line = $term->readline($command ? $PS2 : prompt($PS1));
 	return undef unless (defined $line);
 	
 	if ($line =~ /\\$/) {
@@ -120,7 +119,7 @@ sub prompt {
     # \h: hostname, \u: username, \!: history number
     s/\\h/$HOSTNAME/g;
     s/\\u/$LOGNAME/g;
-    s/\\!/$history_base+$history_length/eg;
+    s/\\!/$attribs->{history_base} + $attribs->{history_length}/eg;
     $_;
 }
 #
