@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.26 1997-01-06 16:28:36 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.27 1997-01-06 16:50:03 hayashi Exp $
  *
  *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
  *
@@ -28,80 +28,12 @@ extern int rl_completion_query_items; /* should be defined in readline.h */
 extern int rl_ignore_completion_duplicates; /* should be defined in readline.h */
 extern int rl_line_buffer_len;
 
+static char *dupstr (char *);	/* duplicate string */
+
 /* from GNU Readline:xmalloc.c */
 extern char *xmalloc (int);
 extern char *xfree (char *);
 
-/*
- *	string variable table for _rl_store_str(), _rl_fetch_str()
- */
-static struct str_vars {
-  char **var;
-  int accessed;
-  int readonly;
-} str_tbl[] = {
-  /* When you change length of rl_line_buffer, change
-     rl_line_buffer_len also. */
-  &rl_line_buffer,				0, 0,	/* 0 */
-  &rl_prompt,					0, 1,	/* 1 */
-  &rl_library_version,				0, 1,	/* 2 */
-  &rl_terminal_name,				0, 0,	/* 3 */
-  &rl_readline_name,				0, 0,	/* 4 */
-  
-  &rl_basic_word_break_characters,		0, 0,	/* 5 */
-  &rl_basic_quote_characters,			0, 0,	/* 6 */
-  &rl_completer_word_break_characters,		0, 0,	/* 7 */
-  &rl_completer_quote_characters,		0, 0,	/* 8 */
-  &rl_filename_quote_characters,		0, 0,	/* 9 */
-  &rl_special_prefixes,				0, 0,	/* 10 */
-  
-  &history_no_expand_chars,			0, 0,	/* 11 */
-  &history_search_delimiter_chars,		0, 0	/* 12 */
-};
-
-/*
- *	integer variable table for _rl_store_int(), _rl_fetch_int()
- */
-
-static struct int_vars {
-  int *var;
-  int charp;
-} int_tbl[] = {
-  &rl_line_buffer_len,				0,	/* 0 */
-  &rl_point,					0,	/* 1 */
-  &rl_end,					0,	/* 2 */
-  &rl_mark,					0,	/* 3 */
-  &rl_done,					0,	/* 4 */
-  &rl_pending_input,				0,	/* 5 */
-
-  &rl_completion_query_items,			0,	/* 6 */
-  &rl_completion_append_character,		0,	/* 7 : int */
-  &rl_ignore_completion_duplicates,		0,	/* 8 */
-  &rl_filename_completion_desired,		0,	/* 9 */
-  &rl_filename_quoting_desired,			0,	/* 10 */
-  &rl_inhibit_completion,			0,	/* 11 */
-
-  &history_base,				0,	/* 12 */
-  &history_length,				0,	/* 13 */
-  (int *)&history_expansion_char,		1,	/* 14 */
-  (int *)&history_subst_char,			1,	/* 15 */
-  (int *)&history_comment_char,			1,	/* 16 */
-  &history_quotes_inhibit_expansion,		0	/* 17 */
-};
-
-static char *
-dupstr (s)			/* duplicate string */
-     char *s;
-{
-  char *r;
-     
-/* Use xmalloc(), because 'r' will be freed in GNU Readline Library routine */
-  r = xmalloc (strlen (s) + 1);	
-  strcpy (r, s);
-  return (r);
-}
-     
-
 /*
  *	custom function support routines
  */
@@ -322,40 +254,67 @@ rl_function_name (Function *function)
       return (funmap[i]->name);
   return NULL;
 }
-
-#if 0
-static int
-rl_debug(int count, int key)
-{
-  warn("count:%d,key:%d\n", count, key);
-  warn("rl_get_keymap():%s\n", rl_get_keymap_name(rl_get_keymap()));
-  warn("rl_executing_keymap:%s\n", rl_get_keymap_name(rl_executing_keymap));
-  warn("rl_binding_keymap:%s\n", rl_get_keymap_name(rl_binding_keymap));
-  return 0;
-}
-#endif
-
-static int
-custom_function_lapper(int count, int key)
-{
-  dSP;
-  struct fbnode *np;
-
-  if ((np = lookup_bind_myfun(key, rl_executing_keymap)) == NULL)
-    croak("Gnu.xs:custom_function_lapper: Internal error (lookup_bind_myfun)");
-
-  PUSHMARK(sp);
-  XPUSHs(sv_2mortal(newSViv(count)));
-  XPUSHs(sv_2mortal(newSViv(key)));
-  PUTBACK;
-
-  perl_call_sv(np->fn, G_DISCARD);
-
-  return;
-}
 
 /*
- * Perl function lapper
+ *	string variable table for _rl_store_str(), _rl_fetch_str()
+ */
+static struct str_vars {
+  char **var;
+  int accessed;
+  int readonly;
+} str_tbl[] = {
+  /* When you change length of rl_line_buffer, change
+     rl_line_buffer_len also. */
+  &rl_line_buffer,				0, 0,	/* 0 */
+  &rl_prompt,					0, 1,	/* 1 */
+  &rl_library_version,				0, 1,	/* 2 */
+  &rl_terminal_name,				0, 0,	/* 3 */
+  &rl_readline_name,				0, 0,	/* 4 */
+  
+  &rl_basic_word_break_characters,		0, 0,	/* 5 */
+  &rl_basic_quote_characters,			0, 0,	/* 6 */
+  &rl_completer_word_break_characters,		0, 0,	/* 7 */
+  &rl_completer_quote_characters,		0, 0,	/* 8 */
+  &rl_filename_quote_characters,		0, 0,	/* 9 */
+  &rl_special_prefixes,				0, 0,	/* 10 */
+  
+  &history_no_expand_chars,			0, 0,	/* 11 */
+  &history_search_delimiter_chars,		0, 0	/* 12 */
+};
+
+/*
+ *	integer variable table for _rl_store_int(), _rl_fetch_int()
+ */
+
+static struct int_vars {
+  int *var;
+  int charp;
+} int_tbl[] = {
+  &rl_line_buffer_len,				0,	/* 0 */
+  &rl_point,					0,	/* 1 */
+  &rl_end,					0,	/* 2 */
+  &rl_mark,					0,	/* 3 */
+  &rl_done,					0,	/* 4 */
+  &rl_pending_input,				0,	/* 5 */
+
+  &rl_completion_query_items,			0,	/* 6 */
+  &rl_completion_append_character,		0,	/* 7 : int */
+  &rl_ignore_completion_duplicates,		0,	/* 8 */
+  &rl_filename_completion_desired,		0,	/* 9 */
+  &rl_filename_quoting_desired,			0,	/* 10 */
+  &rl_inhibit_completion,			0,	/* 11 */
+
+  &history_base,				0,	/* 12 */
+  &history_length,				0,	/* 13 */
+  (int *)&history_expansion_char,		1,	/* 14 */
+  (int *)&history_subst_char,			1,	/* 15 */
+  (int *)&history_comment_char,			1,	/* 16 */
+  &history_quotes_inhibit_expansion,		0	/* 17 */
+};
+
+/*
+ *	function pointer variable table for _rl_store_function(),
+ *	_rl_fetch_funtion()
  */
 
 static int startup_hook_lapper(void);
@@ -393,6 +352,9 @@ static struct fn_vars {
   }
 };
 
+/*
+ * Perl function lappers
+ */
 static int void_arg_func_lapper(int);
 
 static int  startup_hook_lapper()	{ void_arg_func_lapper(STARTUP_HOOK); }
@@ -508,6 +470,25 @@ attempted_completion_function_lapper(char *text, int start, int end)
   return matches;
 }
 
+static int
+custom_function_lapper(int count, int key)
+{
+  dSP;
+  struct fbnode *np;
+
+  if ((np = lookup_bind_myfun(key, rl_executing_keymap)) == NULL)
+    croak("Gnu.xs:custom_function_lapper: Internal error (lookup_bind_myfun)");
+
+  PUSHMARK(sp);
+  XPUSHs(sv_2mortal(newSViv(count)));
+  XPUSHs(sv_2mortal(newSViv(key)));
+  PUTBACK;
+
+  perl_call_sv(np->fn, G_DISCARD);
+
+  return;
+}
+
 static SV* callback_handler_callback = NULL;
 
 static void
@@ -523,6 +504,33 @@ callback_handler_lapper(char *line)
 
   perl_call_sv(callback_handler_callback, G_DISCARD);
 }
+
+/*
+ *	Misc.
+ */
+static char *
+dupstr (s)			/* duplicate string */
+     char *s;
+{
+  char *r;
+     
+/* Use xmalloc(), because 'r' will be freed in GNU Readline Library routine */
+  r = xmalloc (strlen (s) + 1);	
+  strcpy (r, s);
+  return (r);
+}
+     
+#if 0
+static int
+rl_debug(int count, int key)
+{
+  warn("count:%d,key:%d\n", count, key);
+  warn("rl_get_keymap():%s\n", rl_get_keymap_name(rl_get_keymap()));
+  warn("rl_executing_keymap:%s\n", rl_get_keymap_name(rl_executing_keymap));
+  warn("rl_binding_keymap:%s\n", rl_get_keymap_name(rl_binding_keymap));
+  return 0;
+}
+#endif
 
 MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu
 
@@ -535,9 +543,7 @@ MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu
 #	2.1 Basic Behavior
 #
 
-#
 # The function name "readline()" is reserved for a method name.
-#
 void
 rl_readline(prompt = NULL)
 	char *prompt
@@ -556,7 +562,9 @@ rl_readline(prompt = NULL)
 #
 #	2.4 Readline Convenience Functions
 #
+#
 #	2.4.1 Naming a Function
+#
 int
 rl_add_defun(name, fn, key = -1)
 	char *name
@@ -582,8 +590,9 @@ rl_add_defun(name, fn, key = -1)
 	  }
 	}
 
+#
 #	2.4.2 Selection a Keymap
-
+#
 int
 rl_make_bare_keymap(name)
 	char *name
@@ -651,7 +660,9 @@ rl_set_keymap(keymap_name)
 	  }
 	}
 
+#
 #	2.4.3 Binding Keys
+#
 int
 rl_bind_key(key, function, map = NULL)
 	int key
@@ -734,7 +745,9 @@ rl_read_init_file(filename = NULL)
 	char *filename
 	PROTOTYPE: ;$
 
+#
 #	2.4.4 Associating Function Names and Bindings
+#
 int
 rl_do_named_function(name, count = 1, key = -1)
 	char	*name
@@ -808,7 +821,9 @@ void
 rl_list_funmap_names()
 	PROTOTYPE:
 
+#
 #	2.4.5 Allowing Undoing
+#
 int
 rl_begin_undo_group()
 	PROTOTYPE:
@@ -839,7 +854,9 @@ rl_modifying(start, end)
 	int	end
 	PROTOTYPE: $$
 
+#
 #	2.4.6 Redisplay
+#
 # in info : int rl_redisplay()
 void
 rl_redisplay()
@@ -866,7 +883,9 @@ int
 rl_clear_message()
 	PROTOTYPE:
 
+#
 #	2.4.7 Modifying Tex
+#
 int
 rl_insert_text(text)
 	char	*text
@@ -890,7 +909,9 @@ rl_kill_text(start, end)
 	int	end
 	PROTOTYPE: $$
 
+#
 #	2.4.8 Utility Functions
+#
 int
 rl_read_key()
 	PROTOTYPE:
@@ -1031,6 +1052,7 @@ username_completion_function(text, state)
 #
 ########################################################################
 
+#
 #	2.3.1 Initializing History and State Management
 #
 void
