@@ -1,6 +1,6 @@
 #! /usr/local/bin/perl
 #
-#	$Id: pftp,v 1.5 1997-04-14 14:45:41 hayashi Exp $
+#	$Id: pftp,v 1.6 1997-04-14 15:22:25 hayashi Exp $
 #
 #	Copyright (c) 1997 Hiroo Hayashi.  All Rights Reserved.
 #
@@ -9,7 +9,7 @@
 
 =head1 NAME
 
-pftp - an ftp client with GNU Readline support
+pftp - an ftp client with the GNU Readline support
 
 =head1 SYNOPSIS
 
