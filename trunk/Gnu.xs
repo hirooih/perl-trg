@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.54 1997-07-13 15:11:42 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.55 1997-08-24 14:51:41 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -78,7 +78,7 @@ rl_get_function_name (function)
 static struct str_vars {
   char **var;
   int accessed;
-  int readonly;
+  int read_only;
 } str_tbl[] = {
   /* When you change length of rl_line_buffer, you must call
      rl_extend_line_buffer().  See _rl_store_rl_line_buffer() */
@@ -1254,7 +1254,7 @@ _rl_store_str(pstr, id)
 	    XSRETURN_UNDEF;
 	  }
 
-	  if (str_tbl[id].readonly) {
+	  if (str_tbl[id].read_only) {
 	    warn("Gnu.xs:_rl_store_str: store to read only variable");
 	    XSRETURN_UNDEF;
 	  }
