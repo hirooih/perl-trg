@@ -1,4 +1,4 @@
-$Id: README,v 1.7 1997-07-13 15:15:09 hayashi Exp $
+$Id: README,v 1.8 1997-08-24 15:33:29 hayashi Exp $
 
 Term::ReadLine::Gnu --- GNU Readline Library Wrapper Module
 
@@ -45,6 +45,10 @@ Recent changes in this release:
 	See Changes.
 
 Bugs:
+	If you use Solaris 2.5 and dynamic loading, "make test" causes
+	core dump.  The only fix I know now is to link this module
+	statically.  See INSTALL for more details.
+
 	The GNU Readline Library is very stable.  But this is my first
 	XS programming, my first module programming and, my first
 	object oriented programming, and...  There must be many bugs
