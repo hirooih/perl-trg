@@ -1,6 +1,6 @@
 #! /usr/local/bin/perl
 #
-#	$Id: perlsh,v 1.13 1999-03-21 14:50:47 hayashi Exp $	
+#	$Id: perlsh,v 1.14 1999-03-21 17:57:26 hayashi Exp $	
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi. All Rights Reserved.
 #
@@ -80,15 +80,20 @@ sub toplevel {
 	$term->ReadHistory($HISTFILE)
 	    or warn "perlsh: cannot read history file: $!\n";
     }
-#    $attribs->{completion_entry_function} = \&perl_symbol_completion_function;
     $attribs->{completion_append_character} = '';
     $attribs->{special_prefixes} = '$@%&'; # was `$@' !!!
+
+#    $attribs->{completion_entry_function} = \&perl_symbol_completion_function;
     $attribs->{attempted_completion_function} = sub {
 	my ($text, $line, $start, $end) = @_;
 	$attribs->{completion_display_matches_hook}
 	    = \&perl_symbol_display_match_list;
-	return $term->completion_matches($text,
+#	return $term->completion_matches($text,
+#					 \&perl_symbol_completion_function);
+	my @foo =  $term->completion_matches($text,
 					 \&perl_symbol_completion_function);
+#	print "[@foo]\n";
+	return @foo;
     };
 
     $SIG{INT} = 'IGNORE';
@@ -172,10 +177,12 @@ sub prompt {
 	    } elsif ($text =~ /^(\&)/) {
 		@symbol_list = get_symbol($pkg, 'CODE', $1);
 	    } else {
-		@symbol_list = (get_symbol($pkg, 'CODE', ''),
-				get_symbol($pkg, 'FILEHANDLE', ''));
+		@symbol_list = get_symbol($pkg, 'CODE', '');
+# following line causes segmention fault?
+#		@symbol_list = (get_symbol($pkg, 'CODE', ''),
+#				get_symbol($pkg, 'FILEHANDLE', ''));
 	    }
-#	    @symbol_list = sort @symbol_list;
+	    @symbol_list = sort @symbol_list;
 #	    print "\n<<<@symbol_list>>>\n";
 	}
 
@@ -217,8 +224,8 @@ sub get_symbol ($$$) {
 	    push (@list, $pre . $pkg_ . $key);
 	} elsif ($type eq 'CODE' && defined &sym) {
 	    push (@list, $pre . $pkg_ . $key);
-	} elsif ($type eq 'FILEHANDLE' && defined $ref) {
-	    push (@list, $pre . $pkg_ . $key);
+#	} elsif ($type eq 'FILEHANDLE' && defined $ref) {
+#	    push (@list, $pre . $pkg_ . $key);
 	}
     }
     return @list;
