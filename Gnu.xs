@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.10 1996-12-05 14:05:27 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.11 1996-12-25 15:17:24 hayashi Exp $
  *
  *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
  *
@@ -54,6 +54,7 @@ static struct str_vars {
 extern int rl_completion_query_items;
 extern int rl_ignore_completion_duplicates;
 extern int rl_line_buffer_len;
+extern int history_offset;
 
 static struct int_vars {
   int *var;
@@ -87,7 +88,7 @@ extern char *xmalloc (int);
 #ifdef HAVE_READLINE_2_1
 extern char *xfree (char *);
 #else
-void
+static void
 xfree (string)
      char *string;
 {
@@ -102,7 +103,8 @@ dupstr (s)			/* duplicate string */
 {
   char *r;
      
-  r = xmalloc (strlen (s) + 1);
+/* Use xmalloc(), because 'r' will be freed in GNU Readline Library routine */
+  r = xmalloc (strlen (s) + 1);	
   strcpy (r, s);
   return (r);
 }
@@ -117,14 +119,94 @@ rl_insert_preput ()
 }
 
 /*
+ *	custom function support routines
+ */
+struct fnode {			/* table entry */
+  struct fnode *next;
+  int key;
+  SV *fn;
+};
+
+static struct fnode *flist = (struct fnode *)NULL;
+
+struct fnode *
+lookup_defun(int key)
+{
+  struct fnode *np;
+
+  for (np = flist; np != NULL; np = np->next)
+    if (np->key == key) {
+      /*warn("lookup:[%d,%p]\n", np->key, np->fn);*/
+      return np;
+    }
+
+  return (struct fnode *)NULL;
+}
+
+static int
+register_defun(int key, SV *fn)
+{
+  struct fnode *np;
+
+  /*warn("register:[%d,%p]\n", key, fn);*/
+  if ((np = lookup_defun(key)) != (struct fnode *)NULL) {
+    np->key = key;
+    np->fn = newSVsv(fn);
+    return 0;
+  } else {
+    New(0, np, 1, struct fnode);
+    np->next = flist;
+    np->key = key;
+    np->fn = newSVsv(fn);
+    flist = np;
+    return 1;
+  }
+}
+
+static int
+dismiss_defun(int key)
+{
+  struct fnode *np, **lp;
+
+  for (lp = &flist, np = flist; np != NULL; lp = &(np->next), np = np->next)
+    if (np->key == key) {
+      *lp = np->next;
+      SvREFCNT_dec(np->fn);
+      Safefree(np);
+      return 0;
+    }
+
+  return 1;
+}
+
+static int
+custom_function_lapper(int count, int key)
+{
+  dSP;
+  struct fnode *np;
+
+  if ((np = lookup_defun(key)) == NULL)
+    croak("Gnu.xs:custom_function_lapper: Internal error (lookup_defun)");
+
+  PUSHMARK(sp);
+  XPUSHs(sv_2mortal(newSViv(count)));
+  XPUSHs(sv_2mortal(newSViv(key)));
+  PUTBACK;
+
+  /*warn("lapper:[%d,%p]\n", key, np-fn);*/
+  perl_call_sv(np->fn, G_DISCARD);
+  /*warn("[return from perl_call_sv]\n");*/
+
+  return;
+}
+
+/*
  * call a perl function as rl_completion_entry_function
  */
 static SV * completion_entry_function = (SV *)NULL;
 
 static char *
-completion_entry_function_lapper(text, state)
-     char *text;
-     int state;
+completion_entry_function_lapper(char *text, int state)
 {
   dSP;
   int count;
@@ -144,7 +226,7 @@ completion_entry_function_lapper(text, state)
   SPAGAIN;
 
   if (count != 1)
-    croak("Internal error\n");
+    croak("Gnu.xs:completion_entry_function_lapper: Internal error\n");
 
   match = POPs;
   str = SvOK(match) ? dupstr(SvPV(match, na)) : (char *)NULL;
@@ -161,9 +243,7 @@ completion_entry_function_lapper(text, state)
 static SV * attempted_completion_function = (SV *)NULL;
 
 static char **
-attempted_completion_function_lapper(text, start, end)
-     char *text;
-     int start, end;
+attempted_completion_function_lapper(char *text, int start, int end)
 {
   dSP;
   int count;
@@ -212,6 +292,9 @@ attempted_completion_function_lapper(text, start, end)
 
 MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu
 
+#
+#	readline()
+#
 void
 _rl_readline(prompt = (char *)NULL, preput = (char *)NULL)
 	char *prompt
@@ -242,6 +325,9 @@ _rl_readline(prompt = (char *)NULL, preput = (char *)NULL)
 	  }
 	}
 
+#
+#	History Support Routines
+#
 void
 history_expand(line)
 	char *line
@@ -324,6 +410,21 @@ _rl_SetHistory(...)
 	    add_history((char *)SvPV(ST(i), na));
 	}
 
+int
+read_history_range(filename = (char *)NULL, from = 0, to = -1)
+	char *filename
+	int from
+	int to
+	PROTOTYPE: ;$$$
+
+int
+write_history(filename = (char *)NULL)
+	char *filename
+	PROTOTYPE: ;$
+
+#
+#	I/O stream
+#
 void
 _rl_set_instream(fildes)
 	int	fildes
@@ -350,35 +451,115 @@ _rl_set_outstream(fildes)
 	    rl_outstream = fd;
 	}
 
-int
-_rl_read_history(filename = (char *)NULL, from = 0, to = -1)
-	char *filename
-	int from
-	int to
-	PROTOTYPE: ;$$$
-	CODE:
-	{
-	  RETVAL = ! read_history_range(filename, from, to);
-	}
-	OUTPUT:
-	RETVAL
-
-int
-_rl_write_history(filename = (char *)NULL)
-	char *filename
-	PROTOTYPE: ;$
-	CODE:
-	{
-	  RETVAL = ! write_history(filename);
-	}
-	OUTPUT:
-	RETVAL
-
+#
+#	Custom Function Support
+#
 void
 rl_parse_and_bind(line)
 	char *line
 	PROTOTYPE: $
 
+int
+rl_add_defun(fn, key, name = "")
+	SV *	fn
+	int	key
+	char *name
+	PROTOTYPE: $$;$
+	CODE:
+	{
+	  /*warn("add_defun:[%d,%p]\n", key, fn);*/
+	  register_defun(key, fn);
+
+	  if (name[0] == '\0')
+	    RETVAL = rl_bind_key(custom_function_lapper, key);
+	  else
+	    RETVAL = rl_add_defun(name, custom_function_lapper, key);
+
+	  if (RETVAL)
+	    dismiss_defun(key);
+	}
+
+int
+rl_unbind_key(key)
+	int	key
+	PROTOTYPE: $
+	CODE:
+	{
+	  dismiss_defun(key);	/* do nothing if key is bind to C function */
+	  rl_unbind_key(key);
+	}
+
+int
+_rl_do_named_function(name, count = 1, key = -1)
+	char	*name
+	int	count
+	int	key
+	PROTOTYPE: $;$$
+	CODE:
+	{
+	  Function *fn;
+	  if ((fn = rl_named_function(name)) == (Function *)NULL) {
+	    warn("Gnu.xs:_rl_do_named_function: undefined function `%s'",
+		 name);
+	    RETVAL = -1;
+	  } else {
+	    RETVAL = (*fn)(count, key);
+	  }
+	}
+
+#
+# from "Allowing Undoing"
+#
+int
+rl_begin_undo_group()
+
+int
+rl_end_undo_group()
+
+# !!! rl_add_undo is not return int
+void
+rl_add_undo(what, start, end, text)
+	int	what
+	int	start
+	int	end
+	char	*text
+
+void
+free_undo_list()
+
+int
+rl_do_undo()
+
+int
+rl_modifying(start, end)
+	int	start
+	int	end
+
+#
+# from "Modifying Text"
+#
+int
+rl_insert_text(text)
+	char	*text
+
+int
+rl_delete_text(start, end)
+	int	start
+	int	end
+
+char *
+rl_copy_text(start, end)
+	int	start
+	int	end
+
+int
+rl_kill_text(start, end)
+	int	start
+	int	end
+
+#
+# completion
+#
 void
 _rl_store_completion_entry_function(fn)
 	SV *	fn
@@ -461,6 +642,9 @@ completion_matches(text, fn)
 	  }
 	}
 
+#
+#	Readline Variable Access Routines
+#
 void
 _rl_store_str(pstr, id)
 	const char *	pstr
