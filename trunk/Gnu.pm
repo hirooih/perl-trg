@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.38 1997-03-17 17:38:23 hayashi Exp $
+#	$Id: Gnu.pm,v 1.39 1997-03-18 17:25:32 hayashi Exp $
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
 #
@@ -47,7 +47,7 @@ History Library Manual'.
 =cut
 
 use strict;
-use vars qw($VERSION @ISA @EXPORT_OK);
+use vars qw($VERSION @ISA @EXPORT_OK %Attribs %Features);
 use Carp;
 
 $VERSION = '0.07';
@@ -55,16 +55,23 @@ $VERSION = '0.07';
 require Exporter;
 require DynaLoader;
 
-@ISA = qw(Term::ReadLine::Gnu::AU Term::ReadLine::Stub Exporter DynaLoader);
+@ISA = qw(Term::ReadLine::Stub Term::ReadLine::Gnu::AU Exporter DynaLoader);
 
-my %Attribs = ();		# This hash is set later.
-my %Features = (
-		appname => 1, minline => 1, autohistory => 1,
-		getHistory => 1, setHistory => 1, addHistory => 1,
-		readHistory => 1, writeHistory => 1,
-		preput => 1, tkRunning => 1, attribs => 1,
-		stiflehistory => 1,
-	       );
+my @Completion_Word_List;	# used by list_completion_function()
+my $Operate_Index;
+my $Next_Operate_Index;
+
+%Attribs  = (
+	     do_expand => 0,
+	     completion_word => \@Completion_Word_List,
+	    );
+%Features = (
+	     appname => 1, minline => 1, autohistory => 1,
+	     getHistory => 1, setHistory => 1, addHistory => 1,
+	     readHistory => 1, writeHistory => 1,
+	     preput => 1, tkRunning => 1, attribs => 1,
+	     stiflehistory => 1,
+	    );
 
 sub Attribs { \%Attribs; }
 sub Features { \%Features; }
@@ -122,31 +129,25 @@ should be globs.
 
 =cut
 
-my @Completion_Word_List;	# used by list_completion_function()
-my $Operate_Index;
-my $Next_Operate_Index;
-
 # The origin of this function is Term::ReadLine::Perl.pm by Ilya Zakharevich.
 sub new {
     my $this = shift;		# Package
     my $class = ref($this) || $this;
 
     my $name = shift;
+    # Don't use this hash.  Use Attribs method instead.
     my $self = {
-		AppName		=> $name,
 		MinLength	=> 1,
-		DoExpand	=> 0,
 		CompletionWordList	=> \@Completion_Word_List,
 	       };
     bless $self, $class;
 
-    # initialize the GNU Readline Library first
+    # initialize the GNU Readline Library first for sane
     $self->initialize();
 
     $self->store_var('rl_readline_name', $name);
 
     if (!@_) {
-	#my ($IN,$OUT) = Term::ReadLine::Stub::findConsole();
 	my ($IN,$OUT) = $self->findConsole();
 	open(IN,"<$IN")   || croak "Cannot open $IN for read";
 	open(OUT,">$OUT") || croak "Cannot open $OUT for write";
@@ -212,7 +213,7 @@ sub readline {			# should be ReadLine
     return undef unless defined $line;
 
     # history expansion
-    if ($self->{DoExpand}) {
+    if ($self->Attribs->{do_expand}) {
 	my $result;
 	($result, $line) = $self->history_expand($line);
 	my $outstream = $self->fetch_var('rl_outstream');
@@ -309,6 +310,9 @@ is getting input B<(undocumented feature)>.
 #
 #	Additional Supported Methods
 #
+
+# Documentation is after '__END__' for efficiency.
+
 # for backward compatibility
 *AddDefun = \&add_defun;
 *BindKey = \&bind_key;
@@ -353,12 +357,16 @@ use strict;
 #
 #	Readline function wrappers
 #
-sub _str2map ($) {		# convert keymap name to Keymap
+
+# Convert keymap name to Keymap if the argument is not reference to Keymap
+sub _str2map ($) {
     return ref $_[0] ? $_[0]
 	: (rl_get_keymap_by_name($_[0]) || carp "unknown keymap name \`$_[0]\'\n");
 }
 
-sub _str2fn ($) {		# convert function name to Function
+# Convert function name to Function if the argument is not reference
+# to Function
+sub _str2fn ($) {
     return ref $_[0] ? $_[0]
 	: (rl_named_function($_[0]) || carp "unknown function name \`$_[0]\'\n");
 }
@@ -483,8 +491,8 @@ sub filename_list {
 #
 #	Access Routines for GNU Readline/History Library Variables
 #
-
-my %_rl_vars
+use vars qw(%_rl_vars);
+%_rl_vars
     = (
        rl_line_buffer				=> ['S', 0],
        rl_prompt				=> ['S', 1],
@@ -624,7 +632,7 @@ sub STORE {
     confess "wrong type" unless ref $self;
     return Term::ReadLine::Gnu::XS::rl_store_var($$self, shift);
 }
-
+
 package Term::ReadLine::Gnu;
 use Carp;
 use strict;
@@ -634,8 +642,8 @@ use strict;
 #
 
 #	Tie all Readline/History variables
-foreach (keys %_rl_vars) {
-    # this interface is obsoleted
+foreach (keys %Term::ReadLine::Gnu::XS::_rl_vars) {
+    # make $rl_foo : this interface is obsoleted.
     eval "use vars '\$$_'; tie \$$_, 'Term::ReadLine::Gnu::Var', '$_';";
     # tie $Attribs{foo}, 'Term::ReadLine::Gnu::Var', 'rl_foo';
     my $name;
@@ -684,15 +692,13 @@ __END__
 
 =head1 Additional Supported Methods
 
-All these commands are callable via method interface and have names
-which conform to standard conventions with the leading C<rl_> stripped.
+All these GNU Readline/History Library functions are callable via
+method interface and have names which conform to standard conventions
+with the leading C<rl_> stripped.
 
-Followings GNU Readline/History Library support functions are provided
-as Perl functions. 
-
-Almost methods have their lower level functions in
-Term::ReadLine::Gnu::XS package.  To use them full qualified name is
-required.  Using method interface is prefered.
+Almost methods have lower level functions in Term::ReadLine::Gnu::XS
+package.  To use them full qualified name is required.  Using method
+interface is prefered.
 
 =head2 Readline Convenience Functions
 
@@ -705,11 +711,11 @@ required.  Using method interface is prefered.
 =item C<add_defun(NAME, FUNC [,KEY=-1])>
 
 Add name to the Perl function FUNC.  If optional argument KEY is
-specified, bind it to the FUNC.  Returns FunctionPtr.
+specified, bind it to the FUNC.  Returns reference of FunctionPtr.
 
   Example:
-	# name name `reverse-line' to a function reverse_line(), and bind
-	# it to "\C-t"
+	# name name `reverse-line' to a function reverse_line(),
+	# and bind it to "\C-t"
 	$term->add_defun('reverse-line', \&reverse_line, "\ct");
 
 =back
@@ -1148,6 +1154,9 @@ F<~/.history>.  Returns true if successful, or false if not.
 
 =head2 Internal Variable Access
 
+Attribs method is prefered to access GNU Readline/History Library
+variables.  These functions are only for internal use.
+
 =over 4
 
 =item C<fetch_var(NAME)>
@@ -1273,7 +1282,7 @@ in Gnu.pm.  You can use it as follows;
     $attribs->{rl_completion_entry_function} =
 	$attribs->{'list_completion_function'};
     ...
-    @{$term->{CompletionWordList}} =
+    @{$attribs->{completion_word}} =
 	qw(list of words which you want to use for completion);
     $term->readline("custom completion>");
 
