@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.16 1997-03-17 17:39:44 hayashi Exp $
+#	$Id: readline.t,v 1.17 1997-03-18 17:27:02 hayashi Exp $
 #
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl t/readline.t'
@@ -86,9 +86,9 @@ sub reverse_line {
 }
 
 # using method
-$term->AddDefun('reverse-line', \&reverse_line, ord "\ct");
-$term->BindKey(ord "\ct", 'reverse-line', 'emacs-ctlx');
-$term->ParseAndBind('"\C-xt": reverse-line');
+$term->add_defun('reverse-line', \&reverse_line, ord "\ct");
+$term->bind_key(ord "\ct", 'reverse-line', 'emacs-ctlx');
+$term->parse_and_bind('"\C-xt": reverse-line');
 
 sub display_readline_version {
     my($count, $key) = @_;	# ignored in this sample function
@@ -146,8 +146,8 @@ print "ok 7\n";
 print $OUT "\n# history expansion test\n";
 print $OUT "# quit by EOF (\\C-d)\n";
 $term->MinLine(1);
-$term->StifleHistory(5);
-$term->{DoExpand} = 1;
+$term->stifle_history(5);
+$attribs->{do_expand} = 1;
 my ($nline, $line);
 for ($nline = 1;
      defined($line = $term->readline("$nline>"));
@@ -161,7 +161,7 @@ print "ok 8\n";
 # test key unbinding functions
 
 print $OUT "unbind \\C-t and \\C-xt\n";
-$term->UnbindKey(ord "\ct");
+$term->unbind_key(ord "\ct");
 $term->unbind_key(ord "t", 'emacs-ctlx');
 
 @keyseqs = $term->invoking_keyseqs('reverse-line');
@@ -177,7 +177,7 @@ $attribs->{completion_entry_function} =
     $attribs->{'username_completion_function'};
 $term->readline("username completion>");
 
-@{$term->{CompletionWordList}} =
+@{$attribs->{completion_word}} =
     qw(list of words which you want to use for completion);
 $attribs->{completion_entry_function} = $attribs->{'list_completion_function'};
 $term->readline("list completion>");
