@@ -1,6 +1,6 @@
 #! /usr/local/bin/perl
 #
-#	$Id: perlsh,v 1.16 1999-03-23 16:07:18 hayashi Exp $	
+#	$Id: perlsh,v 1.17 1999-03-23 16:52:31 hayashi Exp $	
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi. All Rights Reserved.
 #
@@ -174,29 +174,23 @@ sub perl_symbol_display_match_list ($$$) {
 	    $i++;
 	} else {
 	    # the first call
-	    $i = 0;		# clear index
-	    no strict qw(refs);
 	    my ($pre, $pkg, $sym);
-	    if ($text =~ m/^((\$#|[\@\$%&])?(.*::))/) {
-		$prefix = $1;
-		$pre = $2;
-		$pkg = $3;
-		@sym_list = grep /::$/, keys %$pkg;
-	    } else {
-		$prefix = $pre = ($text =~ m/^(\$#|[\@\$%&])/)[0];
-		$pkg = $CWP eq 'main' ? '::' : $CWP . '::';
-		@sym_list = (@keyword,
-			     grep /::$/, keys %::);
-	    }
+	    $i = 0;		# clear index
 
-	    if ($pre) {
+	    no strict qw(refs);
+	    ($prefix, $pre, $pkg) = ($text =~ m/^((\$#|[\@\$%&])?(.*::)?)/);
+	    @sym_list = grep /::$/, $pkg ? keys %$pkg : keys %::;
+	    $pkg = ($CWP eq 'main' ? '::' : $CWP . '::') unless $pkg;
+
+	    if ($pre) {		# $foo, @foo, $#foo, %foo, &foo
 		@sym_list = (@sym_list,
 			     grep (/^\w+$/
 				   && ($sym = $pkg . $_,
 				       defined *$sym{$type{$pre}}),
 				   keys %$pkg));
-	    } else {
+	    } else {		# foo
 		@sym_list = (@sym_list,
+			     !$prefix && @keyword,
 			     grep (/^\w+$/
 				   && ($sym = $pkg . $_,
 				       defined *$sym{CODE}
@@ -355,16 +349,16 @@ page.  The default value is 0;
 
 Term::ReadLine::Gnu
 
-GNU Readline Library Texinfo Manual
+GNU Readline Library Manual
 
 =head1 AUTHOR
 
 Hiroo Hayashi <hiroo.hayashi@computer.org>
 
-=head1 BUGS
+=head1 TODO
 
-Completion does not work for variable name whose value is 'undef'.
+completion of key name for hash and hash reference
 
-Completion does not work for variable name with package name (`foo::bar').
+completion of method name
 
 =cut
