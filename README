@@ -1,4 +1,4 @@
-$Id: README,v 1.10 1998-05-12 16:24:10 hayashi Exp $
+$Id: README,v 1.11 1998-05-12 16:38:47 hayashi Exp $
 
 Term::ReadLine::Gnu --- GNU Readline Library Wrapper Module
 
@@ -57,6 +57,17 @@ Author:
 
 
 Revision History:
+
+1.01  1998-05-13
+	- support readline-2.2
+		add rl_unbind_function_in_map() and rl_unbind_command_in_map()
+		Makefile.PL checks the version of the GNU Readline Library
+
+	- define rl_save_prompt() and rl_restore_prompt()
+
+	- document fix
+		'Changes' file is removed.  It is merged into README file.
+		fix a bug in a sample program of rl_completion_entry_function
 
 1.00  1998-04-15
 	- the 1st major release
