@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.69 1999-03-10 15:45:59 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.70 1999-03-14 14:44:51 hayashi Exp $
  *
  *	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
  *
@@ -2099,10 +2099,10 @@ _rl_fetch_function(id)
 	  }
 	}
 
-MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu::TermCap
+MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu::XS
 
 void
-_tgetstr(id)
+tgetstr(id)
 	const char *id
 	PROTOTYPE: $
 	CODE:
