@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.56 1998-08-13 15:15:05 hayashi Exp $
+#	$Id: Gnu.pm,v 1.57 1998-09-27 15:52:19 hayashi Exp $
 #
 #	Copyright (c) 1996,1997,1998 Hiroo Hayashi.  All rights reserved.
 #
@@ -54,12 +54,13 @@ use Carp;
     use DynaLoader;
     use vars qw($VERSION @ISA @EXPORT_OK);
 
-    $VERSION = '1.02';
+    $VERSION = '1.03';
 
     @ISA = qw(Term::ReadLine::Stub Term::ReadLine::Gnu::AU
 	      Exporter DynaLoader);
 
-    @EXPORT_OK = qw(NO_MATCH SINGLE_MATCH MULT_MATCH
+    @EXPORT_OK = qw(RL_PROMPT_START_IGNORE RL_PROMPT_END_IGNORE
+		    NO_MATCH SINGLE_MATCH MULT_MATCH
 		    ISFUNC ISKMAP ISMACR
 		    UNDO_DELETE UNDO_INSERT UNDO_BEGIN UNDO_END);
 
@@ -70,7 +71,7 @@ use Carp;
 my $Operate_Index;
 my $Next_Operate_Index;
 
-use vars qw(%Attribs %Features);
+use vars qw(%Attribs %Features @rl_term_set);
 
 %Attribs  = (
 	     do_expand => 0,
@@ -92,6 +93,10 @@ sub Features { \%Features; }
 #
 #	GNU Readline/History Library constant definition
 #	These are included in @EXPORT_OK.
+
+# for non-printing characters in prompt string
+sub RL_PROMPT_START_IGNORE	{ "\001"; }
+sub RL_PROMPT_END_IGNORE	{ "\002"; }
 
 # for rl_filename_quoting_function
 sub NO_MATCH	 { 0; }
@@ -145,16 +150,16 @@ sub new {
 	       };
     bless $self, $class;
 
+    # initialize the GNU Readline Library and termcap library
+    $self->initialize();
+
     # ornaments on to be compatible with perl5.004_05(?)
     unless ($ENV{PERL_RL} and $ENV{PERL_RL} =~ /\bo\w*=0/) {
 	local $^W = 0;		# Term::ReadLine is not waring flag free
 	# 'ue' (underline end) does not work on some terminal 
 	#$self->ornaments(1);
-	$self->ornaments('us,me,,,');
+	$self->ornaments('us,me,,');
     }
-
-    # initialize the GNU Readline Library first for sanity
-    $self->initialize();
 
     $Attribs{readline_name} = $name;
 
@@ -184,6 +189,10 @@ optional argument meaning the initial value of input.
 The optional argument C<PREPUT> is granted only if the value C<preput>
 is in C<Features>.
 
+C<PROMPT> may include some escape sequences.  Use
+C<RL_PROMPT_START_IGNORE> to begin a sequence of non-printing
+characters, and C<RL_PROMPT_END_IGNORE> to end of such a sequence.
+
 =cut
 
 use vars qw($_Preput $_Saved_Startup_Hook);
@@ -196,8 +205,10 @@ sub readline {			# should be ReadLine
     my ($prompt, $preput) = @_;
 
     # ornament support (now prompt only)
-    $prompt = $Term::ReadLine::Stub::rl_term_set[0]
-	. $prompt . $Term::ReadLine::Stub::rl_term_set[1];
+    # non-printing characters must be told to readline
+    $prompt = RL_PROMPT_START_IGNORE . $rl_term_set[0] . RL_PROMPT_END_IGNORE
+	. $prompt
+	    . RL_PROMPT_START_IGNORE . $rl_term_set[1] . RL_PROMPT_END_IGNORE;
 
     # TkRunning support
     if (not $Term::ReadLine::registered and $Term::ReadLine::toloop
@@ -334,6 +345,34 @@ is getting input B<(undocumented feature)>.
 
 =cut
 
+# This routine originates in Term::ReadLine.pm.
+
+# Debian GNU/Linux discourages users from using /etc/termcap.  A
+# subroutine ornaments() defined in Term::ReadLine.pm uses
+# Term::Caps.pm which requires /etc/termcap.
+
+# This module calls termcap (or its compatible) library, which the GNU
+# Readline Library already uses, instead of Term::Caps.pm.
+{
+    # Prompt-start, prompt-end, command-line-start, command-line-end
+    #     -- zero-width beautifies to emit around prompt and the command line.
+    @rl_term_set = ("","","","");
+    # string encoded:
+    my $rl_term_set = ',,,';
+
+    sub ornaments {
+	shift;
+	return $rl_term_set unless @_;
+	$rl_term_set = shift;
+	$rl_term_set ||= ',,,';
+	$rl_term_set = 'us,me,,' if $rl_term_set eq '1';
+	my @ts = split /,/, $rl_term_set, 4;
+	@rl_term_set
+	    = map {$_ ? Term::ReadLine::Gnu::TermCap::_tgetstr($_) || '' : ''} @ts;
+	return $rl_term_set;
+    }
+}
+
 # Not tested yet.  How do I use this?
 sub newTTY {
     my ($self, $in, $out) = @_;
@@ -422,7 +461,10 @@ sub rl_unbind_key ($;$) {
 }
 
 sub rl_unbind_function_in_map ($;$) {
-    if ($Term::ReadLine::Gnu::Attribs{library_version} < 2.2) {
+    # libreadline.* in Debian GNU/Linux 2.0 tells wrong value as '2.1-bash'
+    my ($version) = $Term::ReadLine::Gnu::Attribs{library_version}
+	=~ /(\d+\.\d+)/;
+    if ($version < 2.2) {
 	carp "rl_unbind_function_in_map() is not supported.  Ignored\n";
 	return;
     }
@@ -434,7 +476,9 @@ sub rl_unbind_function_in_map ($;$) {
 }
 
 sub rl_unbind_command_in_map ($;$) {
-    if ($Term::ReadLine::Gnu::Attribs{library_version} < 2.2) {
+    my ($version) = $Term::ReadLine::Gnu::Attribs{library_version}
+	=~ /(\d+\.\d+)/;
+    if ($version < 2.2) {
 	carp "rl_unbind_command_in_map() is not supported.  Ignored\n";
 	return;
     }
