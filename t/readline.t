@@ -1,9 +1,9 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.39 2000-12-05 15:36:00 hayashi Exp $
+#	$Id: readline.t,v 1.40 2001-04-22 14:08:02 hayashi Exp $
 #
-#	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -11,7 +11,7 @@
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl t/readline.t'
 
-BEGIN {print "1..92\n"; $n = 1;}
+BEGIN {print "1..102\n"; $n = 1;}
 END {print "not ok 1\tfail to loading\n" unless $loaded;}
 
 my $verbose = defined @ARGV && ($ARGV[0] eq 'verbose');
@@ -96,9 +96,30 @@ $res = $a->{point} == 0;			ok;
 $res = $a->{end} == 0;				ok;
 $res = $a->{mark} == 0;				ok;
 $res = $a->{done} == 0;				ok;
+if ($version > 4.2 - 0.01) {
+    $res = $a->{num_chars_to_read} == 0;	ok('num_chars_to_read');
+} else {
+    print "ok $n # skipped because GNU Readline Library is older than 4.2.\n";
+    $n++;
+}
 $res = $a->{pending_input} == 0;		ok('pending_input');
+if ($version > 4.2 - 0.01) {
+    $res = $a->{dispatching} == 0;		ok('dispatching');
+} else {
+    print "ok $n # skipped because GNU Readline Library is older than 4.2.\n";
+    $n++;
+}
 $res = $a->{erase_empty_line} == 0;		ok;
 $res = ! defined($a->{prompt});			ok;
+if ($version > 4.2 - 0.01) {
+    $res = $a->{already_prompted} == 0;		ok('already_prompted');
+    $res = $a->{gnu_readline_p} == 1;		ok('gnu_readline_p');
+} else {
+    print "ok $n # skipped because GNU Readline Library is older than 4.2.\n";
+    $n++;
+    print "ok $n # skipped because GNU Readline Library is older than 4.2.\n";
+    $n++;
+}
 if ($version < 4.2) {
     $res = ! defined($a->{terminal_name});	ok;
 } else {
@@ -106,12 +127,10 @@ if ($version < 4.2) {
 }
 $res = $a->{readline_name} eq 'ReadLineTest';	ok('readline_name');
 
-# rl_instream, rl_outstream
-
-# The following variables will be tested later.
-#	rl_startup_hook, rl_pre_input_hook, rl_event_hook,
-#	rl_getc_function, rl_redisplay_function
-#	rl_prep_term_function, rl_deprep_term_function
+# rl_instream, rl_outstream, rl_last_func!!!, 
+# rl_startup_hook, rl_pre_input_hook, rl_event_hook,
+# rl_getc_function, rl_redisplay_function
+# rl_prep_term_function!!!, rl_deprep_term_function!!!
 
 # not defined here
 $res = ! defined($a->{executing_keymap});	ok('executing_keymap');
@@ -122,7 +141,16 @@ if ($version > 4.2 - 0.01) {
     $res = ! defined($a->{executing_macro});	ok('executing_macro');
     $res = ($a->{readline_state} == RL_STATE_INITIALIZED);
     ok('readline_state');
+    $res = $a->{explicit_arg} == 0;		ok('explicit_arg');
+    $res = $a->{numeric_arg} == 1;		ok('numeric_arg');
+    $res = $a->{editing_mode} == 1;		ok('editing_mode');
 } else {
+    print "ok $n # skipped because GNU Readline Library is older than 4.2.\n";
+    $n++;
+    print "ok $n # skipped because GNU Readline Library is older than 4.2.\n";
+    $n++;
+    print "ok $n # skipped because GNU Readline Library is older than 4.2.\n";
+    $n++;
     print "ok $n # skipped because GNU Readline Library is older than 4.2.\n";
     $n++;
     print "ok $n # skipped because GNU Readline Library is older than 4.2.\n";
@@ -361,38 +389,79 @@ if ($version > 4.2 - 0.1) {
 
 bind_my_function;		# do bind
 
-# rl_named_function, rl_function_of_keyseq are tested above
+# rl_named_function, rl_function_of_keyseq, and add_funmap_entry are
+# tested above
 
+# test rl_invoking_keyseqs
 @keyseqs = $t->invoking_keyseqs('abort', 'emacs-ctlx');
 $res = "\\C-g" eq "@keyseqs";
 ok('invoking_keyseqs');
 
-# rl_function_dumper, rl_list_funmap_names will be tested in interructive test.
-
+# Test rl_function_dumper!!!, rl_list_funmap_names!!!, rl_funmap_names!!!
 ########################################################################
 # 2.4.5 Allowing Undoing
-
+# rl_begin_undo_group!!!, rl_end_undo_group!!!, rl_add_undo!!!,
+# rl_free_undo_list!!!, rl_do_undo!!!, rl_modifying
 ########################################################################
 # 2.4.6 Redisplay
-
+# rl_redisplay!!!, rl_forced_update_display, rl_on_new_line!!!,
+# rl_on_new_line_with_prompt!!!, rl_reset_line_state!!!, rl_crlf!!!,
+# rl_show_char!!!,
+# rl_message, rl_clear_message, rl_save_prompt, rl_restore_prompt:
+#   see Gnu/XS.pm:change_ornaments()
+# rl_expand_prompt!!!, rl_set_prompt!!!
 ########################################################################
 # 2.4.7 Modifying Text
-
+# rl_insert_text!!!, rl_delete_text!!!, rl_copy_text!!!, rl_kill_text!!!,
+# rl_push_macro_input!!!
 ########################################################################
-# 2.4.8 Utility Functions
-
+# 2.4.8 Character Input
+# rl_read_key!!!, rl_getc, rl_stuff_char!!!, rl_execute_next!!!,
+# rl_clear_pending_input!!!
 ########################################################################
-# 2.4.9 Alternate Interface
-
+# 2.4.9 Terminal Management
+# rl_prep_terminal!!!, rl_deprep_terminal!!!,
+# rl_tty_set_default_bindings!!!, rl_reset_terminal!!!
+########################################################################
+# 2.4.10 Utility Functions
+# rl_extend_line_buffer!!!, rl_initialize, rl_ding!!!, rl_alphabetic!!!,
+# rl_display_match_list
+########################################################################
+# 2.4.11 Miscellaneous Functions
+# rl_macro_bind!!!, rl_macro_dumpter!!!,
+# rl_variable_bind!!!, rl_variable_dumper!!!
+# rl_set_paren_blink_timeout!!!
+########################################################################
+# 2.4.12 Alternate Interface
+# tested in callbac,.t
+# rl_callback_handler_install, rl_callback_read_char,
+# rl_callback_handler_remove,
 ########################################################################
 # 2.5 Readline Signal Handling
 $res = $a->{catch_signals} == 1;		ok('catch_signals');
 $res = $a->{catch_sigwinch} == 1;		ok('catch_sigwinch');
 
+# rl_cleanup_after_signal!!!, rl_free_line_state!!!,
+# rl_reset_after_signal!!!, rl_resize_terminal!!!,
+# rl_set_screen_size, rl_get_screen_size
+if ($version > 4.2 - 0.1) {
+    my ($rowsav, $colsav) =  $t->get_screen_size;
+    $t->set_screen_size(60, 132);
+    my ($row, $col) =  $t->get_screen_size;
+    $res = ($row == 60 && $col == 132); ok('set/get_screen_size');
+    $t->set_screen_size($rowsav, $colsav);
+} else {
+    print "ok $n # skipped because GNU Readline Library is older than 4.2.\n";
+    $n++;
+}
+# rl_set_signals!!!, rl_clear_signals!!!
 ########################################################################
 # 2.6 Custom Completers
 # 2.6.1 How Completing Works
 # 2.6.2 Completion Functions
+# rl_complete_internal!!!, rl_possible_completions!!!,
+# rl_insert_completions!!!, rl_completion_matches,
+# rl_filename_completion_function, rl_username_completion_function
 # 2.6.3 Completion Variables
 $res = ! defined $a->{completion_entry_function};	ok;
 $res = ! defined $a->{attempted_completion_function};	ok;
@@ -412,6 +481,8 @@ $res = $a->{completion_append_character} eq " ";	ok;
 $res = $a->{ignore_completion_duplicates} == 1;		ok;
 $res = $a->{filename_completion_desired} == 0;		ok;
 $res = $a->{filename_quoting_desired} == 1;		ok;
+$res = $a->{attempted_completion_over} == 0;		ok;
+$res = $a->{completion_type} == 0;			ok;
 $res = $a->{inhibit_completion} == 0;			ok;
 $res = ! defined $a->{ignore_some_completions_function};ok;
 $res = ! defined $a->{directory_completions_hook};	ok;
@@ -846,7 +917,7 @@ my %TYPE = (0 => 'Function', 1 => 'Keymap', 2 => 'Macro');
 print $OUT "\n# Try the following commands.\n";
 foreach ("\co", "\ct", "\cx",
 	 "\cx\cv", "\cxv", "\ec",
-	 "\e?f", "\e?v", "\e?i", "\eo") {
+	 "\e?f", "\e?v", "\e?m", "\e?i", "\eo") {
     my ($p, $type) = $t->function_of_keyseq($_);
     printf $OUT "%-9s: ", toprint($_);
     (print "\n", next) unless defined $type;
@@ -854,7 +925,7 @@ foreach ("\co", "\ct", "\cx",
     if    ($type == ISFUNC) { print $OUT ($t->get_function_name($p)); }
     elsif ($type == ISKMAP) { print $OUT ($t->get_keymap_name($p)); }
     elsif ($type == ISMACR) { print $OUT (toprint($p)); }
-    else { print $OUT "Error Illegal type value"; }
+    else { print $OUT "Error: Illegal type value"; }
     print $OUT "\n";
 }
 
