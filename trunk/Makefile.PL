@@ -1,7 +1,7 @@
 #
 #	Makefile.PL for Term::ReadLine::Gnu
 #
-#	$Id: Makefile.PL,v 1.14 1999-05-17 13:57:49 hayashi Exp $
+#	$Id: Makefile.PL,v 1.15 1999-05-17 14:33:22 hayashi Exp $
 #
 #	Copyright (c) 1996,1997,1998 Hiroo Hayashi.  All rights reserved.
 #		<hiroo.hayashi@computer.org>
@@ -43,7 +43,9 @@ die "Cannot find neither libtermcap.a, libncureses.a, or libcurses.\n"
 # OS/2.
 # Check ftp://ftp.math.ohio-state.edu/pub/users/ilya/os2/
 $os2_usedll = $Config{osname} eq 'os2';
-if ($os2_usedll == 0) {
+if ($Config{osname} =~ /cygwin/i) {
+    $libs = "-lreadline $TERMCAP_LIB -luser32";
+} elsif ($os2_usedll == 0) {
     $libs = "-lreadline $TERMCAP_LIB";
 } else {
     $libs = '-lreadline_import';
@@ -66,7 +68,7 @@ EOF
 close(F);
 
 # compile it
-system("$Config{cc} -I$increadlinedir $Config{ccflags} $defs $frlver -o rlver -L$libreadlinedir -lreadline $TERMCAP_LIB $Config{ldflags}");
+system("$Config{cc} -I$increadlinedir $Config{ccflags} $defs $frlver -o rlver -L$libreadlinedir $libs $Config{ldflags}");
 if ($?) {
     die <<EOM;
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -97,7 +99,7 @@ WriteMakefile(
 	) : () ),
     'INC'	=> "-I$increadlinedir",
     'dist'	=> { COMPRESS => 'gzip -9f', SUFFIX => 'gz' },
-    'clean'	=> { FILES => 'rlver.c rlver' },
+    'clean'	=> { FILES => "rlver.c rlver$Config{_exe}" },
 );
 
 exit(0);
