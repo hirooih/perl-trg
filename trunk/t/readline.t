@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.7 1997-01-20 14:57:00 hayashi Exp $
+#	$Id: readline.t,v 1.8 1997-01-21 17:05:13 hayashi Exp $
 #
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl t/readline.t'
@@ -17,6 +17,18 @@ use Term::ReadLine::Gnu qw(:all);
 
 $loaded = 1;
 print "ok 1\n";
+
+########################################################################
+sub cmp_list {
+    ($a, $b) = @_;
+    my @a = @$a;
+    my @b = @$b;
+    return undef if $#a ne $#b;
+    for (0..$#a) {
+	return undef if $a[$_] ne $b[$_];
+    }
+    return 1;
+}
 
 ########################################################################
 # test new method
@@ -52,7 +64,6 @@ if (%features) {
 ########################################################################
 # test tied variable
 
-print $OUT "GNU Readline Library version: $rl_library_version\n";
 # Version 2.0 is NOT supported.
 print $rl_library_version > 2.0 ? "ok 5\n" : "not ok 5\n";
 
@@ -60,17 +71,6 @@ print $rl_library_version > 2.0 ? "ok 5\n" : "not ok 5\n";
 # test keybind functions
 
 my %TYPE = (0 => 'Function', 1 => 'Keymap', 2 => 'Macro');
-my ($fn, $type);
-
-#  foreach ('a'..'z') {
-#      if (($fn, $type) = rl_function_of_keyseq(eval "\"\\c$_\"")) {
-#  	print $OUT "C-$_: $TYPE{$type},\t$fn\n";
-#      } else {
-#  	print $OUT "C-$_:\n";
-#      }
-#  }
-
-# my $mymap = rl_make_bare_keymap();
 
 # sample custom function (reverse whole line)
 sub reverse_line {
@@ -78,33 +78,54 @@ sub reverse_line {
     $rl_line_buffer = reverse $rl_line_buffer;
 }
 
-$term->AddDefun('reverse-line', \&reverse_line, "\ct");
-rl_bind_key(ord "\co", 'operate-and-get-next',
-	    rl_get_keymap_by_name('emacs-ctlx'));
-rl_generic_bind(ISMACR, "\cx\ci", "\ca[insert from beginning of line]");
+# using method
+$term->AddDefun('reverse-line', \&reverse_line, ord "\ct");
+$term->BindKey(ord "\ct", 'reverse-line', 'emacs-ctlx');
+$term->ParseAndBind('"\C-xt": reverse-line');
 
-foreach ("\co", "\ct", "\cx", "\cx\ci", "\cx\co") {
-    ($fn, $type) = rl_function_of_keyseq($_);
-    print $OUT "C-$_: $TYPE{$type},\t$fn\n";
+sub display_readline_version {
+    my($count, $key) = @_;	# ignored in this sample function
+    print $OUT "GNU Readline Library version: $rl_library_version\n";
+#    rl_message("GNU Readline Library version: $rl_library_version\n");
+}
+# using function
+rl_add_defun('display-readline-version', \&display_readline_version);
+rl_bind_key(ord "\cv", 'display-readline-version', 'emacs-ctlx');
+rl_parse_and_bind('"\C-xv": display-readline-version');
+
+# make original map
+my $helpmap = rl_make_bare_keymap();
+rl_bind_key(ord "f", 'dump-functions', $helpmap);
+rl_generic_bind(ISKMAP, "\e?", $helpmap);
+rl_bind_key(ord "v", 'dump-variables', $helpmap);
+#rl_generic_bind(ISFUNC, "\e?m", 'dump-macros');
+
+# bind macro
+rl_generic_bind(ISMACR, "\e?i", "\ca[insert text from beginning of line]");
+
+# convert control charactors to printable charactors (ex. "\cx" -> '\C-x')
+sub toprint {
+    join('',map{ord($_)<32 ? '\C-'.lc(chr(ord($_)+64)) : $_}(split('',$_[0])));
 }
 
-my @keyseqs;
-@keyseqs = rl_invoking_keyseqs('operate-and-get-next');
-print "operate-and-get-next is bound to :", join(',',@keyseqs), "\n";
-@keyseqs = rl_invoking_keyseqs('operate-and-get-next',
-			       rl_get_keymap_by_name('emacs-ctlx'));
-print "operate-and-get-next is bound to \C-x :", join(',',@keyseqs), "\n";
+foreach ("\co", "\ct", "\cx",
+	 "\cx\ct", "\cxt", "\cx\cv", "\cxv",
+	 "\e?f", "\e?v", "\e?i") {
+    my ($p, $type) = rl_function_of_keyseq($_);
+    print $OUT (toprint($_));
+    (print "\n", next) unless defined $type;
+    print $OUT ": $TYPE{$type},\t";
+    if    ($type == ISFUNC) { print $OUT (rl_get_function_name($p)); }
+    elsif ($type == ISKMAP) { print $OUT (rl_get_keymap_name($p)); }
+    elsif ($type == ISMACR) { print $OUT (toprint($p)); }
+    else { print $OUT "Error Illegal type value"; }
+    print $OUT "\n";
+}
+my @keyseqs = rl_invoking_keyseqs('reverse-line');
+print "reverse-line is bound to ", join(', ',@keyseqs), "\n";
 
-#@keyseqs = rl_invoking_keyseqs('emacs-ctlx', '', &ISKMAP);
-#print "emacs-ctlx is bound to :", join(',',@keyseqs), "\n";
-#rl_parse_and_bind('"\C-o\C-t": debug');
-#rl_generic_bind(0, "\\C-o\\C-o", 'debug');
-
-$term->ParseAndBind('"\C-i": self-insert');
-$term->readline('bind "\C-i" to self-insert>');
-
-$term->UnbindKey("\co");
-$term->readline('unbind "\C-o">');
+#$term->UnbindKey("\co");
+#$term->readline('unbind "\C-o">');
 
 print "ok 8\n";
 
@@ -172,7 +193,7 @@ $term->WriteHistory(".history_test") || warn "error at write_history: $!\n";
 $term->SetHistory();
 $term->ReadHistory(".history_test") || warn "error at read_history: $!\n";
 my @list_read = $term->GetHistory();
-print equal_list(\@list_write, \@list_read) ? "ok 9\n" : "not ok 9\n";
+print cmp_list(\@list_write, \@list_read) ? "ok 9\n" : "not ok 9\n";
 
 ########################################################################
 # test SetHistory(), GetHistory()
@@ -180,18 +201,7 @@ print equal_list(\@list_write, \@list_read) ? "ok 9\n" : "not ok 9\n";
 my @list_set = qw(one two three);
 $term->SetHistory(@list_set);
 my @list_get = $term->GetHistory();
-print equal_list(\@list_set, \@list_get) ? "ok 10\n" : "not ok 10\n";
-
-sub equal_list {
-    ($a, $b) = @_;
-    my @a = @$a;
-    my @b = @$b;
-    return undef if $#a ne $#b;
-    for (0..$#a) {
-	return undef if $a[$_] ne $b[$_];
-    }
-    return 1;
-}
+print cmp_list(\@list_set, \@list_get) ? "ok 10\n" : "not ok 10\n";
 
 end_of_test:
 exit 0;
