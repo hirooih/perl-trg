@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.38 1997-01-18 17:31:14 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.39 1997-01-19 16:27:42 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -99,98 +99,6 @@ discard_myfun(char *name)
   return 1;
 }
 #endif
-
-/*
- * keymap name table management routines
- */
-struct kmnode {			/* custom keymap table entry */
-  struct kmnode *next;
-  char *name;
-  Keymap map;
-};
-
-static struct kmnode *kmlist = NULL;
-
-static struct kmnode *
-lookup_mykeymap(char *name)
-{
-  struct kmnode *np;
-
-  for (np = kmlist; np; np = np->next)
-    if (strcmp(np->name, name) == 0)
-      return np;
-
-  return NULL;
-}
-
-static int
-register_mykeymap(char *name, Keymap map)
-{
-  struct kmnode *np;
-
-  if ((np = lookup_mykeymap(name)) != NULL) {
-    xfree(np->name);
-    np->name = dupstr(name);
-    np->map = map;
-    return 0;
-  } else {
-    New(0, np, 1, struct kmnode);
-    np->next = kmlist;
-    np->name = dupstr(name);
-    np->map = map;
-    kmlist = np;
-    return 1;
-  }
-}
-
-static int
-discard_mykeymap(char *name)
-{
-  struct kmnode *np, **lp;
-
-  for (lp = &kmlist, np = kmlist; np; lp = &(np->next), np = np->next)
-    if (strcmp(np->name, name) == 0) {
-      *lp = np->next;
-      xfree(np->name);
-      Safefree(np);
-      return 0;
-    }
-
-  return 1;
-}
-
-static int
-my_discard_keymap(char *name)
-{
-  struct kmnode *np;
-
-  if ((np = lookup_mykeymap(name)) != NULL) {
-    rl_discard_keymap(np->map);
-    xfree(np->name);
-    Safefree(np);
-    discard_mykeymap(name);
-  }
-}
-
-static Keymap
-my_get_keymap_by_name(char * map)
-{
-  rl_get_keymap_by_name(map) || lookup_mykeymap(map);
-}
-
-static char*
-my_get_keymap_name(Keymap keymap)
-{
-  struct kmnode *np;
-
-  /* search private map first */
-  for (np = kmlist; np; np = np->next)
-    if (np->map == keymap)
-      return np->name;
-
-  /* then search Readline Library map */
-  return rl_get_keymap_name(keymap);
-}
 
 /*
  * function keybind table management routines
@@ -617,94 +525,53 @@ rl_add_defun(name, fn, key = -1)
 #
 #	2.4.2 Selection a Keymap
 #
-int
-rl_make_bare_keymap(name)
-	char *name
-	PROTOTYPE: $
-	CODE:
-	{
-	  my_discard_keymap(name);
-	  RETVAL = register_mykeymap(name, rl_make_bare_keymap());
-	}
-	OUTPUT:
-	RETVAL
+Keymap
+rl_make_bare_keymap()
+	PROTOTYPE:
 	  
-int
-rl_copy_keymap(map, name)
-	char *map
-	char *name
-	PROTOTYPE: $$
-	CODE:
-	{
-	  my_discard_keymap(name);
-	  RETVAL = register_mykeymap(name, rl_copy_keymap(map));
-	}
-	OUTPUT:
-	RETVAL	  
-
-int
-rl_make_keymap(name)
-	char *name
+Keymap
+rl_copy_keymap(map)
+	Keymap map
 	PROTOTYPE: $
-	CODE:
-	{
-	  my_discard_keymap(name);
-	  RETVAL = register_mykeymap(name, rl_make_keymap());
-	}
-	OUTPUT:
-	RETVAL	  
 
-int
-rl_discard_keymap(name)
-	char *name
-	PROTOTYPE: $
-	CODE:
-	{
-	  RETVAL = my_discard_keymap(name);
-	}
-	OUTPUT:
-	RETVAL	  
+Keymap
+rl_make_keymap()
+	PROTOTYPE:
 
 void
+rl_discard_keymap()
+	PROTOTYPE:
+
+Keymap
 rl_get_keymap()
 	PROTOTYPE:
-	CODE:
-	{
-	  char *keymap_name = rl_get_keymap_name(rl_get_keymap());
-
-	  ST(0) = sv_newmortal();
-	  if (keymap_name)
-	    sv_setpv(ST(0), keymap_name);
-	}
 
 void
-rl_set_keymap(keymap_name)
-	char *keymap_name
+rl_set_keymap(keymap)
+	Keymap keymap
 	PROTOTYPE: $
-	CODE:
-	{
-	  Keymap keymap = my_get_keymap_by_name(keymap_name);
 
-	  ST(0) = sv_newmortal();
-	  if (keymap_name && keymap) {
-	    rl_set_keymap(keymap);
-	    sv_setpv(ST(0), keymap_name);
-	  }
-	}
+Keymap
+rl_get_keymap_by_name(name)
+	char *name
+	PROTOTYPE: $
+
+char *
+rl_get_keymap_name(map)
+	Keymap map
+	PROTOTYPE: $
 
 #
 #	2.4.3 Binding Keys
 #
 int
-rl_bind_key(key, function = NULL, map = NULL)
+rl_bind_key(key, function = NULL, map = rl_get_keymap())
 	int key
 	char *function
-	char *map
+	Keymap map
 	PROTOTYPE: $;$$
 	CODE:
 	{
-	  /* add code for custom function !!! */
-	  Keymap keymap = map ? my_get_keymap_by_name(map) : rl_get_keymap();
 	  Function *fn;
 	  struct fnnode *np;
 
@@ -714,41 +581,37 @@ rl_bind_key(key, function = NULL, map = NULL)
 	    XSRETURN(1);
 	  }
 
-	  RETVAL = rl_bind_key_in_map(key, fn, keymap);
+	  RETVAL = rl_bind_key_in_map(key, fn, map);
 
 	  if (RETVAL == 0 && (np = lookup_myfun(function)) != NULL)
-	    bind_myfun(key, np->fn, keymap); /* perl function */
+	    bind_myfun(key, np->fn, map); /* perl function */
 	}
 	OUTPUT:
 	RETVAL
 
 int
-rl_unbind_key(key, map = NULL)
+rl_unbind_key(key, map = rl_get_keymap())
 	int key
-	char *map
+	Keymap map
 	PROTOTYPE: $;$
 	CODE:
 	{
-	  /* add code for custom function !!! */
-	  Keymap keymap = map ? my_get_keymap_by_name(map) : rl_get_keymap();
-
-	  RETVAL = rl_unbind_key_in_map(key, keymap);
-	  unbind_myfun(key, keymap); /* do nothing for C function */
+	  RETVAL = rl_unbind_key_in_map(key, map);
+	  unbind_myfun(key, map); /* do nothing for C function */
 	}
 	OUTPUT:
 	RETVAL
 
 # add code for perl function !!!
 int
-rl_generic_bind(type, keyseq, data, map = NULL)
+rl_generic_bind(type, keyseq, data, map = rl_get_keymap())
 	int type
 	char *keyseq
 	char *data
-	char *map
+	Keymap map
 	PROTOTYPE: $$$;$
 	CODE:
 	{
-	  Keymap keymap = map ? my_get_keymap_by_name(map) : rl_get_keymap();
 	  void *p;
 
 	  switch (type) {
@@ -758,11 +621,11 @@ rl_generic_bind(type, keyseq, data, map = NULL)
 	      RETVAL = -1;
 	      XSRETURN(1);
 	    }
-	    p = rl_named_function(data);
+	    p = rl_named_function(data); /* function name */
 	    break;
 
 	  case ISKMAP:
-	    p = my_get_keymap_by_name(data);
+	    p = rl_get_keymap_by_name(data); /* keymap name */
 	    break;
 
 	  case ISMACR:
@@ -775,7 +638,7 @@ rl_generic_bind(type, keyseq, data, map = NULL)
 	    XSRETURN(1);
 	  }
 
-	  RETVAL = rl_generic_bind(type, keyseq, p, keymap);
+	  RETVAL = rl_generic_bind(type, keyseq, p, map);
 	}
 	OUTPUT:
 	RETVAL
@@ -815,15 +678,14 @@ rl_do_named_function(name, count = 1, key = -1)
 	RETVAL
 
 void
-rl_function_of_keyseq(keyseq, map = NULL)
+rl_function_of_keyseq(keyseq, map = rl_get_keymap())
 	char *keyseq
-	char *map
+	Keymap map
 	PROTOTYPE: $;$
 	PPCODE:
 	{
 	  int type;
-	  Keymap keymap = map ? my_get_keymap_by_name(map) : rl_get_keymap();
-	  Function *fn = rl_function_of_keyseq(keyseq, keymap, &type);
+	  Function *fn = rl_function_of_keyseq(keyseq, map, &type);
 	  char *data;
 
 	  if (fn) {
@@ -832,7 +694,7 @@ rl_function_of_keyseq(keyseq, map = NULL)
 	      data = rl_function_name(fn);
 	      break;
 	    case ISKMAP:
-	      data = my_get_keymap_name((Keymap)fn);
+	      data = rl_get_keymap_name((Keymap)fn);
 	      break;
 	    case ISMACR:
 	      data = (char *)fn;
@@ -852,17 +714,16 @@ rl_function_of_keyseq(keyseq, map = NULL)
 	}
 	  
 void
-rl_invoking_keyseqs(function, map = NULL)
+rl_invoking_keyseqs(function, map = rl_get_keymap())
 	char *function
-	char *map
+	Keymap map
 	PROTOTYPE: $;$
 	PPCODE:
 	{
 	  char **keyseqs;
-	  Keymap keymap = map ? my_get_keymap_by_name(map) : rl_get_keymap();
 	  
 	  keyseqs = rl_invoking_keyseqs_in_map(rl_named_function(function),
-					       keymap);
+					       map);
 
 	  if (keyseqs) {
 	    int i, count;
