@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.76 1999-12-30 05:13:46 hayashi Exp $
+#	$Id: Gnu.pm,v 1.77 2000-04-02 15:51:27 hayashi Exp $
 #
 #	Copyright (c) 1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -33,21 +33,25 @@ This is an implementation of Term::ReadLine using the GNU
 Readline/History Library.
 
 For basic functions object oriented interface is provided. These are
-described in the section L<"Methods"|"Methods">.
+described in the section L<"Standard Methods"|"Standard Methods"> and
+L<"C<Term::ReadLine::Gnu> Functions"|"C<Term::ReadLine::Gnu> Functions">.
 
-This package also has the interface with the almost all variables and
-functions which are documented in the GNU Readline/History Library
-Manual.  These variables and functions are documented in the section
-L<"Variables"|"Variables"> and L<"Functions"|"Functions"> briefly.
-For more detail of the GNU
-Readline/History Library, see 'GNU Readline Library Manual' and 'GNU
-History Library Manual'.
+This package also has the interface with the almost all functions and
+variables which are documented in the GNU Readline/History Library
+Manual.  They are documented in the section
+L<"C<Term::ReadLine::Gnu> Functions"|"C<Term::ReadLine::Gnu> Functions">
+and
+L<"C<Term::ReadLine::Gnu> Variables"|"C<Term::ReadLine::Gnu> Variables">
+briefly.  For more detail of the GNU Readline/History Library, see
+'GNU Readline Library Manual' and 'GNU History Library Manual'.
 
 The sample programs under C<eg/> directory and test programs under
 C<t/> directory in the C<Term::ReadLine::Gnu> distribution include
 many example of this module.
 
-=head2 Minimal Set of Methods defined by B<Term::ReadLine>
+=head2 Standard Methods
+
+These methods are standard methods defined by B<Term::ReadLine>.
 
 =cut
 
@@ -59,7 +63,7 @@ use Carp;
     use DynaLoader;
     use vars qw($VERSION @ISA @EXPORT_OK);
 
-    $VERSION = '1.08';
+    $VERSION = '1.09';
 
     # Term::ReadLine::Gnu::AU makes a function in
     # `Term::ReadLine::Gnu::XS' as a method.
@@ -169,12 +173,11 @@ sub new {
     # enable ornaments to be compatible with perl5.004_05(?)
     unless ($ENV{PERL_RL} and $ENV{PERL_RL} =~ /\bo\w*=0/) {
 	local $^W = 0;		# Term::ReadLine is not warning flag free
-	# 'ue' (underline end) does not work on some terminal 
-	#$self->ornaments(1);
 	# Without the next line Term::ReadLine::Stub::ornaments is used.
 	# Why does Term::ReadLine::Gnu::AU selects it at first?!!!
+	# If you know why this happens, please let me know.  Thanks.
 	undef &Term::ReadLine::Gnu::ornaments;
-	$self->ornaments('us,me,,');
+	$self->ornaments(1);
     }
 
     if (!@_) {
@@ -345,8 +348,6 @@ C<getHistory> and C<setHistory> denote that the corresponding methods are
 present. C<tkRunning> denotes that a Tk application may run while ReadLine
 is getting input.
 
-=back
-
 =cut
 
 # Not tested yet.  How do I use this?
@@ -359,16 +360,11 @@ sub newTTY {
     select($sel);
 }
 
-=item C<CallbackHandlerInstall(PROMPT, LHANDLER)>
-
-This method provides the function C<rl_callback_handler_install()>
-with the following addtional feature compatible with C<readline>
-method; ornament feature, C<Term::ReadLine::Perl> compatible
-completion function, histroy expansion, and addition to history
-buffer.
+=back
 
 =cut
 
+# documented later
 sub CallbackHandlerInstall {
     my $self = shift;
     my ($prompt, $lhandler) = @_;
@@ -469,6 +465,7 @@ use vars qw(%_rl_vars);
        rl_erase_empty_line			=> ['I', 18], # added GRL 4.0
        rl_catch_signals				=> ['I', 19], # added GRL 4.0
        rl_catch_sigwinch			=> ['I', 20], # added GRL 4.0
+       rl_already_prompted			=> ['I', 21], # added GRL 4.1
 
        rl_startup_hook				=> ['F', 0],
        rl_event_hook				=> ['F', 1],
@@ -490,6 +487,8 @@ use vars qw(%_rl_vars);
 
        rl_executing_keymap			=> ['K', 0],
        rl_binding_keymap			=> ['K', 1],
+
+       rl_last_func                             => ['LF', 0],
       );
 
 sub TIESCALAR {
@@ -521,6 +520,8 @@ sub FETCH {
 	return _rl_fetch_iostream($id);
     } elsif ($type eq 'K') {
 	return _rl_fetch_keymap($id);
+    } elsif ($type eq 'LF') {
+        return _rl_fetch_last_func();
     } else {
 	carp "Term::ReadLine::Gnu::Var::FETCH: Illegal type `$type'\n";
 	return undef;
@@ -553,7 +554,7 @@ sub STORE {
 	return _rl_store_function($value, $id);
     } elsif ($type eq 'IO') {
 	return _rl_store_iostream($value, $id);
-    } elsif ($type eq 'K') {
+    } elsif ($type eq 'K' || $type eq 'LF') {
 	carp "Term::ReadLine::Gnu::Var::STORE: read only variable `$name'\n";
 	return undef;
     } else {
@@ -622,7 +623,7 @@ sub AUTOLOAD {
 __END__
 
 
-=head1 Additional Supported Methods
+=head2 C<Term::ReadLine::Gnu> Functions
 
 All these GNU Readline/History Library functions are callable via
 method interface and have names which conform to standard conventions
@@ -632,7 +633,9 @@ Almost methods have lower level functions in
 C<Term::ReadLine::Gnu::XS> package.  To use them full qualified name
 is required.  Using method interface is preferred.
 
-=head2 Readline Convenience Functions
+=over 4
+
+=item Readline Convenience Functions
 
 =over 4
 
@@ -744,10 +747,6 @@ detail see 'GNU Readline Library Manual'.
 
 =over 4
 
-=item C<call_function(FUNCTION, [COUNT [,KEY]])>
-
-	int	rl_call_function(FunctionPtr|str function, count = 1, key = -1)
-
 =item C<named_function(NAME)>
 
 	FunctionPtr rl_named_function(str name)
@@ -774,6 +773,10 @@ detail see 'GNU Readline Library Manual'.
 =item C<list_funmap_names>
 
 	void	rl_list_funmap_names()
+
+=item C<funmap_names> (undocumented)
+
+	(@str)	rl_funmap_names()
 
 =back
 
@@ -822,6 +825,10 @@ detail see 'GNU Readline Library Manual'.
 =item C<on_new_line>
 
 	int	rl_on_new_line()
+
+=item C<on_new_line_with_prompt>
+
+	int	rl_on_new_line_with_prompt()	# GRL 4.1
 
 =item C<reset_line_state>
 
@@ -927,7 +934,7 @@ When C<MAX> is ommited, the max length of an item in @matches is used.
 
 =back
 
-=head2 Readline Signal Handling
+=item Readline Signal Handling
 
 =over 4
 
@@ -957,7 +964,7 @@ When C<MAX> is ommited, the max length of an item in @matches is used.
 
 =back
 
-=head2 Completion Functions
+=item Completion Functions
 
 =over 4
 
@@ -984,7 +991,7 @@ When C<MAX> is ommited, the max length of an item in @matches is used.
 
 =back
 
-=head2 History Functions
+=item History Functions
 
 =over 4
 
@@ -1179,7 +1186,9 @@ Note that this function returns C<expansion> in scalar context.
 
 =back
 
-=head1 Variables
+=back
+
+=head2 C<Term::ReadLine::Gnu> Variables
 
 Following GNU Readline/History Library variables can be accessed from
 Perl program.  See 'GNU Readline Library Manual' and ' GNU History
@@ -1205,6 +1214,7 @@ Examples:
 	int rl_pending_input
 	int rl_erase_empty_line (GRL 4.0)
 	str rl_prompt (read only)
+	int rl_already_prompted (GRL 4.1)
 	str rl_library_version (read only)
 	str rl_terminal_name
 	str rl_readline_name
@@ -1215,6 +1225,7 @@ Examples:
 	pfunc rl_event_hook
 	pfunc rl_getc_function
 	pfunc rl_redisplay_function
+	pfunc rl_last_func (not documented)
 	Keymap rl_executing_keymap (read only)
 	Keymap rl_binding_keymap (read only)
 
@@ -1398,11 +1409,25 @@ function.
 
 =back
 
-=head1 C<Term::ReadLine::Gnu> Specific Features
-
-=head2 Functions
+=head2 C<Term::ReadLine::Gnu> Specific Features
 
 =over 4
+
+=item C<Term::ReadLine::Gnu> Specific Functions
+
+=over 4
+
+=item C<CallbackHandlerInstall(PROMPT, LHANDLER)>
+
+This method provides the function C<rl_callback_handler_install()>
+with the following addtional feature compatible with C<readline>
+method; ornament feature, C<Term::ReadLine::Perl> compatible
+completion function, histroy expansion, and addition to history
+buffer.
+
+=item C<call_function(FUNCTION, [COUNT [,KEY]])>
+
+	int	rl_call_function(FunctionPtr|str function, count = 1, key = -1)
 
 =item C<rl_get_all_function_names>
 
@@ -1427,7 +1452,7 @@ See the description of section L<"Custom Completion"|"Custom Completion">.
 
 =back
 
-=head2 Variables
+=item C<Term::ReadLine::Gnu> Specific Variables
 
 =over 4
 
@@ -1446,7 +1471,7 @@ C<list_completion_function>.
 
 =back
 
-=head2 Commands
+=item C<Term::ReadLine::Gnu> Specific Commands
 
 =over 4
 
@@ -1467,6 +1492,8 @@ Readline Library.
 =item C<change-ornaments>
 
 Change ornaments interactively.
+
+=back
 
 =back
 
@@ -1509,13 +1536,60 @@ None.
 
 =head1 SEE ALSO
 
-GNU Readline Library Manual
+=over 4
 
-GNU History Library Manual
+=item GNU Readline Library Manual
 
-C<Term::ReadLine>
+=item GNU History Library Manual
 
-C<Term::ReadLine::Perl> (Term-ReadLine-Perl-xx.tar.gz)
+=item C<Term::ReadLine>
+
+=item C<Term::ReadLine::Perl> (Term-ReadLine-Perl-xx.tar.gz)
+
+=item F<eg/*> and F<t/*> in the Term::ReadLine::Gnu distribution
+
+=item Works which use Term::ReadLine::Gnu
+
+=over 4
+
+=item Perl Debugger
+
+	perl -d
+
+=item The Perl Shell (psh)
+
+	http://www.focusresearch.com/gregor/psh/
+
+The Perl Shell is a shell that combines the interactive nature of a
+Unix shell with the power of Perl.  The goal is to eventually have a
+full featured shell that behaves as expected for normal shell
+activity.  But, the Perl Shell will use Perl syntax and functionality
+for for control-flow statements and other things.
+
+=item Ghostscript Shell
+
+	http://www.panix.com/~jdf/gshell/
+
+It provides a friendly way to play with the Ghostscript interpreter,
+including command history and auto-completion of Postscript font names
+and reserved words.
+
+=item SPP (Synopsys Plus Perl)
+
+	http://www.stanford.edu/~jsolomon/SPP/
+
+SPP (Synopsys Plus Perl) is a Perl module that wraps around Synopsys'
+shell programs.  SPP is inspired by the original dc_perl written by
+Steve Golson, but it's an entirely new implementation.  Why is it
+called SPP and not dc_perl?  Well, SPP was written to wrap around any
+of Synopsys' shells.
+
+=back
+
+If you know any other works which can be listed here, please let me
+know.
+
+=back
 
 =head1 AUTHOR
 
