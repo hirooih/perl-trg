@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.23 1997-01-03 15:55:05 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.24 1997-01-03 17:07:22 hayashi Exp $
  *
  *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
  *
@@ -236,7 +236,7 @@ discard_mykeymap(char *name)
 }
 
 static int
-discard_keymap(char *name)
+my_discard_keymap(char *name)
 {
   struct kmnode *np;
 
@@ -246,6 +246,12 @@ discard_keymap(char *name)
     Safefree(np);
     discard_mykeymap(name);
   }
+}
+
+static Keymap
+my_get_keymap_by_name(char * map)
+{
+  rl_get_keymap_by_name(map) || lookup_mykeymap(map);
 }
 
 /*
@@ -310,6 +316,19 @@ unbind_myfun(int key, Keymap map)
     }
 
   return 1;
+}
+
+static char *
+rl_function_name (Function *function)
+{
+  register int i;
+
+  rl_initialize_funmap ();
+
+  for (i = 0; funmap[i]; i++)
+    if (funmap[i]->function == function)
+      return (funmap[i]->name);
+  return NULL;
 }
 
 #if 0
@@ -516,7 +535,7 @@ rl_make_bare_keymap(name)
 	PROTOTYPE: $
 	CODE:
 	{
-	  discard_keymap(name);
+	  my_discard_keymap(name);
 	  register_mykeymap(name, rl_make_bare_keymap());
 	}
 	  
@@ -527,7 +546,7 @@ rl_copy_keymap(map, name)
 	PROTOTYPE: $$
 	CODE:
 	{
-	  discard_keymap(name);
+	  my_discard_keymap(name);
 	  register_mykeymap(name, rl_copy_keymap(map));
 	}
 	  
@@ -537,7 +556,7 @@ rl_make_keymap(name)
 	PROTOTYPE: $
 	CODE:
 	{
-	  discard_keymap(name);
+	  my_discard_keymap(name);
 	  register_mykeymap(name, rl_make_keymap());
 	}
 	  
@@ -547,7 +566,7 @@ rl_discard_keymap(name)
 	PROTOTYPE: $
 	CODE:
 	{
-	  discard_keymap(name);
+	  my_discard_keymap(name);
 	}
 	  
 void
@@ -566,7 +585,7 @@ rl_set_keymap(keymap_name)
 	char *keymap_name
 	CODE:
 	{
-	  Keymap keymap = rl_get_keymap_by_name(keymap_name);
+	  Keymap keymap = my_get_keymap_by_name(keymap_name);
 
 	  ST(0) = sv_newmortal();
 	  if (keymap_name && keymap) {
@@ -586,7 +605,7 @@ rl_bind_key(key, function, map = NULL)
 	{
 	  /* add code for custom function !!! */
 	  Function *fn = rl_named_function(function);
-	  Keymap keymap = map ? rl_get_keymap_by_name(map) : rl_get_keymap();
+	  Keymap keymap = map ? my_get_keymap_by_name(map) : rl_get_keymap();
 	  struct fnnode *np;
 
 	  RETVAL = rl_bind_key_in_map(key, fn, keymap);
@@ -602,7 +621,7 @@ rl_unbind_key(key, map = NULL)
 	PROTOTYPE: $;$
 	CODE:
 	{
-	  Keymap keymap = map ? rl_get_keymap_by_name(map) : rl_get_keymap();
+	  Keymap keymap = map ? my_get_keymap_by_name(map) : rl_get_keymap();
 	  rl_unbind_key_in_map(key, keymap);
 	  unbind_myfun(key, keymap); /* do nothing for C function */
 	}
@@ -617,7 +636,7 @@ rl_generic_bind(type, keyseq, data, map = NULL)
 	PROTOTYPE: $$$;$
 	CODE:
 	{
-	  Keymap keymap = map ? rl_get_keymap_by_name(map) : rl_get_keymap();
+	  Keymap keymap = map ? my_get_keymap_by_name(map) : rl_get_keymap();
 	  void *p;
 
 	  switch (type) {
@@ -631,7 +650,7 @@ rl_generic_bind(type, keyseq, data, map = NULL)
 	    break;
 
 	  case ISKMAP:
-	    p = rl_get_keymap_by_name(data);
+	    p = my_get_keymap_by_name(data);
 	    break;
 
 	  case ISMACR:
@@ -674,6 +693,52 @@ rl_do_named_function(name, count = 1, key = -1)
 	    warn("Gnu.xs:_rl_do_named_function: undefined function `%s'",
 		 name);
 	    RETVAL = -1;
+	  }
+	}
+
+void
+rl_function_of_keyseq(keyseq, map = NULL)
+	char *keyseq
+	char *map
+	PROTOTYPE: $$
+	PPCODE:
+	{
+	  int type;
+	  Keymap keymap = map ? my_get_keymap_by_name(map) : rl_get_keymap();
+	  Function *fn = rl_function_of_keyseq(keyseq, keymap, &type);
+
+	  EXTEND(sp, 2);
+	  PUSHs(sv_2mortal(newSVpv(rl_function_name(fn), 0)));
+	  PUSHs(sv_2mortal(newSViv(type)));
+	}
+	  
+void
+rl_invoking_keyseqs(fn, map = NULL)
+	char *fn
+	char *map
+	PROTOTYPE: $;$
+	PPCODE:
+	{
+	  char **keyseqs;
+	  Keymap keymap = map ? my_get_keymap_by_name(map) : rl_get_keymap();
+	  
+	  keyseqs = rl_invoking_keyseqs_in_map(rl_named_function(fn, map));
+
+	  if (keyseqs) {
+	    int i, count;
+
+	    /* count number of entries */
+	    for (count = 0; keyseqs[count]; count++)
+	      ;
+
+	    EXTEND(sp, count);
+	    for (i = 0; i < count; i++) {
+	      PUSHs(sv_2mortal(newSVpv(keyseqs[i], 0)));
+	      xfree(keyseqs[i]);
+	    }
+	    xfree((char *)keyseqs);
+	  } else {
+	    /* return null list */
 	  }
 	}
 
@@ -770,6 +835,26 @@ int
 ding()
 
 #
+#	2.4.9 Alternate Interface
+#
+void
+rl_callback_handler_install(prompt, lhandler)
+	char * prompt
+	SV * lhandler
+	PROTOTYPE: $$
+	CODE:
+	{
+	}
+
+void
+rl_callback_read_char()
+	PROTOTYPE:
+
+void
+rl_callback_handler_remove()
+	PROTOTYPE:
+
+#
 #	2.5 Custom Completers
 #
 void
@@ -820,6 +905,11 @@ _rl_store_attempted_completion_function(fn)
 	  }
 	}
 
+int
+rl_complete_internal(what_to_do)
+	int what_to_do
+	PROTOTYPE: $
+
 void
 completion_matches(text, fn)
 	char * text
@@ -858,6 +948,36 @@ completion_matches(text, fn)
 	    xfree((char *)matches);
 	  } else {
 	    /* return null list */
+	  }
+	}
+
+void
+filename_completion_function(text, state)
+	char *text
+	int state
+	PROTOTYPE: $$
+	CODE:
+	{
+	  char *str = filename_completion_function(text, state);
+	  ST(0) = sv_newmortal();
+	  if (str) {
+	    sv_setpv(ST(0), str);
+	    xfree(str);
+	  }
+	}
+
+void
+username_completion_function(text, state)
+	char *text
+	int state
+	PROTOTYPE: $$
+	CODE:
+	{
+	  char *str = username_completion_function(text, state);
+	  ST(0) = sv_newmortal();
+	  if (str) {
+	    sv_setpv(ST(0), str);
+	    xfree(str);
 	  }
 	}
 
