@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.39 1997-03-18 17:25:32 hayashi Exp $
+#	$Id: Gnu.pm,v 1.40 1997-03-18 17:49:29 hayashi Exp $
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
 #
@@ -142,7 +142,7 @@ sub new {
 	       };
     bless $self, $class;
 
-    # initialize the GNU Readline Library first for sane
+    # initialize the GNU Readline Library first for sanity
     $self->initialize();
 
     $self->store_var('rl_readline_name', $name);
@@ -698,7 +698,7 @@ with the leading C<rl_> stripped.
 
 Almost methods have lower level functions in Term::ReadLine::Gnu::XS
 package.  To use them full qualified name is required.  Using method
-interface is prefered.
+interface is preferred.
 
 =head2 Readline Convenience Functions
 
@@ -768,7 +768,7 @@ specified, bind it to the FUNC.  Returns reference of FunctionPtr.
 			    Keymap|str map = rl_get_keymap())
 
 Bind KEY to the FUNCTION.  FUNCTION is the name added by the
-C<AddDefun> method.  If optional argument MAP is specified, binds
+C<add_defun> method.  If optional argument MAP is specified, binds
 in MAP.  Returns non-zero in case of error.
 
 =item C<unbind_key(KEY [,MAP])>
@@ -821,7 +821,7 @@ detail see 'GNU Readline Library Manual'.
 
 =item C<invoking_keyseqs(FUNCTION [,MAP])>
 
-	(@str)	rl_invoking_keyseqs(FuntionPtr|str function,
+	(@str)	rl_invoking_keyseqs(FunctionPtr|str function,
 				    Keymap|str map = rl_get_keymap())
 
 =item C<function_dumper([READABLE])>
@@ -894,7 +894,7 @@ detail see 'GNU Readline Library Manual'.
 
 =back
 
-=item Modifiying Text
+=item Modifying Text
 
 =over 4
 
@@ -1096,7 +1096,7 @@ returns the history of input as a list, if actual C<readline> is present.
 =item C<history_search(STRING [,DIRECTION [,POS]])>
 
 	int	history_search(str string,
-			       int direction = -1, int pos = where_hisotry())
+			       int direction = -1, int pos = where_history())
 
 =item C<history_search_prefix(STRING [,DIRECTION])>
 
@@ -1116,7 +1116,7 @@ returns the history of input as a list, if actual C<readline> is present.
 adds the contents of C<FILENAME> to the history list, a line at a
 time.  If C<FILENAME> is false, then read from F<~/.history>.  Start
 reading at line C<FROM> and end at C<TO>.  If C<FROM> is omitted or
-zero, start at the beginning.  If C<TO> is omittied or less than
+zero, start at the beginning.  If C<TO> is omitted or less than
 C<FROM>, then read until the end of the file.  Returns true if
 successful, or false if not.
 
@@ -1133,9 +1133,9 @@ F<~/.history>.  Returns true if successful, or false if not.
 
 	int	append_history(int nelements, str filename = '~/.history')
 
-=item C<history_trancate_file([FILENAME [,NLINES]])>
+=item C<history_truncate_file([FILENAME [,NLINES]])>
 
-	int	history_trancate_file(str filename = '~/.history',
+	int	history_truncate_file(str filename = '~/.history',
 				      int nlines = 0)
 
 =back
@@ -1154,7 +1154,7 @@ F<~/.history>.  Returns true if successful, or false if not.
 
 =head2 Internal Variable Access
 
-Attribs method is prefered to access GNU Readline/History Library
+Attribs method is preferred to access GNU Readline/History Library
 variables.  These functions are only for internal use.
 
 =over 4
@@ -1314,7 +1314,7 @@ The default value of this variable is C<undef>.  You can use it as follows;
         # If first word then username completion, else filename completion
         if (substr($line, 0, $start) =~ /^\s*$/) {
     	    return $term->completion_matches($text,
-					     $attrbs->{'username_completion_function'});
+					     $attribs->{'username_completion_function'});
         } else {
     	    return ();
         }
@@ -1329,11 +1329,11 @@ If there are no completions, returns C<undef>.  The first entry
 in the returned array is the substitution for TEXT.  The remaining
 entries are the possible completions.
 
-ENTRY_FUNC is a generator function which has two args, and returns a
-string.  The first argument is TEXT.  The second is a state argument;
-it is zero on the first call, and non-zero on subsequent calls.
-ENTRY_FUNC returns a C<undef> to the caller when there are no more
-matches.
+ENTRY_FUNC is a generator function which has two arguments, and
+returns a string.  The first argument is TEXT.  The second is a state
+argument; it is zero on the first call, and non-zero on subsequent
+calls.  ENTRY_FUNC returns a C<undef> to the caller when there are no
+more matches.
 
 If the value of ENTRY_FUNC is undef, built-in
 C<filename_completion_function> is used.
