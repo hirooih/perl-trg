@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.9 1996-12-01 15:43:11 hayashi Exp $
+#	$Id: Gnu.pm,v 1.10 1996-12-03 16:30:53 hayashi Exp $
 #
 #	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
 #
@@ -36,14 +36,19 @@ Readline Library Manual' and 'GNU History Library Manual'.
 =cut
 
 use strict;
+#use vars qw($VERSION @ISA %EXPORT_TAGS @EXPORT_OK);
 use vars qw($VERSION @ISA);
 use Carp;
 
 require Exporter;
 require DynaLoader;
 
-@ISA = qw(Term::ReadLine::Stub Exporter DynaLoader);
+@ISA = qw(Exporter DynaLoader);
 $VERSION = '0.04';
+
+#%EXPORT_TAGS = (custom_completion => [qw(completion_matches
+#					 list_completion_functon)]);
+#Exporter::export_ok_tags('custom_completion');
 
 bootstrap Term::ReadLine::Gnu $VERSION;
 
@@ -70,6 +75,8 @@ by two arguments for C<IN> and C<OUT> filehandles. These arguments
 should be globs.
 
 =cut
+
+my @Completion_Word_List;	# used by list_completion_function()
 
 # The origin of this function is Term::ReadLine::Perl.pm by Ilya Zakharevich.
 sub new {
@@ -100,6 +107,7 @@ sub new {
 		MinLength	=> 1,
 		DoExpand	=> 0,
 		MaxHist		=> undef,
+		CompletionWordList	=> \@Completion_Word_List,
 	       };
     bless $self, $class;
 }
@@ -299,11 +307,11 @@ sub FetchVar {
     
     my ($type, $id) = @{$_rl_vars{$name}};
     if ($type eq 'S') {
-	return Term::ReadLine::Gnu::Str::_rl_fetch_str($id);
+	return _rl_fetch_str($id);
     } elsif ($type eq 'I') {
-	return Term::ReadLine::Gnu::Int::_rl_fetch_int($id);
+	return _rl_fetch_int($id);
     } elsif ($type eq 'C') {
-	return chr(Term::ReadLine::Gnu::Int::_rl_fetch_int($id));
+	return chr(_rl_fetch_int($id));
     } elsif ($type eq 'F') {
 	my $func = $id;
 	return $func;		# return value which saved in perl variable
@@ -327,11 +335,11 @@ sub StoreVar {
 	if ($name eq 'rl_line_buffer') {
 	    $self->StoreVar('rl_line_buffer_len', length($value) + 1);
 	}
-	return Term::ReadLine::Gnu::Str::_rl_store_str($value, $id);
+	return _rl_store_str($value, $id);
     } elsif ($type eq 'I') {
-	return Term::ReadLine::Gnu::Int::_rl_store_int($value, $id);
+	return _rl_store_int($value, $id);
     } elsif ($type eq 'C') {
-	return chr(Term::ReadLine::Gnu::Int::_rl_store_int(ord($value), $id));
+	return chr(_rl_store_int(ord($value), $id));
     } elsif ($type eq 'F') {
 	my $func = $id;
 	if ($name eq 'rl_completion_entry_function') {
@@ -353,7 +361,7 @@ sub StoreVar {
 #
 #	Custom Completion Support
 #
-=item C<Term::ReadLine::completion_matches(TEXT, ENTRY_FUNC)>
+=item C<completion_matches(TEXT, ENTRY_FUNC)>
 
 Returns an array of strings which is a list of completions for TEXT.
 If there are no completions, returns C<undef>.  The first entry
@@ -376,17 +384,15 @@ C<$rl_completion_entry_function>.
 
 =cut
 
-# Term::Readline::completion_matches() is defined in Gnu.xs
+# completion_matches() is defined in Gnu.xs
 
-package Term::ReadLine;
+=item C<list_completion_function(TEXT, STATE)>
 
-use vars qw(@completion_word_list
-	    %EXPORT_TAGS @EXPORT_OK);
+A sample generator function defined by Term::ReadLine::Gnu.pm.
+Example code at C<rl_completion_entry_function> shows how to use this
+function.
 
-%EXPORT_TAGS = (custom_completion => [qw(completion_matches
-					 @completion_word_list
-					 list_completion_function)]);
-Exporter::export_ok_tags('custom_completion');
+=cut
 
 BEGIN {
     my $i;
@@ -396,15 +402,13 @@ BEGIN {
 	my $entry;
 
 	$i = $state ? $i + 1 : 0; # clear counter at the first call
-	for (; $i <= $#completion_word_list; $i++) {
+	for (; $i <= $#Completion_Word_List; $i++) {
 	    return $entry
-		if (($entry = $completion_word_list[$i]) =~ /^$text/);
+		if (($entry = $Completion_Word_List[$i]) =~ /^$text/);
 	}
 	return undef;
     }
 }
-
-package Term::ReadLine::Gnu;
 
 # The following functions are defined in ReadLine.pm.
 
@@ -450,10 +454,6 @@ sub Features { \%Features; }
 #
 #	string variable access function
 #
-package Term::ReadLine::Gnu::Str;
-use Carp;
-use strict;
-
 sub TIESCALAR {
     my $class = shift;
     my $id = shift;
@@ -472,8 +472,6 @@ sub STORE {
     confess "wrong type" unless ref $self;
     return _rl_store_str(shift, $self->[0]);
 }
-
-#	End of Term::ReadLine::Gnu::Str;
 
 1;
 __END__
@@ -520,6 +518,8 @@ GNU History Library Manual' for each variable.
     'rl_completion_entry_function'
     'rl_attempted_completion_function'
 
+Following variables need more explanation.
+
 =over 4
 
 =item C<rl_completion_entry_function>
@@ -543,12 +543,15 @@ C<'username'>, build-in C<username_completion_function> is used.
 A sample generator function, C<list_completion_function>, is defined
 in Gnu.pm.  You can use it as follows;
 
-    use Term::ReadLine qw(@completion_word_list list_completion_function);
+    use Term::ReadLine;
     ...
     my $term = new Term::ReadLine 'sample';
     ...
-    @completion_word_list = qw(list of words which you want to use for completion);
-    $term->StoreVar('rl_completion_entry_function', \&list_completion_function);
+    $term->StoreVar('rl_completion_entry_function',
+		    \&Term::ReadLine::Gnu::list_completion_function);
+    ...
+    @{$term->{CompletionWordList}} =
+	qw(list of words which you want to use for completion);
     $term->readline("custom completion>");
 
 See also C<completion_matches>.
@@ -573,11 +576,12 @@ The default value of this variable is C<undef>.  You can use it as follows;
         my ($text, $line, $start, $end) = @_;
         # If first word then username completion, else filename completion
         if (substr($line, 0, $start) =~ /^\s*$/) {
-    	    return completion_matches($text, 'username');
+    	    return Term::ReadLine::Gnu::completion_matches($text, 'username');
         } else {
     	    return ();
         }
     }
+    ...
     $term->StoreVar('rl_attempted_completion_function', \&sample_completion);
 
 =back
@@ -617,14 +621,7 @@ your F<~/.inputrc> can define keybindings only for it as follows;
 
 =head1 EXPORTS
 
-By default none.  Following names can be exported explicitly.
-
-	completion_matches
-	@completion_word_list
-	list_completion_function
-
-And export tag, C<custom_completion>, is defined for these names.
-(Suggest me other implementaions!)
+None.
 
 =head1 SEE ALSO
 
@@ -647,8 +644,6 @@ Hiroo Hayashi, hayashi@pdcd.ilab.toshiba.co.jp
 support OperateAndGetNext command
 
 support TkRunning
-
-Better interface to 'completion_matches' and 'list_completion_function'.
 
 =cut
 
