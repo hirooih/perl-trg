@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.24 1998-09-27 16:11:13 hayashi Exp $
+#	$Id: readline.t,v 1.25 1999-02-22 16:23:14 hayashi Exp $
 #
 #	Copyright (c) 1996,1997,1998 Hiroo Hayashi.  All rights reserved.
 #
@@ -123,14 +123,9 @@ sub invert_case_line {
 }
 
 # sample function of rl_message()
-#
-# Note:
-#	_rl_save_prompt() and _rl_restore_promts() are not documented
-#	by the GNU Readline Library Manual.
-#	These functions may be obsoleted in the future.
 sub change_ornaments {
     my($count, $key) = @_;	# ignored in this sample function
-    $t->save_prompt;		# undocumented function
+    $t->save_prompt;
     $t->message("[S]tandout, [U]nderlining, [B]old, [R]everse, [V]isible bell");
     my $c = chr $t->read_key;
     if ($c =~ /s/i) {
@@ -146,7 +141,7 @@ sub change_ornaments {
     } else {
 	$t->ding;
     }
-    $t->restore_prompt;		# undocumented function
+    $t->restore_prompt;
     $t->clear_message;
 }
 
