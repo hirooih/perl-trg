@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.91 2001-02-27 17:22:53 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.92 2001-03-09 14:51:59 hayashi Exp $
  *
  *	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
  *
@@ -1325,44 +1325,6 @@ _rl_set_key(keyseq, function, map = rl_get_keymap())
 
 #endif /* readline-4.2 and later */
 
-# rl_macro_bind() is documented by readline-4.2 but it has been implemented 
-# from 2.2.1.
-# It is equivalent with 
-# rl_generic_bind(ISMACR, keyseq, (char *)macro_keys, map).
-int
-_rl_macro_bind(keyseq, macro, map = rl_get_keymap())
-	CONST char *keyseq
-	CONST char *macro
-	Keymap map
-	PROTOTYPE: $$;$
-	CODE:
-	{
-	  RETVAL = rl_macro_bind(keyseq, macro, map);
-	}
-	OUTPUT:
-	RETVAL
-
-# rl_variable_bind() is documented by readline-4.2 but it has been implemented 
-# from 2.2.1.
-
-int
-rl_variable_bind(name, value)
-	CONST char *name
-	CONST char *value
-	PROTOTYPE: $$
-
-# rl_push_macro_input() is documented by readline-4.2 but it has been
-# implemented from 2.2.1.
-
-void
-rl_push_macro_input(macro)
-	const char *macro
-	PROTOTYPE: $
-	CODE:
-	{
-	  rl_push_macro_input(dupstr(macro));
-	}
-
 int
 _rl_generic_bind_function(keyseq, function, map = rl_get_keymap())
 	CONST char *keyseq
@@ -1514,19 +1476,6 @@ rl_function_dumper(readable = 0)
 	int readable
 	PROTOTYPE: ;$
 
-# rl_macro_dumper and rl_variable_dumper are documented by Readline 4.2,
-# but have been implemented for 2.2.1.
-
-void
-rl_macro_dumper(readable = 0)
-	int readable
-	PROTOTYPE: ;$
-
-void
-rl_variable_dumper(readable = 0)
-	int readable
-	PROTOTYPE: ;$
-
 void
 rl_list_funmap_names()
 	PROTOTYPE:
@@ -1654,6 +1603,11 @@ rl_reset_line_state()
 	PROTOTYPE:
 
 int
+rl_show_char(i)
+	int i
+	PROTOTYPE: $
+
+int
 _rl_message(text)
 	const char *text
 	PROTOTYPE: $
@@ -1671,13 +1625,6 @@ rl_crlf()
 int
 rl_clear_message()
 	PROTOTYPE:
-
-# rl_show_char is not useful for Perl.
-
-int
-rl_show_char(i)
-	int i
-	PROTOTYPE: $
 
 void
 rl_save_prompt()
@@ -1724,6 +1671,18 @@ rl_kill_text(start = 0, end = rl_end)
 	int start
 	int end
 	PROTOTYPE: ;$$
+
+# rl_push_macro_input() is documented by readline-4.2 but it has been
+# implemented from 2.2.1.
+
+void
+rl_push_macro_input(macro)
+	const char *macro
+	PROTOTYPE: $
+	CODE:
+	{
+	  rl_push_macro_input(dupstr(macro));
+	}
 
 #
 #	2.4.8 Character Input
@@ -1857,7 +1816,49 @@ rl_display_match_list(pmatches, plen = -1, pmax = -1)
 #endif /* (RLMAJORVER < 4) */
 
 #
-#	2.4.9 Alternate Interface
+#	2.4.9 Miscellaneous Functions
+#
+# rl_macro_bind() is documented by readline-4.2 but it has been implemented 
+# from 2.2.1.
+# It is equivalent with 
+# rl_generic_bind(ISMACR, keyseq, (char *)macro_keys, map).
+int
+_rl_macro_bind(keyseq, macro, map = rl_get_keymap())
+	CONST char *keyseq
+	CONST char *macro
+	Keymap map
+	PROTOTYPE: $$;$
+	CODE:
+	{
+	  RETVAL = rl_macro_bind(keyseq, macro, map);
+	}
+	OUTPUT:
+	RETVAL
+
+# rl_macro_dumper and rl_variable_dumper are documented by Readline 4.2,
+# but have been implemented for 2.2.1.
+
+void
+rl_macro_dumper(readable = 0)
+	int readable
+	PROTOTYPE: ;$
+
+# rl_variable_bind() is documented by readline-4.2 but it has been implemented 
+# from 2.2.1.
+
+int
+rl_variable_bind(name, value)
+	CONST char *name
+	CONST char *value
+	PROTOTYPE: $$
+
+void
+rl_variable_dumper(readable = 0)
+	int readable
+	PROTOTYPE: ;$
+
+#
+#	2.4.10 Alternate Interface
 #
 void
 rl_callback_handler_install(prompt, lhandler)
