@@ -1,7 +1,7 @@
 #
 #	Makefile.PL for Term::ReadLine::Gnu
 #
-#	$Id: Makefile.PL,v 1.11 1998-09-27 15:21:18 hayashi Exp $
+#	$Id: Makefile.PL,v 1.12 1998-09-28 16:02:07 hayashi Exp $
 #
 #	Copyright (c) 1996,1997,1998 Hiroo Hayashi.  All rights reserved.
 #		<hiroo.hayashi@computer.org>
@@ -23,11 +23,15 @@ use Config;
 
 $defs = ($Config{strings} =~ m|/string.h$|) ? '-DHAVE_STRING_H' : '';
 
-# search libncurses, libcurses, or libtermcap in this order
-my $TERMCAP_LIB = &search_lib('-lncurses')
-    || &search_lib('-lcurses')
-    || &search_lib('-ltermcap');
-die "Cannot find neither -lncurses, -lcurses, nor -ltermcap.\n"
+# Search libtermcap, libncurses, or libcurses in this order.
+# I emulate the behavior of configure script for bash, and don't know
+# why AIX prefers curses.
+$PREFER_CURSES = $Config{osname} eq 'aix';
+$TERMCAP_LIB = (! $PREFER_CURSES && &search_lib('-ltermcap'))
+    || &search_lib('-lncurses')
+    || &search_lib('-lcurses');
+
+die "Cannot find neither libtermcap.a, libncureses.a, or libcurses.\n"
     unless $TERMCAP_LIB;
 
 # Ignore outside of OS/2. Set to 1 if linking with readline.dll under
