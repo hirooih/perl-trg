@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.36 1997-03-07 15:14:33 hayashi Exp $
+#	$Id: Gnu.pm,v 1.37 1997-03-13 14:51:29 hayashi Exp $
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
 #
@@ -532,13 +532,17 @@ is getting input B<(undocumented feature)>.
 
 my %Features = (
 		appname => 1, minline => 1, autohistory => 1,
-		preput => 1, do_expand => 1, stifleHistory => 1,
 		getHistory => 1, setHistory => 1, addHistory => 1,
-		readHistory => 1, writeHistory => 1, parseAndBind => 1,
-		customCompletion => 1, tkRunning => 0
+		readHistory => 1, writeHistory => 1,
+		preput => 1, tkRunning => 0, attribs => 1,
+		stiflehistory => 1,
 	       );
 
 sub Features { \%Features; }
+
+my %Attribs = ();		# This hash is set later.
+sub Attribs { \%Attribs; }
+
 
 #
 #	Readline/History Library Variable Access Routines
@@ -696,7 +700,22 @@ package Term::ReadLine::Gnu;
 
 #	Tie all Readline/History variables
 foreach (keys %_rl_vars) {
+    # this interface is obsoleted
     eval "use vars '\$$_'; tie \$$_, 'Term::ReadLine::Gnu::Var', '$_';";
+    # tie $Attribs{foo}, 'Term::ReadLine::Gnu::Var', 'rl_foo';
+    my $name;
+    ($name = $_) =~ s/^rl_//;	# strip leading `rl_'
+    eval "tie \$Attribs{$name},  'Term::ReadLine::Gnu::Var', '$_';";
+}
+#
+# for compatibility with Term::ReadLine::Gnu
+#
+tie $Attribs{completion_function}, 'Term::ReadLine::Gnu::Var',
+    'rl_attempted_completion_function';
+sub filename_list {
+    shift;
+    my ($text) = @_;
+    return completion_matches($text, \&filename_completion_function);
 }
 
 #
