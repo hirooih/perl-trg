@@ -1,6 +1,6 @@
 #! /usr/local/bin/perl
 #
-#	$Id: perlsh,v 1.21 1999-04-08 16:37:56 hayashi Exp $	
+#	$Id: perlsh,v 1.22 1999-12-30 05:05:30 hayashi Exp $	
 #
 #	Copyright (c) 1999 Hiroo Hayashi. All Rights Reserved.
 #
@@ -120,7 +120,7 @@ sub reader {
 	    $command = $command ? $command . " $line" : $line;
 	} else {
 	    $command = $command ? $command . " $line" : $line;
-	    $term->addhistory($command);
+	    $term->addhistory($command) if (length($command) > 0);
 	    return $command;
 	}
     }
@@ -151,7 +151,7 @@ sub prompt {
 
 sub perl_symbol_display_match_list ($$$) {
     my($matches, $num_matches, $max_length) = @_;
-    map { $_ =~ s/^((\$#|[\@\$%&])?).*::(.+)/\3/; }(@{$matches});
+    map { $_ =~ s/^((\$#|[\@\$%&])?).*::(.+)/$3/; }(@{$matches});
     $term->display_match_list($matches);
     $term->forced_update_display;
 }
