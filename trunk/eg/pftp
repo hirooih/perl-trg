@@ -1,8 +1,8 @@
 #! /usr/local/bin/perl
 #
-#	$Id: pftp,v 1.7 1997-08-12 13:50:18 hayashi Exp $
+#	$Id: pftp,v 1.8 1998-05-08 17:38:59 hayashi Exp $
 #
-#	Copyright (c) 1997 Hiroo Hayashi.  All Rights Reserved.
+#	Copyright (c) 1997,1998 Hiroo Hayashi.  All Rights Reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -60,7 +60,11 @@ my $HOSTFILE = ($ENV{HOME} || (getpwuid($<))[7]) . "/.pftp_hosts";
 
 my $term = Term::ReadLine->new('PFTP');
 my $attribs = $term->Attribs;
+$term->ornaments('md,me,,');	# bold face prompt
 
+#
+#	read hostname to which login
+#
 my $host;
 my @hosts = read_hosts($HOSTFILE);
 if (@ARGV) {
@@ -125,7 +129,7 @@ $attribs->{attempted_completion_function} = sub {
 	return $term->completion_matches($text,
 					 \&ftp_dirname_completion_function);
     } else {			# put mput lcd
-	return ();
+	return ();		# local file name completion
     }
 };
 
@@ -134,10 +138,10 @@ $attribs->{attempted_completion_function} = sub {
 #
 $SIG{INT} = 'IGNORE';		# ignore Control-C
 
-while (defined($_ = $term->readline("pftp\@$host:$pwd> "))) {
+while (defined($_ = $term->readline("$login\@$host:$pwd> "))) {
     no strict 'refs';
     next if /^\s*$/;
-    my ($cmd, @args) = split(' ', $_);
+    my ($cmd, @args) = $term->history_tokenize($_);
     if ($cmd eq 'quit' || $cmd eq 'bye') {
 	last;
     }
@@ -439,7 +443,7 @@ not contained in this file, it will be added automatically.
 
 =head1 AUTHOR
 
-Hiroo Hayashi <hiroo.hayashi@toshiba.co.jp>
+Hiroo Hayashi <hiroo.hayashi@computer.org>
 
 =head1 BUGS
 
