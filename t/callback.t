@@ -1,9 +1,9 @@
 # -*- perl -*-
 #	callback.t - Test script for Term::ReadLine:GNU callback function
 #
-#	$Id: callback.t,v 1.2 1999-04-04 11:24:44 hayashi Exp $
+#	$Id: callback.t,v 1.3 2000-12-03 16:44:31 hayashi Exp $
 #
-#	Copyright (c) 1999 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -45,6 +45,8 @@ if ($verbose) {
 
 ########################################################################
 # check Tk is installed
+#disable the warning, "Too late to run INIT block at..."
+$^W = 0;
 if (eval "use Tk; 1") {
     print "ok $n\tuse Tk\n"; $n++;
 } else {
@@ -54,6 +56,9 @@ if (eval "use Tk; 1") {
     print "ok $n\t# skipped since Tk is not installed.\n"; $n++;
     exit 0;
 }
+$^W = 1; 
+
+########################################################################
 my $mw;
 $mw = MainWindow->new();
 $mw->protocol('WM_DELETE_WINDOW' => \&quit);
