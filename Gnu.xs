@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.11 1996-12-25 15:17:24 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.12 1996-12-26 16:01:56 hayashi Exp $
  *
  *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
  *
@@ -490,7 +490,7 @@ rl_unbind_key(key)
 	}
 
 int
-_rl_do_named_function(name, count = 1, key = -1)
+rl_do_named_function(name, count = 1, key = -1)
 	char	*name
 	int	count
 	int	key
