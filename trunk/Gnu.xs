@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.30 1997-01-09 15:09:52 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.31 1997-01-09 16:56:53 hayashi Exp $
  *
  *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
  *
@@ -176,6 +176,20 @@ static Keymap
 my_get_keymap_by_name(char * map)
 {
   rl_get_keymap_by_name(map) || lookup_mykeymap(map);
+}
+
+static char*
+my_get_keymap_name(Keymap keymap)
+{
+  struct kmnode *np;
+
+  /* search private map first */
+  for (np = kmlist; np; np = np->next)
+    if (np->map == keymap)
+      return np->name;
+
+  /* then search Readline Library map */
+  return rl_get_keymap_name(keymap);
 }
 
 /*
@@ -578,8 +592,10 @@ rl_add_defun(name, fn, key = -1)
 	    RETVAL = -1;
 	    return;
 	  }
-	  rl_add_defun(name, custom_function_lapper, -1); /* always return 0 */
-	  register_myfun(name, fn); /* register custom function name */
+	  /* rl_add_defun() always returns 0. */
+	  rl_add_defun(dupstr(name), custom_function_lapper, -1);
+	  /* register custom function name */
+	  register_myfun(name, fn); 
 	  RETVAL = 0;
 
 	  if (key != -1) {
@@ -722,7 +738,7 @@ rl_generic_bind(type, keyseq, data, map = NULL)
 	    break;
 
 	  case ISMACR:
-	    p = data;
+	    p = dupstr(data);	/* Who will free this memory? */
 	    break;
 
 	  defaults:
@@ -770,29 +786,69 @@ void
 rl_function_of_keyseq(keyseq, map = NULL)
 	char *keyseq
 	char *map
-	PROTOTYPE: $$
+	PROTOTYPE: $;$
 	PPCODE:
 	{
 	  int type;
 	  Keymap keymap = map ? my_get_keymap_by_name(map) : rl_get_keymap();
 	  Function *fn = rl_function_of_keyseq(keyseq, keymap, &type);
+	  char *data;
 
-	  EXTEND(sp, 2);
-	  PUSHs(sv_2mortal(newSVpv(rl_function_name(fn), 0)));
-	  PUSHs(sv_2mortal(newSViv(type)));
+	  if (fn) {
+	    switch (type) {
+	    case ISFUNC:
+	      data = rl_function_name(fn);
+	      break;
+	    case ISKMAP:
+	      data = my_get_keymap_name((Keymap)fn);
+	      break;
+	    case ISMACR:
+	      data = (char *)fn;
+	      break;
+	    defaults:
+	      warn("Gnu.xs:rl_function_of_keyseq: illegal type `%d'\n", type);
+	      return;		/* return NULL list */
+	    }
+	    if (data) {
+	      EXTEND(sp, 2);
+	      PUSHs(sv_2mortal(newSVpv(data, 0)));
+	      PUSHs(sv_2mortal(newSViv(type)));
+	    } else
+	      ;			/* return NULL list */
+	  } else
+	    ;			/* return NULL list */
 	}
 	  
 void
-rl_invoking_keyseqs(fn, map = NULL)
-	char *fn
+rl_invoking_keyseqs(function, map = NULL, type = ISFUNC)
+	char *function
 	char *map
-	PROTOTYPE: $;$
+	int type
+	PROTOTYPE: $;$$
 	PPCODE:
 	{
 	  char **keyseqs;
-	  Keymap keymap = map ? my_get_keymap_by_name(map) : rl_get_keymap();
+	  Keymap keymap;
+	  Function *fn;
 	  
-	  keyseqs = rl_invoking_keyseqs_in_map(rl_named_function(fn, map));
+	  switch (type) {
+	  case ISFUNC:
+	    fn = rl_named_function(function);
+	    break;
+	  case ISKMAP:
+	    fn = (Function *)my_get_keymap_by_name(function);
+	    break;
+	  case ISMACR:
+	    fn = (Function *)function;
+	    break;
+	  defaults:
+	    warn("Gnu.xs:rl_invoking_keyseqs: illegal type `%d'\n", type);
+	    return;
+	  }
+
+	  
+	  keymap = (map&&*map) ? my_get_keymap_by_name(map) : rl_get_keymap();
+	  keyseqs = rl_invoking_keyseqs_in_map(fn, keymap);
 
 	  if (keyseqs) {
 	    int i, count;
