@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.5 1996-11-15 15:56:56 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.6 1996-11-19 15:08:35 hayashi Exp $
  *
  *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
  *
@@ -255,7 +255,7 @@ _rl_SetHistory(...)
 
 void
 _rl_set_readline_name(name)
-const char *	name;
+	const char *	name
 	PROTOTYPE: $
 	CODE:
 	{
@@ -274,7 +274,7 @@ const char *	name;
 
 void
 _rl_store_basic_word_break_characters(str)
-const char *	str;
+	const char *	str
 	PROTOTYPE: $
 	CODE:
 	{
@@ -293,7 +293,7 @@ const char *	str;
 
 void
 _rl_set_instream(fildes)
-int	fildes;
+	int	fildes
 	PROTOTYPE: $
 	CODE:
 	{
@@ -306,7 +306,7 @@ int	fildes;
 
 void
 _rl_set_outstream(fildes)
-int	fildes;
+	int	fildes
 	PROTOTYPE: $
 	CODE:
 	{
@@ -332,7 +332,7 @@ _rl_read_history(filename = (char *)NULL, from = 0, to = -1)
 
 int
 _rl_write_history(filename = (char *)NULL)
-	char *filename;
+	char *filename
 	PROTOTYPE: ;$
 	CODE:
 	{
@@ -340,6 +340,11 @@ _rl_write_history(filename = (char *)NULL)
 	}
 	OUTPUT:
 	RETVAL
+
+void
+rl_parse_and_bind(line)
+	char *line
+	PROTOTYPE: $
 
 void
 _rl_store_completion_entry_function(fn)
