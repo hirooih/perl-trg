@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.90 2002-03-31 05:32:21 hiroo Exp $
+#	$Id: Gnu.pm,v 1.91 2002-07-28 04:25:46 hiroo Exp $
 #
 #	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
 #
@@ -63,10 +63,12 @@ use Carp;
     use DynaLoader;
     use vars qw($VERSION @ISA @EXPORT_OK);
 
-    $VERSION = '1.12';
+    $VERSION = '1.13';
 
     # Term::ReadLine::Gnu::AU makes a function in
     # `Term::ReadLine::Gnu::XS' as a method.
+    # The namespace of Term::ReadLine::Gnu::AU is searched before ones
+    # of other classes
     @ISA = qw(Term::ReadLine::Gnu::AU Term::ReadLine::Stub
 	      Exporter DynaLoader);
 
@@ -295,7 +297,7 @@ sub readline {			# should be ReadLine
 	($result, $line) = $self->history_expand($line);
 	my $outstream = $Attribs{outstream};
 	print $outstream "$line\n" if ($result);
-     
+
 	# return without adding line into history
 	if ($result < 0 || $result == 2) {
 	    return '';		# don't return `undef' which means EOF.
@@ -351,7 +353,7 @@ sub MinLine {
     $self->{MinLength} = shift;
     $old_minlength;
 }
-    
+
 # findConsole is defined in ReadLine.pm.
 
 =item C<findConsole>
@@ -476,7 +478,7 @@ use vars qw(%_rl_vars);
        history_search_delimiter_chars		=> ['S', 12],
        rl_executing_macro			=> ['S', 13], # GRL4.2
        history_word_delimiters			=> ['S', 14], # GRL4.2
-       
+
        rl_point					=> ['I', 0],
        rl_end					=> ['I', 1],
        rl_mark					=> ['I', 2],
@@ -510,6 +512,8 @@ use vars qw(%_rl_vars);
        rl_attempted_completion_over		=> ['I', 29], # GRL 4.2
        rl_completion_type			=> ['I', 30], # GRL 4.2
        rl_readline_version			=> ['I', 31], # GRL 4.2a
+       rl_completion_suppress_append		=> ['I', 32], # GRL 4.3
+       rl_completion_mark_symlink_dirs		=> ['I', 33], # GRL 4.3
 
        rl_startup_hook				=> ['F', 0],
        rl_event_hook				=> ['F', 1],
@@ -552,7 +556,7 @@ sub FETCH {
 	confess "Term::ReadLine::Gnu::Var::FETCH: Unknown variable name `$name'\n";
 	return undef ;
     }
-    
+
     my ($type, $id) = @{$_rl_vars{$name}};
     if ($type eq 'S') {
 	return _rl_fetch_str($id);
@@ -583,7 +587,7 @@ sub STORE {
 	confess "Term::ReadLine::Gnu::Var::STORE: Unknown variable name `$name'\n";
 	return undef ;
     }
-    
+
     my $value = shift;
     my ($type, $id) = @{$_rl_vars{$name}};
     if ($type eq 'S') {
@@ -1005,6 +1009,10 @@ detail see 'GNU Readline Library Manual'.
 
 =over 4
 
+=item C<replace_line(TEXT [,CLEAR_UNDO]>
+
+	int	rl_replace_line(str text, int clear_undo)	# GRL 4.3
+
 =item C<initialize>
 
 	int	rl_initialize()
@@ -1124,6 +1132,10 @@ When C<MAX> is ommited, the max length of an item in @matches is used.
 =item C<complete_internal([WHAT_TO_DO])>
 
 	int	rl_complete_internal(int what_to_do = TAB)
+
+=item C<completion_mode(FUNCTION)>
+
+	int	rl_completion_mode(FunctionPtr|str function)
 
 =item C<completion_matches(TEXT [,FUNC])>
 
@@ -1409,6 +1421,8 @@ Examples:
 	str rl_filename_quote_characters
 	str rl_special_prefixes
 	int rl_completion_append_character
+	int rl_completion_suppress_append (GRL 4.3)
+	int rl_completion_mark_symlink_dirs (GRL 4.3)
 	int rl_ignore_completion_duplicates
 	int rl_filename_completion_desired
 	int rl_filename_quoting_desired
