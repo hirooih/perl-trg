@@ -1,9 +1,9 @@
 	-*- Indented-text -*-
-$Id: README,v 1.21 2001-10-28 04:20:56 hayashi Exp $
+$Id: README,v 1.22 2002-03-31 05:40:46 hiroo Exp $
 
 Term::ReadLine::Gnu --- GNU Readline Library Wrapper Module
 
-	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
+	Copyright (c) 2002 Hiroo Hayashi.  All rights reserved.
 
 	This program is free software; you can redistribute it and/or
 	modify it under the same terms as Perl itself.
@@ -18,8 +18,8 @@ Description:
 	variables and functions which are documented in the GNU
 	Readline/History Library.  So you can program your custom
 	editing function, your custom completion function, and so on
-	with Perl.  TRG may be useful for prototyping before
-	programming with C.
+	with Perl.  TRG may be useful for a C programmer to prototype
+	a program which uses the GNU Readline Library.
 
 	TRG is upper compatible with Term::ReadLine included in Perl
 	distribution.  Term::ReadLine uses TRG automatically when TRG
@@ -52,7 +52,7 @@ How to build/install:
 	See INSTALL.
 
 Bugs:
-	There must be many bugs in both programs and documents
+	There may be many bugs in both programs and documents
 	(especially in English grammar).  Comments and bug reports are
 	very welcome.
 
@@ -61,6 +61,15 @@ Author:
 
 
 Revision History:
+
+1.12  2002-03-30
+	- add '-static' flag to 'LDDFLAGS' on Cygwin 1.3.
+	- shadow redisplay does not pester you with warning on a poor
+	  terminal, or a terminal with wrong TERM environment variable
+	  setting.
+	- update documents
+	- improve coding style of Gnu.xs. (indentation stype, more
+          typemap, etc.)
 
 1.11  2001-10-27
 	- fix bug of filename-list.  Now works with perldb.
