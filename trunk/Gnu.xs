@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.94 2001-03-10 05:07:21 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.95 2001-03-12 15:33:31 hayashi Exp $
  *
  *	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
  *
@@ -1826,8 +1826,9 @@ rl_display_match_list(pmatches, plen = -1, pmax = -1)
 #endif /* (RLMAJORVER < 4) */
 
 #
-#	2.4.9 Miscellaneous Functions
+#	2.4.11 Miscellaneous Functions
 #
+
 # rl_macro_bind() is documented by readline-4.2 but it has been implemented 
 # from 2.2.1.
 # It is equivalent with 
@@ -1845,7 +1846,7 @@ _rl_macro_bind(keyseq, macro, map = rl_get_keymap())
 	OUTPUT:
 	RETVAL
 
-# rl_macro_dumper and rl_variable_dumper are documented by Readline 4.2,
+# rl_macro_dumper is documented by Readline 4.2,
 # but have been implemented for 2.2.1.
 
 void
@@ -1862,13 +1863,25 @@ rl_variable_bind(name, value)
 	CONST char *value
 	PROTOTYPE: $$
 
+# rl_variable_dumper is documented by Readline 4.2,
+# but have been implemented for 2.2.1.
+
 void
 rl_variable_dumper(readable = 0)
 	int readable
 	PROTOTYPE: ;$
 
+#if (RLMAJORVER > 4 || RLMAJORVER == 4 && RLMINORVER >= 2)
+
+int
+rl_set_paren_blink_timeout(usec)
+	int usec
+	PROTOTYPE: $
+
+#endif /* (RLMAJORVER > 4 || RLMAJORVER == 4 && RLMINORVER >= 2) */
+
 #
-#	2.4.10 Alternate Interface
+#	2.4.12 Alternate Interface
 #
 void
 rl_callback_handler_install(prompt, lhandler)
