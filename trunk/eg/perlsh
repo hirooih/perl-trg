@@ -1,6 +1,6 @@
 #! /usr/local/bin/perl
 #
-#	$Id: perlsh,v 1.18 1999-03-26 17:12:23 hayashi Exp $	
+#	$Id: perlsh,v 1.19 1999-03-27 03:11:50 hayashi Exp $	
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi. All Rights Reserved.
 #
@@ -151,98 +151,99 @@ sub perl_symbol_display_match_list ($$$) {
     $term->forced_update_display;
 }
 
-{
-    my ($hashref, $package);
-
-    sub attempt_perl_completion ($$$$) {
-	my ($text, $line, $start, $end) = @_;
-	
-	$attribs->{special_prefixes} = '$@%&';
-	$attribs->{completion_display_matches_hook}
-	    = \&perl_symbol_display_match_list;
-
-	no strict qw(refs);
-	if (substr($line, 0, $start) =~ m/\$([\w:]+)\s*{\s*['"]?$/) {
-	    # $foo{key
-	    $hashref = \%$1;
-	    $attribs->{completion_append_character} = '}';
-	    return $term->completion_matches($text,
-					     \&perl_hash_key_completion_function);
-	} elsif (substr($line, 0, $start) =~ m/\$([\w:]+)\s*->\s*{\s*['"]?$/) {
-	    # $foo->{key
-	    $hashref = eval (($1 =~ m/::/) ? "\$$1" : "\$${CWP}::$1");
-	    $attribs->{completion_append_character} = '}';
-	    return $term->completion_matches($text,
-					     \&perl_hash_key_completion_function);
-	} elsif (substr($line, 0, $start) =~ m/\$([\w:]+)\s*->\s*['"]?$/) {
-	    # $foo->method
-	    $package = ref eval (($1 =~ m/::/) ? "\$$1" : "\$${CWP}::$1");
-	    $attribs->{completion_append_character} = ' ';
-	    return $term->completion_matches($text,
-					     \&perl_method_completion_function);
-	} else {
-	    # symbol completion
-	    $attribs->{completion_append_character} = '';
-	    return  $term->completion_matches($text,
-					      \&perl_symbol_completion_function);
-	}
-    }
-
-    my ($i, @matches);
-
-    sub perl_hash_key_completion_function ($$) {
-	my($text, $state) = @_;
-
-	if ($state) {
-	    $i++;
-	} else {
-	    # the first call
-	    $i = 0;		# clear index
-	    no strict qw(refs);
-	    @matches = keys %$hashref
-	}
-	for (; $i <= $#matches; $i++) {
-	    return $matches[$i] if ($matches[$i] =~ /^\Q$text/);
-	}
-	return undef;
-    }
-
-    sub _search_ISA ($) {
-	my ($mypkg) = @_;
-	no strict 'refs';
-	my $isa = "${mypkg}::ISA";
-	return $mypkg, map _search_ISA($_), @$isa;
-    }
-
-    sub perl_method_completion_function ($$) {
-	my($text, $state) = @_;
-
-	if ($state) {
-	    $i++;
-	} else {
-	    # the first call
-	    my ($sym, $pkg);
-	    $i = 0;		# clear index
-	    no strict qw(refs);
-	    @matches = map { $pkg = $_ . '::';
-			     grep (/^\w+$/
-				   && ($sym = "${pkg}$_",
-				       defined *$sym{CODE}),
-				   keys %$pkg);
-			 } _search_ISA($package);
-	}
-	for (; $i <= $#matches; $i++) {
-	    return $matches[$i] if ($matches[$i] =~ /^\Q$text/);
-	}
-	return undef;
+sub attempt_perl_completion ($$$$) {
+    my ($text, $line, $start, $end) = @_;
+    
+    $attribs->{special_prefixes} = '$@%&';
+    $attribs->{completion_display_matches_hook}
+	= \&perl_symbol_display_match_list;
+    
+    no strict qw(refs);
+    if (substr($line, 0, $start) =~ m/\$([\w:]+)\s*(->)?\s*{\s*['"]?$/) {
+	# $foo{key, $foo->{key
+	$attribs->{completion_append_character} = '}';
+	return $term->completion_matches($text,
+					 \&perl_hash_key_completion_function);
+    } elsif (substr($line, 0, $start) =~ m/\$([\w:]+)\s*->\s*['"]?$/) {
+	# $foo->method
+	$attribs->{completion_append_character} = ' ';
+	return $term->completion_matches($text,
+					 \&perl_method_completion_function);
+    } else { # Perl symbol completion
+	$attribs->{completion_append_character} = '';
+	return  $term->completion_matches($text,
+					  \&perl_symbol_completion_function);
     }
 }
 
+# static global variables for completion functions
+use vars qw($i @matches);
+
+sub perl_hash_key_completion_function ($$) {
+    my($text, $state) = @_;
+    
+    if ($state) {
+	$i++;
+    } else {
+	# the first call
+	$i = 0;			# clear index
+	my ($var,$arrow) = (substr($attribs->{line_buffer},
+				   0, $attribs->{point} - length($text))
+			    =~ m/\$([\w:]+)\s*(->)?\s*{\s*['"]?$/); # });
+	no strict qw(refs);
+	$var = "${CWP}::$var" unless ($var =~ m/::/);
+	if ($arrow) {
+	    my $hashref = eval "\$$var";
+	    @matches = keys %$hashref;
+	} else {
+	    @matches = keys %$var;
+	}
+	
+    }
+    for (; $i <= $#matches; $i++) {
+	return $matches[$i] if ($matches[$i] =~ /^\Q$text/);
+    }
+    return undef;
+}
+
+sub _search_ISA ($) {
+    my ($mypkg) = @_;
+    no strict 'refs';
+    my $isa = "${mypkg}::ISA";
+    return $mypkg, map _search_ISA($_), @$isa;
+}
+
+sub perl_method_completion_function ($$) {
+    my($text, $state) = @_;
+    
+    if ($state) {
+	$i++;
+    } else {
+	# the first call
+	my ($var, $pkg, $sym, $pk);
+	$i = 0;			# clear index
+	$var = (substr($attribs->{line_buffer},
+		       0, $attribs->{point} - length($text))
+		=~ m/\$([\w:]+)\s*->\s*$/)[0];
+	$pkg = ref eval (($var =~ m/::/) ? "\$$var" : "\$${CWP}::$var");
+	no strict qw(refs);
+	@matches = map { $pk = $_ . '::';
+			 grep (/^\w+$/
+			       && ($sym = "${pk}$_", defined *$sym{CODE}),
+			       keys %$pk);
+		     } _search_ISA($pkg);
+    }
+    for (; $i <= $#matches; $i++) {
+	return $matches[$i] if ($matches[$i] =~ /^\Q$text/);
+    }
+    return undef;
+}
+
 #
-#	perl symbol name completion
+#	Perl symbol name completion
 #
 {
-    my ($i, $prefix, @sym_list, %type, @keyword);
+    my ($prefix, %type, @keyword);
 
     sub perl_symbol_completion_function ($$) {
 	my($text, $state) = @_;
@@ -256,29 +257,29 @@ sub perl_symbol_display_match_list ($$$) {
 
 	    no strict qw(refs);
 	    ($prefix, $pre, $pkg) = ($text =~ m/^((\$#|[\@\$%&])?(.*::)?)/);
-	    @sym_list = grep /::$/, $pkg ? keys %$pkg : keys %::;
+	    @matches = grep /::$/, $pkg ? keys %$pkg : keys %::;
 	    $pkg = ($CWP eq 'main' ? '::' : $CWP . '::') unless $pkg;
 
 	    if ($pre) {		# $foo, @foo, $#foo, %foo, &foo
-		@sym_list = (@sym_list,
-			     grep (/^\w+$/
-				   && ($sym = $pkg . $_,
-				       defined *$sym{$type{$pre}}),
-				   keys %$pkg));
+		@matches = (@matches,
+			    grep (/^\w+$/
+				  && ($sym = $pkg . $_,
+				      defined *$sym{$type{$pre}}),
+				  keys %$pkg));
 	    } else {		# foo
-		@sym_list = (@sym_list,
-			     !$prefix && @keyword,
-			     grep (/^\w+$/
-				   && ($sym = $pkg . $_,
-				       defined *$sym{CODE}
-				       || defined *$sym{FILEHANDLE}
-				      ),
-				   keys %$pkg));
+		@matches = (@matches,
+			    !$prefix && @keyword,
+			    grep (/^\w+$/
+				  && ($sym = $pkg . $_,
+				      defined *$sym{CODE}
+				      || defined *$sym{FILEHANDLE}
+				     ),
+				  keys %$pkg));
 	    }
 	}
 	my $entry;
-	for (; $i <= $#sym_list; $i++) {
-	    $entry = $prefix . $sym_list[$i];
+	for (; $i <= $#matches; $i++) {
+	    $entry = $prefix . $matches[$i];
 	    return $entry if ($entry =~ /^\Q$text/);
 	}
 	return undef;
