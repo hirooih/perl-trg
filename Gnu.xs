@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.70 1999-03-14 14:44:51 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.71 1999-03-19 16:01:13 hayashi Exp $
  *
  *	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
  *
@@ -341,7 +341,7 @@ getc_function_wrapper(fp)
 }
 
 static void
-redisplay_function_wrapper()	{ void_arg_func_wrapper(REDISPLAY_FN); }
+redisplay_function_wrapper()	{ return void_arg_func_wrapper(REDISPLAY_FN); }
 
 static int
 pre_input_hook_wrapper() { return void_arg_func_wrapper(PRE_INPUT_HOOK); }
@@ -353,6 +353,7 @@ void_arg_func_wrapper(type)
   dSP;
   int count;
   int ret;
+  SV *svret;
 
   ENTER;
   SAVETMPS;
@@ -364,7 +365,8 @@ void_arg_func_wrapper(type)
   if (count != 1)
     croak("Gnu.xs:void_arg_func_wrapper: Internal error\n");
 
-  ret = POPi;
+  svret = POPs;
+  ret = SvIOK(svret) ? SvIV(svret) : -1;
   PUTBACK;
   FREETMPS;
   LEAVE;
@@ -594,7 +596,7 @@ char_is_quoted_p_wrapper(text, index)
   if (count != 1)
     croak("Gnu.xs:char_is_quoted_p_wrapper: Internal error\n");
 
-  ret = POPi;
+  ret = POPi;			/* warns unless integer */
   PUTBACK;
   FREETMPS;
   LEAVE;
@@ -678,7 +680,7 @@ directory_completion_hook_wrapper(textp)
   if (count != 1)
     croak("Gnu.xs:directory_completion_hook_wrapper: Internal error\n");
 
-  ret = POPp;
+  ret = POPp;			/* warns unless string */
   PUTBACK;
   FREETMPS;
   LEAVE;
@@ -721,7 +723,7 @@ history_inhibit_expansion_function_wrapper(text, index)
   if (count != 1)
     croak("Gnu.xs:history_inhibit_expansion_function_wrapper: Internal error\n");
 
-  ret = POPi;
+  ret = POPi;			/* warns unless integer */
   PUTBACK;
   FREETMPS;
   LEAVE;
