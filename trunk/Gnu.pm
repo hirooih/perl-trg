@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.29 1997-01-20 16:59:26 hayashi Exp $
+#	$Id: Gnu.pm,v 1.30 1997-01-21 17:04:33 hayashi Exp $
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
 #
@@ -75,6 +75,8 @@ my @bindfn = qw( rl_add_defun		rl_make_bare_keymap	rl_copy_keymap
 		 rl_named_function	rl_get_function_name
 		 rl_function_of_keyseq	rl_invoking_keyseqs
 		 rl_function_dumper	rl_list_funmap_names
+
+		 $rl_executing_keymap	$rl_binding_keymap
 
 		 ISFUNC			ISKMAP			ISMACR );
 
@@ -404,9 +406,7 @@ invalid KEY.
 
 sub AddDefun {
     my $self = shift;
-    my ($name, $func, $key) = @_;
-
-    rl_add_defun($name, $func, (defined $key ? ord $key : -1));
+    &rl_add_defun;
 }
 
 =item C<BindKey(KEY, FUNCTION [,MAP])>
@@ -419,8 +419,7 @@ in MAP.  Returns non-zero in case of error.
 
 sub BindKey {
     my $self = shift;
-    my ($key, $function, $map) = @_;
-    rl_bind_key(ord $key, $function, $map);
+    &rl_bind_key;
 }
 
 =item C<UnbindKey(KEY [,MAP])>
@@ -431,12 +430,7 @@ Bind KEY to the null function.  Returns non-zero in case of error.
 
 sub UnbindKey {
     my $self = shift;
-    my ($key, $map) = @_;
-    if (defined $map) {
-	rl_unbind_key(ord $key, $map);
-    } else {
-	rl_unbind_key(ord $key);
-    }
+    &rl_unbind_key;
 }
 
 =item C<ParseAndBind(LINE)>
@@ -449,7 +443,7 @@ detail see 'GNU Readline Library Manual'.
 
 sub ParseAndBind {
     my $self = shift;
-    rl_parse_and_bind(shift);
+    &rl_parse_and_bind;
 }
 
 # The following functions are defined in ReadLine.pm.
@@ -492,6 +486,10 @@ my %Features = (appname => 1, minline => 1, autohistory => 1,
 		customCompletion => 1, tkRunning => 0);
 
 sub Features { \%Features; }
+
+#
+#	Readline/History Library Variable Access Routines
+#
 
 =item C<FetchVar(VARIABLE_NAME), StoreVar(VARIABLE_NAME, VALUE)>
 
@@ -543,6 +541,9 @@ my %_rl_vars
 
        rl_instream				=> ['IO', 0],
        rl_outstream				=> ['IO', 1],
+
+       rl_executing_keymap			=> ['K', 0],
+       rl_binding_keymap			=> ['K', 1],
       );
 
 sub FetchVar {
@@ -568,6 +569,8 @@ sub rl_fetch_var ( $ ) {
 	return _rl_fetch_function($id);
     } elsif ($type eq 'IO') {
 	return _rl_fetch_iostream($id);
+    } elsif ($type eq 'K') {
+	return _rl_fetch_keymap($id);
     } else {
 	carp "Term::ReadLine::Gnu::FetchVar: Illegal type `$type'\n";
 	return undef;
@@ -609,6 +612,9 @@ sub rl_store_var ( $$ ) {
 	return _rl_store_function($value, $id);
     } elsif ($type eq 'IO') {
 	return _rl_store_iostream($value, $id);
+    } elsif ($type eq 'K') {
+	carp "Term::ReadLine::Gnu::StoreVar: read only variable `$name'\n";
+	return undef;
     } else {
 	carp "Term::ReadLine::Gnu::StoreVar: Illegal type `$type'\n";
 	return undef;
@@ -646,12 +652,38 @@ package Term::ReadLine::Gnu;
 foreach (keys %_rl_vars) {
     eval "use vars '\$$_'; tie \$$_, 'Term::ReadLine::Gnu::Var', '$_';";
 }
+
+#
+#	GNU Readline/History Library constant definition
+#
+# for rl_filename_quoting_function
+sub NO_MATCH	 { 0; }
+sub SINGLE_MATCH { 1; }
+sub MULT_MATCH   { 2; }
+
+# for rl_generic_bind, rl_function_of_keyseq
+sub ISFUNC	{ 0; }
+sub ISKMAP	{ 1; }
+sub ISMACR	{ 2; }
+
+# for rl_add_undo
+sub UNDO_DELETE	{ 0; }
+sub UNDO_INSERT	{ 1; }
+sub UNDO_BEGIN	{ 2; }
+sub UNDO_END	{ 3; }
 
 #
 #	Readline function wrappers
 #
-sub _str2map ( $ ) { return ref $_[0] ? $_[0] : rl_get_keymap_by_name($_[0]); }
-sub _str2fn ( $ )  { return ref $_[0] ? $_[0] : rl_named_function($_[0]); }
+sub _str2map ( $ ) {
+    return ref $_[0] ? $_[0]
+	: (rl_get_keymap_by_name($_[0]) || carp "unknown keymap name \`$_[0]\'\n");
+}
+
+sub _str2fn ( $ ) {
+    return ref $_[0] ? $_[0]
+	: (rl_named_function($_[0]) || carp "unknown function name \`$_[0]\'\n");
+}
 
 sub rl_copy_keymap ( $ )    { return _rl_copy_keymap(_str2map($_[0])); }
 sub rl_discard_keymap ( $ ) { return _rl_discard_keymap(_str2map($_[0])); }
@@ -667,12 +699,36 @@ sub rl_bind_key ( $$;$ ) {
 
 sub rl_unbind_key ( $;$ ) {
     if (defined $_[1]) {
-	return _rl_bind_key($_[0], _str2map($_[1]));
+	return _rl_unbind_key($_[0], _str2map($_[1]));
     } else {
-	return _rl_bind_key($_[0]);
+	return _rl_unbind_key($_[0]);
     }
 }
 
+sub rl_generic_bind ( $$$;$ ) {
+    if      ($_[0] == ISFUNC) {
+	if (defined $_[3]) {
+	    _rl_generic_bind_function($_[1], _str2fn($_[2]), _str2map($_[3]));
+	} else {
+	    _rl_generic_bind_function($_[1], _str2fn($_[2]));
+	}
+    } elsif ($_[0] == ISKMAP) {
+	if (defined $_[3]) {
+	    _rl_generic_bind_keymap($_[1], _str2map($_[2]), _str2map($_[3]));
+	} else {
+	    _rl_generic_bind_keymap($_[1], _str2map($_[2]));
+	}
+    } elsif ($_[0] == ISMACR) {
+	if (defined $_[3]) {
+	    _rl_generic_bind_macro($_[1], $_[2], _str2map($_[3]));
+	} else {
+	    _rl_generic_bind_macro($_[1], $_[2]);
+	}
+    } else {
+	carp("Term::ReadLine::Gnu::rl_generic_bind: invalid \`type\'\n");
+    }
+}
+	    
 sub rl_call_function ( $;$$ ) {
     if (defined $_[2]) {
 	return _rl_call_function(_str2fn($_[0]), $_[1], $_[2]);
@@ -696,25 +752,6 @@ sub rl_message {
     my $line = sprintf($fmt, @_);
     _rl_message($line);
 }
-
-#
-#	GNU Readline/History Library constant definition
-#
-# for rl_filename_quoting_function
-sub NO_MATCH	 { 0; }
-sub SINGLE_MATCH { 1; }
-sub MULT_MATCH   { 2; }
-
-# for rl_generic_bind, rl_function_of_keyseq
-sub ISFUNC	{ 0; }
-sub ISKMAP	{ 1; }
-sub ISMACR	{ 2; }
-
-# for rl_add_undo
-sub UNDO_DELETE	{ 0; }
-sub UNDO_INSERT	{ 1; }
-sub UNDO_BEGIN	{ 2; }
-sub UNDO_END	{ 3; }
 
 #
 #	List Completion Function
@@ -788,9 +825,14 @@ Examples:
 
 =item base_function
 
-	rl_library_version
+	rl_library_version (read only)
 	rl_terminal_name
 	rl_readline_name
+
+=item keybind_function
+
+	rl_executing_keymap (read only)
+	rl_binding_keymap (read only)
 
 =item misc_function
 
@@ -862,7 +904,7 @@ Examples:
 	add_history(string)
 	history_expand(line)
 
-=item bind_function
+=item keybind_function
 
 	rl_add_defun(name, perl_fn [,key])
 	rl_make_bare_keymap()
@@ -1104,5 +1146,13 @@ Hiroo Hayashi, hayashi@pdcd.ilab.toshiba.co.jp
 =head1 TODO
 
 support TkRunning
+
+=head1 BUGS
+
+rl_add_defun() can define up to 16 functions.
+
+rl_message() does not work.
+
+Some other functions are not tested yet.
 
 =cut
