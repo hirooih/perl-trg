@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.75 1999-04-03 15:57:20 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.76 1999-04-03 16:23:04 hayashi Exp $
  *
  *	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
  *
@@ -1271,6 +1271,23 @@ rl_function_dumper(readable = 0)
 void
 rl_list_funmap_names()
 	PROTOTYPE:
+
+# return list of all function name. (Term::Readline::Gnu specific function)
+void
+rl_get_all_function_names()
+	PROTOTYPE:
+	PPCODE:
+	{
+	  int i, count;
+	  /* count number of entries */
+	  for (count = 0; funmap[count]; count++)
+	    ;
+	  
+	  EXTEND(sp, count);
+	  for (i = 0; i < count; i++) {
+	    PUSHs(sv_2mortal(newSVpv(funmap[i]->name, 0)));
+	  }
+	}
 
 #
 #	2.4.5 Allowing Undoing
