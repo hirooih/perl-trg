@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.11 1997-01-24 15:02:03 hayashi Exp $
+#	$Id: readline.t,v 1.12 1997-02-01 17:51:04 hayashi Exp $
 #
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl t/readline.t'
@@ -12,7 +12,7 @@ END {print "not ok 1\n" unless $loaded;}
 $^W = 1;			# perl -w
 use strict;
 use vars qw($loaded);
-use lib qw(./blib/arch ./blib/lib);
+use ExtUtils::testlib;
 use Term::ReadLine;
 use Term::ReadLine::Gnu qw(:all);
 
@@ -112,6 +112,7 @@ sub toprint {
     join('',map{ord($_)<32 ? '\C-'.lc(chr(ord($_)+64)) : $_}(split('',$_[0])));
 }
 
+print $OUT "\n";
 foreach ("\co", "\ct", "\cx",
 	 "\cx\ct", "\cxt", "\cx\cv", "\cxv",
 	 "\e?f", "\e?v", "\e?i") {
