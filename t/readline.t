@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.32 1999-04-03 17:06:45 hayashi Exp $
+#	$Id: readline.t,v 1.33 1999-04-04 11:20:48 hayashi Exp $
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -497,7 +497,9 @@ $t->parse_and_bind('set bell-style none'); # make readline quiet
 
 $INSTR = "t/comp\cI\e*\cM";
 $line = $t->readline("insert completion>");
-$res = $line eq 't/comptest/0123 t/comptest/012345 t/comptest/023456 t/comptest/a_b t/comptest/README ';
+# "a_b" < "README" on some locale ? (bug?)
+$res = $line eq 't/comptest/0123 t/comptest/012345 t/comptest/023456 t/comptest/README t/comptest/a_b '
+    || $line eq 't/comptest/0123 t/comptest/012345 t/comptest/023456 t/comptest/a_b t/comptest/README ';
 ok('insert completion', $line);
 
 $INSTR = "t/comp\cIR\cI\cM";
