@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.22 1997-01-03 14:41:34 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.23 1997-01-03 15:55:05 hayashi Exp $
  *
  *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
  *
@@ -114,6 +114,9 @@ rl_insert_preput ()
  *	custom function support routines
  */
 
+/*
+ * function name table management routines
+ */
 struct fnnode {			/* perl function name table entry */
   struct fnnode *next;
   char *name;
@@ -140,13 +143,14 @@ register_myfun(char *name, SV *fn)
   struct fnnode *np;
 
   if ((np = lookup_myfun(name)) != NULL) {
-    np->name = name;
+    xfree(np->name);
+    np->name = dupstr(name);
     sv_setsv(np->fn, fn);
     return 0;
   } else {
     New(0, np, 1, struct fnnode);
     np->next = fnlist;
-    np->name = name;
+    np->name = dupstr(name);
     np->fn = newSVsv(fn);
     fnlist = np;
     return 1;
@@ -162,6 +166,7 @@ discard_myfun(char *name)
   for (lp = &fnlist, np = fnlist; np; lp = &(np->next), np = np->next)
     if (strcmp(np->name, name) == 0) {
       *lp = np->next;
+      xfree(np->name);
       SvREFCNT_dec(np->fn);
       Safefree(np);
       return 0;
@@ -171,6 +176,81 @@ discard_myfun(char *name)
 }
 #endif
 
+/*
+ * keymap name table management routines
+ */
+struct kmnode {			/* custom keymap table entry */
+  struct kmnode *next;
+  char *name;
+  Keymap map;
+};
+
+static struct kmnode *kmlist = NULL;
+
+static struct kmnode *
+lookup_mykeymap(char *name)
+{
+  struct kmnode *np;
+
+  for (np = kmlist; np; np = np->next)
+    if (strcmp(np->name, name) == 0)
+      return np;
+
+  return NULL;
+}
+
+static int
+register_mykeymap(char *name, Keymap map)
+{
+  struct kmnode *np;
+
+  if ((np = lookup_mykeymap(name)) != NULL) {
+    xfree(np->name);
+    np->name = dupstr(name);
+    np->map = map;
+    return 0;
+  } else {
+    New(0, np, 1, struct kmnode);
+    np->next = kmlist;
+    np->name = dupstr(name);
+    np->map = map;
+    kmlist = np;
+    return 1;
+  }
+}
+
+static int
+discard_mykeymap(char *name)
+{
+  struct kmnode *np, **lp;
+
+  for (lp = &kmlist, np = kmlist; np; lp = &(np->next), np = np->next)
+    if (strcmp(np->name, name) == 0) {
+      *lp = np->next;
+      xfree(np->name);
+      Safefree(np);
+      return 0;
+    }
+
+  return 1;
+}
+
+static int
+discard_keymap(char *name)
+{
+  struct kmnode *np;
+
+  if ((np = lookup_mykeymap(name)) != NULL) {
+    rl_discard_keymap(np->map);
+    xfree(np->name);
+    Safefree(np);
+    discard_mykeymap(name);
+  }
+}
+
+/*
+ * function keybind table management routines
+ */
 struct fbnode {			/* perl function keybind table entry */
   struct fbnode *next;
   int key;
@@ -430,6 +510,46 @@ rl_add_defun(name, fn, key = -1)
 
 #	2.4.2 Selection a Keymap
 
+int
+rl_make_bare_keymap(name)
+	char *name
+	PROTOTYPE: $
+	CODE:
+	{
+	  discard_keymap(name);
+	  register_mykeymap(name, rl_make_bare_keymap());
+	}
+	  
+int
+rl_copy_keymap(map, name)
+	char *map
+	char *name
+	PROTOTYPE: $$
+	CODE:
+	{
+	  discard_keymap(name);
+	  register_mykeymap(name, rl_copy_keymap(map));
+	}
+	  
+int
+rl_make_keymap(name)
+	char *name
+	PROTOTYPE: $
+	CODE:
+	{
+	  discard_keymap(name);
+	  register_mykeymap(name, rl_make_keymap());
+	}
+	  
+int
+rl_discard_keymap(name)
+	char *name
+	PROTOTYPE: $
+	CODE:
+	{
+	  discard_keymap(name);
+	}
+	  
 void
 rl_get_keymap()
 	CODE:
