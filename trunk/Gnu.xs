@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.17 1996-12-29 17:59:38 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.18 1996-12-30 15:58:30 hayashi Exp $
  *
  *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
  *
@@ -122,7 +122,7 @@ lookup_defun(int key)
 {
   struct fnode *np;
 
-  for (np = flist; np != NULL; np = np->next)
+  for (np = flist; np; np = np->next)
     if (np->key == key) {
       /*warn("lookup:[%d,%p]\n", np->key, np->fn);*/
       return np;
@@ -156,7 +156,7 @@ dismiss_defun(int key)
 {
   struct fnode *np, **lp;
 
-  for (lp = &flist, np = flist; np != NULL; lp = &(np->next), np = np->next)
+  for (lp = &flist, np = flist; np; lp = &(np->next), np = np->next)
     if (np->key == key) {
       *lp = np->next;
       SvREFCNT_dec(np->fn);
@@ -309,7 +309,7 @@ _rl_readline(prompt = NULL, preput = NULL)
 	  line_read = readline(prompt);
 
 	  ST(0) = sv_newmortal(); /* default return value is 'undef' */
-	  if (line_read != NULL) {
+	  if (line_read) {
 	    sv_setpv(ST(0), line_read);
 	    xfree(line_read);
 	  }
@@ -326,10 +326,10 @@ _rl_set_instream(fildes)
 	CODE:
 	{
 	  FILE *fd;
-	  if ((fd = fdopen(fildes, "r")) == NULL)
-	    warn("Gnu.xs:rl_set_instream: cannot fdopen");
-	  else
+	  if ((fd = fdopen(fildes, "r")) != NULL)
 	    rl_instream = fd;
+	  else
+	    warn("Gnu.xs:rl_set_instream: cannot fdopen");
 	}
 
 void
@@ -339,10 +339,10 @@ _rl_set_outstream(fildes)
 	CODE:
 	{
 	  FILE *fd;
-	  if ((fd = fdopen(fildes, "w")) == NULL)
-	    warn("Gnu.xs:rl_set_outstream: cannot fdopen");
-	  else
+	  if ((fd = fdopen(fildes, "w")) != NULL)
 	    rl_outstream = fd;
+	  else
+	    warn("Gnu.xs:rl_set_outstream: cannot fdopen");
 	}
 
 #
@@ -392,12 +392,12 @@ rl_do_named_function(name, count = 1, key = -1)
 	CODE:
 	{
 	  Function *fn;
-	  if ((fn = rl_named_function(name)) == NULL) {
+	  if ((fn = rl_named_function(name)) != NULL) {
+	    RETVAL = (*fn)(count, key);
+	  } else {
 	    warn("Gnu.xs:_rl_do_named_function: undefined function `%s'",
 		 name);
 	    RETVAL = -1;
-	  } else {
-	    RETVAL = (*fn)(count, key);
 	  }
 	}
 
@@ -466,10 +466,15 @@ _rl_store_completion_entry_function(fn)
 	    rl_completion_entry_function
 	      = (Function *)username_completion_function;
 	  } else {
-	    if (completion_entry_function == NULL)
-	      completion_entry_function = newSVsv(fn);
-	    else
+	    /*
+	     * Don't remove braces. The definition of SvSetSV() of
+	     * Perl 5.003 has a problem.
+	     */
+	    if (completion_entry_function) {
 	      SvSetSV(completion_entry_function, fn);
+	    } else {
+	      completion_entry_function = newSVsv(fn);
+	    }
 
 	    rl_completion_entry_function
 	      = (Function *)completion_entry_function_lapper;
@@ -484,10 +489,12 @@ _rl_store_attempted_completion_function(fn)
 	  if (! SvTRUE(fn)) {
 	    rl_attempted_completion_function = NULL;
 	  } else {
-	    if (attempted_completion_function == NULL)
-	      attempted_completion_function = newSVsv(fn);
-	    else
+	    /* Don't remove braces. */
+	    if (attempted_completion_function) {
 	      SvSetSV(attempted_completion_function, fn);
+	    } else {
+	      attempted_completion_function = newSVsv(fn);
+	    }
 
 	    rl_attempted_completion_function
 	      = (CPPFunction *)attempted_completion_function_lapper;
@@ -509,15 +516,15 @@ completion_matches(text, fn)
 	  } else {
 	    /* use completion_entry_function temporarily */
 	    SV * save = completion_entry_function;
-	    if (save == NULL)
-	      completion_entry_function = newSVsv(fn);
-	    else
+	    if (save)
 	      SvSetSV(completion_entry_function, fn);
+	    else
+	      completion_entry_function = newSVsv(fn);
 	    matches = completion_matches(text,
 					 completion_entry_function_lapper);
 	    completion_entry_function = save;
 	  }
-	  if (matches != NULL) {
+	  if (matches) {
 	    int i, count;
 
 	    /* count number of entries */
