@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.89 2001-10-28 04:15:04 hayashi Exp $
+#	$Id: Gnu.pm,v 1.90 2002-03-31 05:32:21 hiroo Exp $
 #
 #	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
 #
@@ -63,7 +63,7 @@ use Carp;
     use DynaLoader;
     use vars qw($VERSION @ISA @EXPORT_OK);
 
-    $VERSION = '1.11';
+    $VERSION = '1.12';
 
     # Term::ReadLine::Gnu::AU makes a function in
     # `Term::ReadLine::Gnu::XS' as a method.
@@ -115,6 +115,11 @@ sub Features { \%Features; }
 #
 #	GNU Readline/History Library constant definition
 #	These are included in @EXPORT_OK.
+
+# I can define these variables in XS code to use the value defined in
+# readline.h, etc.  But it needs some calling convention change and
+# will cause compatiblity problem. I hope the definition of these
+# constant value will not be changed.
 
 # for non-printing characters in prompt string
 sub RL_PROMPT_START_IGNORE	{ "\001"; }
@@ -1026,6 +1031,8 @@ When C<MAX> is ommited, the max length of an item in @matches is used.
 
 =item Miscellaneous Functions
 
+=over 4
+
 =item C<macro_bind(KEYSEQ, MACRO [,MAP])>
 
 	int	rl_macro_bind(const str keyseq, const str macro, Keymap map)
@@ -1049,8 +1056,6 @@ When C<MAX> is ommited, the max length of an item in @matches is used.
 =item C<get_termcap(cap)>
 
 	str	rl_get_termcap(cap)
-
-=over 4
 
 =back
 
@@ -1709,6 +1714,27 @@ None.
 
 =item F<eg/*> and F<t/*> in the Term::ReadLine::Gnu distribution
 
+=item Articles related to Term::ReadLine::Gnu
+
+=over 4
+
+=item effective perl programming
+
+	http://www.usenix.org/publications/login/2000-7/features/effective.html
+
+This article demonstrates how to integrate Term::ReadLine::Gnu into an
+interactive command line program.
+
+=item eijiro (Japanese)
+
+	http://bulknews.net/lib/columns/02_eijiro/column.html
+
+A command line interface to Eijiro, Japanese-English dictionary
+service on WWW.
+
+
+=back
+
 =item Works which use Term::ReadLine::Gnu
 
 =over 4
@@ -1722,18 +1748,9 @@ None.
 	http://www.focusresearch.com/gregor/psh/
 
 The Perl Shell is a shell that combines the interactive nature of a
-Unix shell with the power of Perl.  The goal is to eventually have a
-full featured shell that behaves as expected for normal shell
-activity.  But, the Perl Shell will use Perl syntax and functionality
-for for control-flow statements and other things.
+Unix shell with the power of Perl.
 
-=item Ghostscript Shell
-
-	http://www.panix.com/~jdf/gshell/
-
-It provides a friendly way to play with the Ghostscript interpreter,
-including command history and auto-completion of Postscript font names
-and reserved words.
+A programmable completion feature compatible with bash is implemented.
 
 =item SPP (Synopsys Plus Perl)
 
@@ -1744,6 +1761,47 @@ shell programs.  SPP is inspired by the original dc_perl written by
 Steve Golson, but it's an entirely new implementation.  Why is it
 called SPP and not dc_perl?  Well, SPP was written to wrap around any
 of Synopsys' shells.
+
+=item PFM (Personal File Manager for Unix/Linux)
+
+	http://p-f-m.sourceforge.net/
+
+Pfm is a terminal-based file manager written in Perl, based on PFM.COM
+for MS-DOS (originally by Paul Culley and Henk de Heer).
+
+=item The soundgrab
+
+	http://rawrec.sourceforge.net/soundgrab/soundgrab.html
+
+soundgrab is designed to help you slice up a big long raw audio file
+(by default 44.1 kHz 2 channel signed sixteen bit little endian) and
+save your favorite sections to other files. It does this by providing
+you with a cassette player like command line interface.
+
+=item PDL (The Perl Data Language)
+
+	http://pdl.perl.org/index_en.html
+
+PDL (``Perl Data Language'') gives standard Perl the ability to
+compactly store and speedily manipulate the large N-dimensional data
+arrays which are the bread and butter of scientific computing.
+
+=item PIQT (Perl Interactive DBI Query Tool)
+
+	http://piqt.sourceforge.net/
+
+PIQT is an interactive query tool using the Perl DBI database
+interface. It supports ReadLine, provides a built in scripting language
+with a Lisp like syntax, an online help system, and uses wrappers to
+interface to the DBD modules.
+
+=item Ghostscript Shell
+
+	http://www.panix.com/~jdf/gshell/
+
+It provides a friendly way to play with the Ghostscript interpreter,
+including command history and auto-completion of Postscript font names
+and reserved words.
 
 =back
 
