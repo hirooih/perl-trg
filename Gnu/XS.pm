@@ -2,7 +2,7 @@
 #
 #	XS.pm : perl function definition for Term::ReadLine::Gnu
 #
-#	$Id: XS.pm,v 1.4 1999-03-17 16:10:33 hayashi Exp $
+#	$Id: XS.pm,v 1.5 1999-03-27 01:33:39 hayashi Exp $
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -61,7 +61,38 @@ my $rl_term_set = ',,,';
 	$i = $state ? $i + 1 : 0; # clear counter at the first call
 	my $cw = $Attribs{completion_word};
 	for (; $i <= $#{$cw}; $i++) {
-	    return $cw->[$i] if ($cw->[$i] =~ /^$text/);
+	    return $cw->[$i] if ($cw->[$i] =~ /^\Q$text/);
+	}
+	return undef;
+    }
+}
+
+#
+#	wrapper completion function of 'completion_function'
+#	for compatibility with Term::ReadLine::Perl
+#
+{
+    my $i;
+    my @matches;
+
+    sub _trp_completion_function ( $$ ) {
+	my($text, $state) = @_;
+
+	my $cf;
+	return undef unless defined ($cf = $Attribs{completion_function});
+
+	if ($state) {
+	    $i++;
+	} else {
+	    # the first call
+	    $i = 0;		# clear index
+	    @matches = &$cf($text,
+			    $Attribs{line_buffer},
+			    $Attribs{point} - length($text));
+	}
+
+	for (; $i <= $#matches; $i++) {
+	    return $matches[$i] if ($matches[$i] =~ /^\Q$text/);
 	}
 	return undef;
     }
@@ -194,7 +225,11 @@ sub rl_message {
 #
 sub rl_filename_list {
     my ($text) = @_;
-    return completion_matches($text, \&filename_completion_function);
+
+    # lcd : lowest common denominator
+    my ($lcd, @matches) = completion_matches($text,
+					     \&filename_completion_function);
+    return @matches ? @matches : $lcd;
 }
 
 #
@@ -347,5 +382,4 @@ sub shadow_redisplay {
     print $OUT (tgetstr('le') # cursor left
 		x (length($Attribs{line_buffer}) - $Attribs{point}));
     $oldfh = select($OUT); $| = 0; select($oldfh);
-    1;				# warn me without this.  Why?
 }
