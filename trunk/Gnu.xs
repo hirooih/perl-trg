@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.13 1996-12-28 14:58:38 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.14 1996-12-29 13:52:06 hayashi Exp $
  *
  *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
  *
@@ -77,25 +77,15 @@ static struct int_vars {
   &history_base, 0,					/* 12 */
   &history_length, 0,					/* 13 */
   &history_offset, 0,					/* 14 */
-  (int *)&history_expansion_char, 1,			/* 15 */
-  (int *)&history_subst_char, 1,			/* 16 */
-  (int *)&history_comment_char, 1,			/* 17 */
-  &history_quotes_inhibit_expansion, 0			/* 18 */
+  (int *)&history_expansion_char, 1,			/* 14 */
+  (int *)&history_subst_char, 1,			/* 15 */
+  (int *)&history_comment_char, 1,			/* 16 */
+  &history_quotes_inhibit_expansion, 0			/* 17 */
 };
 
 /* from GNU Readline:xmalloc.c */
 extern char *xmalloc (int);
-#ifdef HAVE_READLINE_2_1
 extern char *xfree (char *);
-#else
-static void
-xfree (string)
-     char *string;
-{
-  if (string)
-    free (string);
-}
-#endif
 
 static char *
 dupstr (s)			/* duplicate string */
@@ -292,6 +282,11 @@ attempted_completion_function_lapper(char *text, int start, int end)
 
 MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu
 
+########################################################################
+#
+#	Gnu Readline Library
+#
+########################################################################
 #
 #	readline()
 #
@@ -323,115 +318,9 @@ _rl_readline(prompt = (char *)NULL, preput = (char *)NULL)
 	}
 
 #
-#	History Support Routines
-#
-void
-history_expand(line)
-	char *line
-	PROTOTYPE: $
-	PPCODE:
-	{
-	  char *expansion;
-	  int result;
-
-	  result = history_expand(line, &expansion);
-	  EXTEND(sp, 2);
-	  PUSHs(sv_2mortal(newSViv(result)));
-	  PUSHs(sv_2mortal(newSVpv(expansion, 0)));
-	  xfree(expansion);
-	}
-
-int
-_stifle_history(i)
-	SV *i
-	PROTOTYPE: $
-	CODE:
-	{
-	  if (SvOK(i)) {
-	    int max = SvIV(i);
-	    stifle_history(max);
-	    RETVAL = max;
-	  } else {
-	    RETVAL = unstifle_history();
-	  }
-	}
-	OUTPUT:
-	RETVAL
-
-void
-add_history(...)
-	PROTOTYPE: @
-	CODE:
-	{
-	  register int i;
-	  for (i = 0; i < items; i++)
-	    add_history((char *)SvPV(ST(i), na));
-	}
-
-int
-where_history()
-
-void
-history_get(offset)
-	int offset
-	CODE:
-	{
-	  HIST_ENTRY *hist;
-
-	  ST(0) = sv_newmortal(); /* default return value is 'undef' */
-
-	  hist = history_get(offset);
-	  if (hist && hist->line)
-	    sv_setpv(ST(0), hist->line);
-	}
-
-int
-history_set_pos(pos)
-	int pos
-
-void
-_rl_GetHistory()
-	PROTOTYPE:
-	PPCODE:
-	{
-	  register HIST_ENTRY **the_list;
-	  register int i;
-     
-	  the_list = history_list ();
-	  if (the_list) {
-	    EXTEND(sp, history_length);
-	    for (i = 0; i < history_length; i++)
-	      PUSHs(sv_2mortal(newSVpv(the_list[i]->line,0)));
-	  }
-	}
-
-void
-_rl_SetHistory(...)
-	PROTOTYPE: @
-	CODE:
-	{
-	  register int i;
-
-	  clear_history();
-	  for (i = 0; i < items; i++)
-	    add_history((char *)SvPV(ST(i), na));
-	}
-
-int
-read_history_range(filename = (char *)NULL, from = 0, to = -1)
-	char *filename
-	int from
-	int to
-	PROTOTYPE: ;$$$
-
-int
-write_history(filename = (char *)NULL)
-	char *filename
-	PROTOTYPE: ;$
-
-#
 #	I/O stream
 #
+
 void
 _rl_set_instream(fildes)
 	int	fildes
@@ -523,7 +412,6 @@ rl_begin_undo_group()
 int
 rl_end_undo_group()
 
-# !!! rl_add_undo is not return int
 void
 rl_add_undo(what, start, end, text)
 	int	what
@@ -648,9 +536,202 @@ completion_matches(text, fn)
 	    /* return null list */
 	  }
 	}
+
+########################################################################
+#
+#	Gnu History Library
+#
+########################################################################
+#
+#	History List Management
+#
+void
+add_history(...)
+	PROTOTYPE: @
+	CODE:
+	{
+	  register int i;
+	  for (i = 0; i < items; i++)
+	    add_history((char *)SvPV(ST(i), na));
+	}
+
+#!!!
+# void
+# remove_history(which)
+# 	int which
+# 	CODE:
+# 	{
+# 	}
+
+#!!!
+# void
+# replace_history_entry(which, line)
+# 	int which
+# 	char *line
+# 	CODE:
+# 	{
+# 	}
+
+void
+clear_history()
+
+int
+stifle_history(i)
+	SV *i
+	PROTOTYPE: $
+	CODE:
+	{
+	  if (SvOK(i)) {
+	    int max = SvIV(i);
+	    stifle_history(max);
+	    RETVAL = max;
+	  } else {
+	    RETVAL = unstifle_history();
+	  }
+	}
+	OUTPUT:
+	RETVAL
+
+int
+history_is_stifled()
+
+void
+_rl_SetHistory(...)
+	PROTOTYPE: @
+	CODE:
+	{
+	  register int i;
+
+	  clear_history();
+	  for (i = 0; i < items; i++)
+	    add_history((char *)SvPV(ST(i), na));
+	}
 
 #
-#	Readline Variable Access Routines
+#	Information About the History List
+#
+int
+where_history()
+
+#!!
+# void
+# current_history()
+
+void
+history_get(offset)
+	int offset
+	CODE:
+	{
+	  HIST_ENTRY *hist;
+
+	  ST(0) = sv_newmortal(); /* default return value is 'undef' */
+
+	  hist = history_get(offset);
+	  if (hist && hist->line)
+	    sv_setpv(ST(0), hist->line);
+	}
+
+int
+history_total_bytes()
+
+void
+_rl_GetHistory()
+	PROTOTYPE:
+	PPCODE:
+	{
+	  register HIST_ENTRY **the_list;
+	  register int i;
+     
+	  the_list = history_list ();
+	  if (the_list) {
+	    EXTEND(sp, history_length);
+	    for (i = 0; i < history_length; i++)
+	      PUSHs(sv_2mortal(newSVpv(the_list[i]->line,0)));
+	  }
+	}
+
+#
+#	Moving Around the History List
+#
+int
+history_set_pos(pos)
+	int pos
+
+#!!
+# void
+# previous_history()
+
+#!!
+# void
+# next_history()
+
+#
+#	Searching the History List
+#
+int
+history_search(string, direction)
+	char *string
+	int direction
+
+int
+history_search_prefix(string, direction)
+	char *string
+	int direction
+
+int
+history_search_pos(string, direction, pos)
+	char *string
+	int direction
+	int pos
+
+#
+#	Managing the History File
+#
+int
+read_history_range(filename = (char *)NULL, from = 0, to = -1)
+	char *filename
+	int from
+	int to
+	PROTOTYPE: ;$$$
+
+int
+write_history(filename = (char *)NULL)
+	char *filename
+	PROTOTYPE: ;$
+
+int
+append_history(nelements, filename = (char *)NULL)
+	int nelements
+	char *filename
+	PROTOTYPE: ;$
+
+int
+history_truncate_file(filename = (char *)NULL, nlines = 0)
+	char *filename
+	int nlines
+	PROTOTYPE: ;$$
+
+#
+#	History Expansion
+#
+void
+history_expand(line)
+	char *line
+	PROTOTYPE: $
+	PPCODE:
+	{
+	  char *expansion;
+	  int result;
+
+	  result = history_expand(line, &expansion);
+	  EXTEND(sp, 2);
+	  PUSHs(sv_2mortal(newSViv(result)));
+	  PUSHs(sv_2mortal(newSVpv(expansion, 0)));
+	  xfree(expansion);
+	}
+
+#
+#	Readline/History Library Variable Access Routines
 #
 void
 _rl_store_str(pstr, id)
