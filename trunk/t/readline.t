@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.40 2001-04-22 14:08:02 hayashi Exp $
+#	$Id: readline.t,v 1.41 2001-10-28 03:52:42 hayashi Exp $
 #
 #	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
 #
@@ -11,7 +11,7 @@
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl t/readline.t'
 
-BEGIN {print "1..102\n"; $n = 1;}
+BEGIN {print "1..104\n"; $n = 1;}
 END {print "not ok 1\tfail to loading\n" unless $loaded;}
 
 my $verbose = defined @ARGV && ($ARGV[0] eq 'verbose');
@@ -85,10 +85,12 @@ $res = defined $a; ok('Attrib method');
 ########################################################################
 # 2.3 Readline Variables
 
-my ($version) = $a->{library_version} =~ /(\d+\.\d+)/;
+my ($maj, $min) = $a->{library_version} =~ /(\d+)\.(\d+)/;
+my $version = $a->{readline_version};
+$res = ($version == 0x100 * $maj + $min); ok('readline_version');
 
 # Version 2.0 is NOT supported.
-$res = $version > 2.0; ok('rl_version');
+$res = $version > 0x0200; ok('rl_version');
 
 # check the values of initialized variables
 $res = $a->{line_buffer} eq '';			ok;
@@ -96,14 +98,14 @@ $res = $a->{point} == 0;			ok;
 $res = $a->{end} == 0;				ok;
 $res = $a->{mark} == 0;				ok;
 $res = $a->{done} == 0;				ok;
-if ($version > 4.2 - 0.01) {
+if ($version >= 0x0402) {
     $res = $a->{num_chars_to_read} == 0;	ok('num_chars_to_read');
 } else {
     print "ok $n # skipped because GNU Readline Library is older than 4.2.\n";
     $n++;
 }
 $res = $a->{pending_input} == 0;		ok('pending_input');
-if ($version > 4.2 - 0.01) {
+if ($version >= 0x0402) {
     $res = $a->{dispatching} == 0;		ok('dispatching');
 } else {
     print "ok $n # skipped because GNU Readline Library is older than 4.2.\n";
@@ -111,7 +113,7 @@ if ($version > 4.2 - 0.01) {
 }
 $res = $a->{erase_empty_line} == 0;		ok;
 $res = ! defined($a->{prompt});			ok;
-if ($version > 4.2 - 0.01) {
+if ($version >= 0x0402) {
     $res = $a->{already_prompted} == 0;		ok('already_prompted');
     $res = $a->{gnu_readline_p} == 1;		ok('gnu_readline_p');
 } else {
@@ -120,7 +122,7 @@ if ($version > 4.2 - 0.01) {
     print "ok $n # skipped because GNU Readline Library is older than 4.2.\n";
     $n++;
 }
-if ($version < 4.2) {
+if ($version < 0x0402) {
     $res = ! defined($a->{terminal_name});	ok;
 } else {
     $res = $a->{terminal_name} eq $ENV{TERM};	ok;
@@ -137,7 +139,7 @@ $res = ! defined($a->{executing_keymap});	ok('executing_keymap');
 # anonymous keymap
 $res = defined($a->{binding_keymap});		ok('binding_keymap');
 
-if ($version > 4.2 - 0.01) {
+if ($version >= 0x0402) {
     $res = ! defined($a->{executing_macro});	ok('executing_macro');
     $res = ($a->{readline_state} == RL_STATE_INITIALIZED);
     ok('readline_state');
@@ -292,7 +294,7 @@ sub bind_my_function {
     $t->bind_key(ord "\cv", 'display-readline-version', 'emacs-ctlx');
     $t->parse_and_bind('"\C-xv": display-readline-version');
     $t->bind_key(ord "c", 'invert-case-line', 'emacs-meta');
-    if ($version > 4.2 - 0.1) {
+    if ($version >= 0x0402) {
 	# rl_set_key in introduced by GRL 4.2
 	$t->set_key("\eo", 'change-ornaments');
     } else {
@@ -305,7 +307,7 @@ sub bind_my_function {
     $t->generic_bind(ISKMAP, "\e?", $helpmap);
     $t->bind_key(ord "v", 'dump-variables', $helpmap);
     # 'dump-macros' is documented but not defined by GNU Readline 2.1
-    $t->generic_bind(ISFUNC, "\e?m", 'dump-macros') if $version > 2.1;
+    $t->generic_bind(ISFUNC, "\e?m", 'dump-macros') if $version > 0x0201;
     
     # bind a macro
     $mymacro = "\ca[insert text from beginning of line]";
@@ -335,7 +337,7 @@ $res = (is_boundp("\cT", 'reverse-line')
 	&& is_boundp("\eo",    'change-ornaments')
 	&& is_boundp("\e?f",   'dump-functions')
 	&& is_boundp("\e?v",   'dump-variables')
-	&& ($version <= 2.1 or is_boundp("\e?m",   'dump-macros')));
+	&& ($version <= 0x0201 or is_boundp("\e?m",   'dump-macros')));
 ok('function binding');
 
 # test rl_read_init_file
@@ -359,7 +361,7 @@ ok;
 $t->unbind_key(ord "\ct");	# reverse-line
 $t->unbind_key(ord "f", $helpmap); # dump-function
 $t->unbind_key(ord "v", 'emacs-ctlx'); # display-readline-version
-if ($version > 2.1) {
+if ($version > 0x0201) {
     $t->unbind_command_in_map('display-readline-version', 'emacs-ctlx');
     $t->unbind_function_in_map($t->named_function('dump-variables'), $helpmap);
 } else {
@@ -373,7 +375,7 @@ my @keyseqs = ($t->invoking_keyseqs('reverse-line'),
 	       $t->invoking_keyseqs('dump-variables'));
 $res = scalar @keyseqs == 0; ok('unbind_key',"@keyseqs");
 
-if ($version > 4.2 - 0.1) {
+if ($version >= 0x0402) {
     $t->add_funmap_entry('foo_bar', 'reverse-line');
 # This does not work.  We need `equal' in Lisp.
 #    $res = ($t->named_function('reverse-line')
@@ -431,6 +433,7 @@ ok('invoking_keyseqs');
 # rl_macro_bind!!!, rl_macro_dumpter!!!,
 # rl_variable_bind!!!, rl_variable_dumper!!!
 # rl_set_paren_blink_timeout!!!
+# rl_get_termcap!!!
 ########################################################################
 # 2.4.12 Alternate Interface
 # tested in callbac,.t
@@ -444,7 +447,7 @@ $res = $a->{catch_sigwinch} == 1;		ok('catch_sigwinch');
 # rl_cleanup_after_signal!!!, rl_free_line_state!!!,
 # rl_reset_after_signal!!!, rl_resize_terminal!!!,
 # rl_set_screen_size, rl_get_screen_size
-if ($version > 4.2 - 0.1) {
+if ($version >= 0x0402) {
     my ($rowsav, $colsav) =  $t->get_screen_size;
     $t->set_screen_size(60, 132);
     my ($row, $col) =  $t->get_screen_size;
@@ -760,6 +763,11 @@ $res = $line eq 't/comptest/';
 ok('directory_completion_hook', $line);
 undef $a->{directory_completion_hook};
 
+# filename_list
+my @m = $t->filename_list('t/comptest/01');
+$res = $#m == 1;
+ok('filename_list', $#m);
+
 $t->parse_and_bind('set bell-style audible'); # resume to default style
 
 ########################################################################
@@ -774,7 +782,7 @@ $a->{startup_hook} = undef;
 $a->{pre_input_hook} = sub { $a->{point} = 10; };
 $INSTR = "insert\cM";
 $line = $t->readline("rl_pre_input_hook test>", "cursor is, <- here");
-if ($version > 4.0 - 0.1) {
+if ($version >= 0x0400) {
     $res = $line eq 'cursor is,insert <- here'; ok('pre_input_hook', $line);
 } else {
     print "ok $n # skipped because GNU Readline Library is older than 4.0.\n";
@@ -795,7 +803,7 @@ print "ok $n\n"; $n++;
 #########################################################################
 # test rl_display_match_list
 
-if ($version > 4.0 - 0.1) {
+if ($version >= 0x0400) {
     my @match_list = @{$a->{completion_word}};
     $t->display_match_list(\@match_list);
     $t->parse_and_bind('set print-completions-horizontally on');
@@ -810,7 +818,7 @@ if ($version > 4.0 - 0.1) {
 #########################################################################
 # test rl_completion_display_matches_hook
 
-if ($version > 4.0 - 0.1) {
+if ($version >= 0x0400) {
     # See 'eg/perlsh' for better example
     $a->{completion_display_matches_hook} = sub  {
 	my($matches, $num_matches, $max_length) = @_;
