@@ -2,7 +2,7 @@
 #
 #	XS.pm : perl function definition for Term::ReadLine::Gnu
 #
-#	$Id: XS.pm,v 1.2 1999-03-15 15:08:15 hayashi Exp $
+#	$Id: XS.pm,v 1.3 1999-03-16 16:07:22 hayashi Exp $
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -44,23 +44,43 @@ use vars qw(*rl_unbind_function_in_map *rl_unbind_command_in_map);
 #
 #	a sample custom function
 #
-#	defined in this module for the compatibility with bash and
-#	Term::ReadLine::Perl
-#
+
+# The equivalent of the Korn shell C-o operate-and-get-next-history-line
+# editing command. 
+
+# This routine was borrowed from bash.
 sub operate_and_get_next {
     my ($count, $key) = @_;
 
-    if (defined $Term::ReadLine::Gnu::Next_Operate_Index) {
-	history_set_pos($Term::ReadLine::Gnu::Next_Operate_Index
-			- $Attribs{history_base});
-	undef $Term::ReadLine::Gnu::Next_Operate_Index;
-    }
-    rl_call_function("accept-line", $count, $key);
+    my $saved_history_line_to_use = -1;
+    my $old_rl_startup_hook;
 
-    $Term::ReadLine::Gnu::Operate_Index
-	= $Attribs{history_base} + where_history();
+    # Accept the current line.
+    rl_call_function('accept-line', 1, $key);
+
+    # Find the current line, and find the next line to use. */
+    my $where = where_history();
+    if ((history_is_stifled()
+	 && ($Attribs{history_length} >= $Attribs{max_input_history}))
+	|| ($where >= $Attribs{history_length} - 1)) {
+	$saved_history_line_to_use = $where;
+    } else {
+	$saved_history_line_to_use = $where + 1;
+    }
+    $old_rl_startup_hook = $Attribs{startup_hook};
+    $Attribs{startup_hook} = sub {
+	if ($saved_history_line_to_use >= 0) {
+	    rl_call_function('previous-history',
+			     $Attribs{history_length}
+			     - $saved_history_line_to_use,
+			     0);
+	    $Attribs{startup_hook} = $old_rl_startup_hook;
+	    $saved_history_line_to_use = -1;
+	}
+    };
 }
 
+# bind by default for the compatibility with bash and Term::ReadLine::Perl
 rl_add_defun('operate-and-get-next', \&operate_and_get_next, ord "\co");
 
 use vars qw(*read_history);
@@ -84,8 +104,8 @@ sub Tk_getc {
 *history_arg_extract = \*hist_arg_extract;
 
 1;
-
 __END__
+
 
 #
 #	Readline Library function wrappers
