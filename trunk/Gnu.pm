@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.45 1997-04-10 15:42:08 hayashi Exp $
+#	$Id: Gnu.pm,v 1.46 1997-04-13 14:24:40 hayashi Exp $
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
 #
@@ -9,7 +9,7 @@
 #	modify it under the same terms as Perl itself.
 #
 #	Some of documentation strings in this file are cited from the
-#	info of GNU Readline.
+#	GNU Readline/History Library Manual.
 
 package Term::ReadLine::Gnu;
 
@@ -239,7 +239,7 @@ sub Tk_getc {
     return Term::ReadLine::Gnu::XS::rl_getc($FILE);
 }
 
-=item C<addhistory(LINE1, LINE2, ...)>
+=item C<AddHistory(LINE1, LINE2, ...)>
 
 adds the lines to the history of input, from where it can be used if
 the actual C<readline> is present.
@@ -254,6 +254,7 @@ sub AddHistory {
 	$self->add_history($_);
     }
 }
+
 =item C<IN>, C<OUT>
 
 return the file handles for input and output or C<undef> if
@@ -302,7 +303,7 @@ minimal interface: C<appname> should be present if the first argument
 to C<new> is recognized, and C<minline> should be present if
 C<MinLine> method is not dummy.  C<autohistory> should be present if
 lines are put into history automatically (maybe subject to
-C<MinLine>), and C<addhistory> if C<addhistory> method is not dummy. 
+C<MinLine>), and C<addhistory> if C<AddHistory> method is not dummy. 
 C<preput> means the second argument to C<readline> method is processed.
 C<getHistory> and C<setHistory> denote that the corresponding methods are 
 present. C<tkRunning> denotes that a Tk application may run while ReadLine
@@ -1385,7 +1386,7 @@ Term::ReadLine::Perl (Term-ReadLine-xx.tar.gz)
 
 =head1 AUTHOR
 
-Hiroo Hayashi, hayashi@pdcd.ilab.toshiba.co.jp
+Hiroo Hayashi <hiroo.hayashi@toshiba.co.jp>
 
 =head1 TODO
 
