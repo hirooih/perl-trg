@@ -1,9 +1,9 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.59 1999-02-22 16:20:09 hayashi Exp $
+#	$Id: Gnu.pm,v 1.60 1999-03-01 15:33:44 hayashi Exp $
 #
-#	Copyright (c) 1996,1997,1998 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -54,7 +54,7 @@ use Carp;
     use DynaLoader;
     use vars qw($VERSION @ISA @EXPORT_OK);
 
-    $VERSION = '1.04';
+    $VERSION = '1.05';
 
     @ISA = qw(Term::ReadLine::Stub Term::ReadLine::Gnu::AU
 	      Exporter DynaLoader);
@@ -660,6 +660,9 @@ use vars qw(%_rl_vars);
        history_subst_char			=> ['C', 15],
        history_comment_char			=> ['C', 16],
        history_quotes_inhibit_expansion		=> ['I', 17],
+       rl_erase_empty_line			=> ['I', 18], # added GRL 4.0
+       rl_catch_signals				=> ['I', 19], # added GRL 4.0
+       rl_catch_sigwinch			=> ['I', 20], # added GRL 4.0
 
        rl_startup_hook				=> ['F', 0],
        rl_event_hook				=> ['F', 1],
@@ -667,6 +670,14 @@ use vars qw(%_rl_vars);
        rl_redisplay_function			=> ['F', 3],
        rl_completion_entry_function		=> ['F', 4],
        rl_attempted_completion_function		=> ['F', 5],
+       rl_filename_quoting_function		=> ['F', 6],
+       rl_filename_dequoting_function		=> ['F', 7],
+       rl_char_is_quoted_p			=> ['F', 8],
+       rl_ignore_some_completions_function	=> ['F', 9],
+       rl_directory_completion_hook		=> ['F', 10],
+       history_inhibit_expansion_function	=> ['F', 11],
+       rl_pre_input_hook			=> ['F', 12], # added GRL 4.0
+       rl_completion_display_matches_hook	=> ['F', 13], # added GRL 4.0
 
        rl_instream				=> ['IO', 0],
        rl_outstream				=> ['IO', 1],
@@ -1016,6 +1027,14 @@ detail see 'GNU Readline Library Manual'.
 
 	int	rl_clear_message()
 
+=item C<save_prompt>
+
+	void	rl_save_prompt()
+
+=item C<restore_prompt>
+
+	void	rl_restore_prompt()
+
 =back
 
 =item Modifying Text
@@ -1068,6 +1087,11 @@ detail see 'GNU Readline Library Manual'.
 
 	int	ding()
 
+=item C<display_match_list(MATCHES)>
+
+	void	rl_display_match_list(@str)	# GRL 4.0
+	void	rl_display_match_list(\@str)	# GRL 4.0
+
 =back
 
 =item Alternate Interface
@@ -1087,6 +1111,36 @@ detail see 'GNU Readline Library Manual'.
 	void	rl_callback_handler_remove()
 
 =back
+
+=back
+
+=head2 Readline Signal Handling
+
+=over 4
+
+=item C<cleanup_after_signal>
+
+	void	rl_cleanup_after_signal()	# GRL 4.0
+
+=item C<free_line_state>
+
+	void	rl_free_line_state()	# GRL 4.0
+
+=item C<reset_after_signal>
+
+	void	rl_reset_after_signal()	# GRL 4.0
+
+=item C<resize_terminal>
+
+	void	rl_resize_terminal()	# GRL 4.0
+
+=item C<set_signals>
+
+	int	rl_set_signals()	# GRL 4.0
+
+=item C<clear_signals>
+
+	int	rl_clear_signals()	# GRL 4.0
 
 =back
 
@@ -1334,6 +1388,7 @@ Examples:
 	int rl_mark
 	int rl_done		
 	int rl_pending_input
+	int rl_erase_empty_line (GRL 4.0)
 	str rl_prompt (read only)
 	str rl_library_version (read only)
 	str rl_terminal_name
@@ -1341,19 +1396,25 @@ Examples:
 	filehandle rl_instream
 	filehandle rl_outstream
 	pfunc rl_startup_hook
+	pfunc rl_pre_input_hook (GRL 4.0)
 	pfunc rl_event_hook
 	pfunc rl_getc_function
 	pfunc rl_redisplay_function
 	Keymap rl_executing_keymap (read only)
 	Keymap rl_binding_keymap (read only)
 
+=item Signal Handling Variables
+
+	int_rl_catch_signals (GRL 4.0)
+	int_rl_catch_sigwinch (GRL 4.0)
+
 =item Completion Variables
 
 	pfunc rl_completion_entry_function
 	pfunc rl_attempted_completion_function
-	rl_filename_quoting_function (not implemented)
-	rl_filename_dequoting_function (not implemented)
-	rl_char_is_quoted_p (not implemented)
+	pfunc rl_filename_quoting_function
+	pfunc rl_filename_dequoting_function
+	pfunc rl_char_is_quoted_p
 	int rl_completion_query_items
 	str rl_basic_word_break_characters
 	str rl_basic_quote_characters
@@ -1366,8 +1427,9 @@ Examples:
 	int rl_filename_completion_desired
 	int rl_filename_quoting_desired
 	int rl_inhibit_completion
-	rl_ignore_some_completion_function (not implemented)
-	rl_directory_completion_hook (not implemented)
+	pfunc rl_ignore_some_completion_function
+	pfunc rl_directory_completion_hook
+	pfunc rl_completion_display_matches_hook (GRL 4.0)
 
 =item History Variables
 
@@ -1380,6 +1442,7 @@ Examples:
 	str history_no_expand_chars
 	str history_search_delimiter_chars
 	int history_quotes_inhibit_expansion
+	pfunc history_inhibit_expansion_function
 
 =item Function References
 
