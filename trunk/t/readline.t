@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.21 1998-03-26 14:14:58 hayashi Exp $
+#	$Id: readline.t,v 1.22 1998-04-14 16:35:15 hayashi Exp $
 #
 #	Copyright (c) 1996,1997,1998 Hiroo Hayashi.  All rights reserved.
 #
@@ -120,9 +120,35 @@ sub invert_case_line {
     return 0;
 }
 
+# sample function of rl_message()
+#
+# Note:
+#	_rl_save_prompt() and _rl_restore_promts() are not documented
+#	by the GNU Readline Library Manual.
+#	These functions may be obsoleted in the future.
+sub change_ornaments {
+    my($count, $key) = @_;	# ignored in this sample function
+    $t->_rl_save_prompt;	# undocumented function
+    $t->rl_message("[S]tandout, [U]nderlining, [B]old, [R]everse, [V]isible bell");
+    my $c = chr $t->rl_read_key;
+    if ($c =~ /s/i) {
+	$t->ornaments('so,me,,');
+    } elsif ($c =~ /u/i) {
+	$t->ornaments('us,me,,');
+    } elsif ($c =~ /b/i) {
+	$t->ornaments('md,me,,');
+    } elsif ($c =~ /r/i) {
+	$t->ornaments('mr,me,,');
+    } elsif ($c =~ /v/i) {
+	$t->ornaments('vb,,,');
+    } else {
+	$t->ding;
+    }
+    $t->_rl_restore_prompt;	# undocumented function
+    $t->rl_clear_message;
+}
+
 $t->add_defun('reverse-line', \&reverse_line, ord "\ct");
-$t->bind_key(ord "\ct", 'reverse-line', 'emacs-ctlx');
-$t->parse_and_bind('"\C-xt": reverse-line');
 
 $t->add_defun('display-readline-version', \&display_readline_version);
 $t->bind_key(ord "\cv", 'display-readline-version', 'emacs-ctlx');
@@ -130,6 +156,9 @@ $t->parse_and_bind('"\C-xv": display-readline-version');
 
 $t->add_defun('invert-case-line', \&invert_case_line);
 $t->bind_key(ord "c", 'invert-case-line', 'emacs-meta');
+
+$t->add_defun('change-ornaments', \&change_ornaments);
+$t->bind_key(ord "o", 'change-ornaments', 'emacs-meta');
 
 # make original map
 my $helpmap = $t->make_bare_keymap();
@@ -144,15 +173,17 @@ $t->generic_bind(ISMACR, "\e?i", "\ca[insert text from beginning of line]");
 
 # convert control charactors to printable charactors (ex. "\cx" -> '\C-x')
 sub toprint {
-    join('',map{ord($_)<32 ? '\C-'.lc(chr(ord($_)+64)) : $_}(split('',$_[0])));
+    join('',
+	 map{$_ eq "\e" ? '\M-': ord($_)<32 ? '\C-'.lc(chr(ord($_)+64)) : $_}
+	 (split('',$_[0])));
 }
 
 my %TYPE = (0 => 'Function', 1 => 'Keymap', 2 => 'Macro');
 
 print $OUT "\n";
 foreach ("\co", "\ct", "\cx",
-	 "\cx\ct", "\cxt", "\cx\cv", "\cxv", "\ec",
-	 "\e?f", "\e?v", "\e?i") {
+	 "\cx\cv", "\cxv", "\ec",
+	 "\e?f", "\e?v", "\e?i", "\eo") {
     my ($p, $type) = $t->function_of_keyseq($_);
     printf $OUT "%-9s: ", toprint($_);
     (print "\n", next) unless defined $type;
@@ -174,6 +205,8 @@ print "ok 7\n";
 # goto short_cut;
 # goto end_of_test;
 
+$t->ornaments(0);		# ornaments off
+
 print $OUT "\n# history expansion test\n# quit by EOF (\\C-d)\n";
 $t->MinLine(1);
 $t->stifle_history(5);
@@ -188,9 +221,9 @@ print "ok 8\n";
 ########################################################################
 # test key unbinding functions
 
-print $OUT "unbind \\C-t and \\C-xt\n";
+print $OUT "unbind \\C-t and \\C-xv\n";
 $t->unbind_key(ord "\ct");
-$t->unbind_key(ord "t", 'emacs-ctlx');
+$t->unbind_key(ord "v", 'emacs-ctlx');
 
 @keyseqs = $t->invoking_keyseqs('reverse-line');
 print $OUT "reverse-line is bound to ", join(', ',@keyseqs), "\n";
@@ -202,14 +235,15 @@ print "ok 9\n";
 $t->readline("filename completion (default)>", "this is default string");
 
 $a->{completion_entry_function} = $a->{'username_completion_function'};
-$t->readline("username completion>");
+print $OUT "\n" unless defined($t->readline("username completion>"));
 
-$a->{completion_word} = [qw(a list of words for completion)];
+$a->{completion_word} = [qw(a list of words for completion and another word)];
 $a->{completion_entry_function} = $a->{'list_completion_function'};
-$t->readline("list completion>");
+print $OUT "given list is: a list of words for completion and another word\n";
+print $OUT "\n" unless defined $t->readline("list completion>");
 
 $a->{completion_entry_function} = $a->{'filename_completion_function'};
-$t->readline("filename completion>");
+print $OUT "\n" unless defined $t->readline("filename completion>");
 
 sub sample_completion {
     my ($text, $line, $start, $end) = @_;
@@ -222,7 +256,8 @@ sub sample_completion {
 }
 
 $a->{attempted_completion_function} = \&sample_completion;
-$t->readline("list & filename completion>");
+print $OUT "given list is: a list of words for completion and another word\n";
+print $OUT "\n" unless defined $t->readline("list & filename completion>");
 $a->{attempted_completion_function} = undef;
 
 print "ok 10\n";
@@ -231,25 +266,25 @@ print "ok 10\n";
 # test ornaments
 #short_cut:
 {
-    local $^W = 0;		# Term::ReadLine is not waring flag free
+    local $^W = 0;		# Term::Cap.pm warns for unsupported function
     print $OUT "# ornaments test\n";
     print $OUT "# Note: Some function may not work on your terminal.\n";
     # Kterm seems to have a bug with 'ue' (End underlining) does not work\n";
     $t->ornaments(1);	# equivalent to 'us,ue,md,me'
-    $t->readline("default ornaments (underline)>");
+    print $OUT "\n" unless defined $t->readline("default ornaments (underline)>");
     # cf. man termcap(5)
     $t->ornaments('so,me,,');
-    $t->readline("standout>");
+    print $OUT "\n" unless defined $t->readline("standout>");
     $t->ornaments('us,me,,');
-    $t->readline("underlining>");
+    print $OUT "\n" unless defined $t->readline("underlining>");
     $t->ornaments('mb,me,,');
-    $t->readline("blinking>");
+    print $OUT "\n" unless defined $t->readline("blinking>");
     $t->ornaments('md,me,,');
-    $t->readline("bold>");
+    print $OUT "\n" unless defined $t->readline("bold>");
     $t->ornaments('mr,me,,');
-    $t->readline("reverse>");
+    print $OUT "\n" unless defined $t->readline("reverse>");
     $t->ornaments('vb,,,');
-    $t->readline("visible bell>");
+    print $OUT "\n" unless defined $t->readline("visible bell>");
     $t->ornaments(0);
     print $OUT "# end of ornaments test\n";
 }
@@ -261,7 +296,7 @@ print "ok 11\n";
 
 sub insert_string { $t->insert_text('insert text'); };
 $a->{startup_hook} = \&insert_string;
-$t->readline("rl_startup_hook test>");
+print $OUT "\n" unless defined $t->readline("rl_startup_hook test>");
 $a->{startup_hook} = undef;
 
 print "ok 12\n";
@@ -276,7 +311,7 @@ sub uppercase {
 }
 
 $a->{getc_function} = \&uppercase;
-$t->readline("convert to uppercase>");
+print $OUT "\n" unless defined $t->readline("convert to uppercase>");
 $a->{getc_function} = undef;
 
 print "ok 13\n";
