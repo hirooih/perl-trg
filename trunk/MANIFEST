@@ -1,6 +1,9 @@
 Changes
 Gnu.pm
 Gnu.xs
+INSTALL
 MANIFEST
 Makefile.PL
-test.pl
+README
+perlsh
+t/readline.t
