@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.71 1999-04-10 05:18:24 hayashi Exp $
+#	$Id: Gnu.pm,v 1.72 1999-04-10 15:19:14 hayashi Exp $
 #
 #	Copyright (c) 1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -592,6 +592,7 @@ foreach (keys %Term::ReadLine::Gnu::Var::_rl_vars) {
     use strict 'refs';
     $Attribs{shadow_redisplay} = \&Term::ReadLine::Gnu::XS::shadow_redisplay;
     $Attribs{Tk_getc} = \&Term::ReadLine::Gnu::XS::Tk_getc;
+    $Attribs{list_completion_function} = \&Term::ReadLine::Gnu::XS::list_completion_function;
 }
 
 package Term::ReadLine::Gnu::AU;
