@@ -1,4 +1,4 @@
-#	$Id: INSTALL,v 1.15 1998-08-13 15:04:17 hayashi Exp $
+#	$Id: INSTALL,v 1.16 1999-04-04 15:14:23 hayashi Exp $
 
 1. How to Install Term::ReadLine::Gnu
 
@@ -32,12 +32,12 @@
 
 2. How to Install GNU Readline Library
 
-	Now this module supports only GNU Readline Library 2.1 and
-	2.2.1. (readline-2.[12].tar.gz or libraries which are included
-	in the GNU Bash version 2.0 or later) Executing `perl
-	Makefile.PL` detects which version of the GNU Readline Library
-	is already installed and warns you if you have the unsupported
-	version.
+	Now this module supports only GNU Readline Library 2.1, 2.2.1 and
+	4.0. (readline-2.[12].tar.gz, readline-4.0.tar.gz or libraries
+	which are included in the GNU Bash version 2.0 or later) Executing
+	`perl Makefile.PL` detects which version of the GNU Readline
+	Library is already installed and warns you if you have the
+	unsupported version.
 
 	Note that some free Unix distribution and Cygwin32-b19 include
 	the GNU Readline Library 2.0 which is not supported by this
@@ -46,20 +46,16 @@
 	my perl for Windows 95/NT does not work with it.  Your
 	suggestion will be welcome.)
 
-	In following example, the install prefix directory is
+	In the following example, the install prefix directory is
 	`/usr/local/gnu'.  If you install the library and header files
 	in another directory, you must edit `LIBS' and/or `INC'
 	section in Makefile.PL.
 
 	You DON'T have to build the library as shared library.  If you
-	want, you can do.  I don't know about building shared library
-	well.  But Masahito Yamaga <yamaga@ipc.chiba-u.ac.jp>
-	contributed me a patch which adds the definitions for shared
-	library on Makefile.in of readline-2.2.  With this patch I can
-	build a shared library easily on my Linux box, and it works
-	with Term::ReadLine::Gnu.  If you have interested with it, try
-	the patch atteched at the end of this file.
-
+	want, you can do.  If you want to build it, use readline-4.0 (and
+	later).  Type `make shared' instead of `make' to build shared
+	library.
+	
 	Since the GNU Readline Library is 8 bit clean, I use Japanese
 	characters without any patch.  But I have to hit Backspace key
 	twice to erase a Japanese character.  If you want to handle
@@ -69,12 +65,12 @@
 
 	I've not tried it, but it should work with my module.
 
-2.1. readline-2.2.1.tar.gz
+2.1. readline-4.0.tar.gz, readline-2.2.1.tar.gz
 
 	readline-2.2.tar.gz has some bugs, so I strongly recommend you
-	to use readline-2.2.1.tar.gz instead.
+	to use readline-2.2.1.tar.gz or later instead.
 
-	1. get and extract readline-2.2.1.tar.gz
+	1. get and extract readline-XX.tar.gz
 
 	2. configure
 		% ./configure --prefix=/usr/local/gnu
@@ -184,55 +180,5 @@
 		% make
 	7. install
 		% make install
-
-------------------------------------------------------------------------
-3. Patch to build shared GNU Readline library
-
-*** Makefile.in.orig	Sat Apr  4 01:23:01 1998
---- Makefile.in	Fri May  8 01:48:52 1998
-***************
-*** 94,99 ****
---- 94,133 ----
-  SHARED_HISTORY = libhistory.so.$(MAJOR)$(MINOR)
-  SHARED_LIBS = $(SHARED_READLINE) $(SHARED_HISTORY)
-  
-+ # uncomment the proper one of the followings to build a shared library
-+ 
-+ # (Solaris2.x gcc, SunOS4.1.x gcc, NetBSD, FreeBSD, Linux)
-+ #CC=	gcc
-+ #PICFLAG=        -fpic
-+ #LD=	gcc
-+ #SHLIB_OPTS=	-shared
-+ 
-+ # (Solaris2.x /opt/SUNWspro/bin/cc)
-+ #CC=	/opt/SUNWspro/bin/cc
-+ #PICFLAG=	-KPIC
-+ #LD=	/usr/ccs/bin/ld
-+ #SHLIB_OPTS=	-G -z text
-+ 
-+ # (SunOS4.1.x cc)
-+ #CC=	cc
-+ #PICFLAG=	-pic
-+ #LD=	ld
-+ #SHLIB_OPTS=
-+ 
-+ # (IRIX 5.x, 6.x)
-+ #CC=	cc
-+ #PICFLAG=	-KPIC
-+ #LD=	ld
-+ #SHLIB_OPTS=	-shared
-+ 
-+ # (HP-UX)
-+ #CC=	cc
-+ #PICFLAG=	+z
-+ #LD=	ld
-+ #SHLIB_OPTS=	-b
-+ #SHARED_READLINE = libreadline.sl
-+ #SHARED_HISTORY = libhistory.sl
-+ 
-  # The C code source files for this library.
-  CSOURCES = $(srcdir)/readline.c $(srcdir)/funmap.c $(srcdir)/keymaps.c \
-  	   $(srcdir)/vi_mode.c $(srcdir)/parens.c $(srcdir)/rltty.c \
-
 
 EOF
