@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.64 1999-03-01 15:17:40 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.65 1999-03-01 15:21:39 hayashi Exp $
  *
  *	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
  *
@@ -37,11 +37,6 @@ extern "C" {
 #    define __P(protos) ()
 #  endif
 #endif /* !__STDC__ */
-
-/* following variables should be defined in readline.h */
-extern char *rl_prompt;
-extern int rl_completion_query_items;
-extern int rl_ignore_completion_duplicates;
 
 /* from GNU Readline:xmalloc.c */
 extern char *xmalloc __P((int));
