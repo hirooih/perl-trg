@@ -2,7 +2,7 @@
 #
 #	XS.pm : perl function definition for Term::ReadLine::Gnu
 #
-#	$Id: XS.pm,v 1.21 2003-10-01 02:21:57 hiroo Exp $
+#	$Id: XS.pm,v 1.22 2004-10-17 17:02:23 hiroo Exp $
 #
 #	Copyright (c) 2003 Hiroo Hayashi.  All rights reserved.
 #
@@ -181,7 +181,7 @@ sub rl_set_key ($$;$) {
 }
 
 # rl_bind_keyseq_if_unbound
-sub rl_bind_keyseq ($$;$) {
+sub rl_bind_keyseq_if_unbound ($$;$) {
     my ($version) = $Attribs{library_version}
 	=~ /(\d+\.\d+)/;
     if ($version < 5.0) {
