@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.48 1997-02-22 16:49:38 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.49 1997-03-01 15:57:47 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -44,9 +44,12 @@ dupstr(s)			/* duplicate string */
   /*
    * Use xmalloc(), because allocated block will be freed in GNU
    * Readline Library routine.
-   * Don't make a macro.  Because 's' is evaluated twice.
+   * Don't make a macro, because the variable 's' is evaluated twice.
    */
-  return strcpy (xmalloc (strlen (s) + 1), s);
+  int len = strlen(s) + 1;
+  char *d = xmalloc(len);
+  Copy(s, d, len, char);	/* Is Copy() better than strcpy() in XS? */
+  return d;
 }
 
 /*
@@ -903,7 +906,7 @@ rl_callback_handler_install(prompt, lhandler)
 	CODE:
 	{
 	  static char *cb_prompt = NULL;
-	  int len = strlen(prompt);
+	  int len = strlen(prompt) + 1;
 
 	  /* The value of prompt may be used after return from this routine. */
 	  if (cb_prompt)
@@ -1263,7 +1266,7 @@ _rl_store_str(pstr, id)
 	  }
 	  str_tbl[id].accessed = 1;
 
-	  len = strlen(pstr)+1;
+	  len = strlen(pstr) + 1;
 	  *str_tbl[id].var = xmalloc(len);
 	  Copy(pstr, *str_tbl[id].var, len, char);
 
