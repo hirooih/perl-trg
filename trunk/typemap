@@ -1,8 +1,9 @@
 #	typemap for Term::ReadLine::Gnu
 #
-#	$Id: typemap,v 1.2 2000-11-27 17:03:14 hayashi Exp $
+#	$Id: typemap,v 1.3 2001-02-27 17:24:01 hayashi Exp $
 
 const char *	T_PV
+CONST char *	T_PV
 FILE *		T_INOUT
 Keymap		T_PTROBJ
 Function *	T_PTROBJ
