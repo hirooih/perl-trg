@@ -1,8 +1,8 @@
 #! /usr/local/bin/perl
 #
-#	$Id: perlsh,v 1.6 1997-01-12 17:41:32 hayashi Exp $	
+#	$Id: perlsh,v 1.7 1997-01-12 17:49:42 hayashi Exp $	
 #
-#	Copyright (c) 1996 Hiroo Hayashi. All Rights Reserved.
+#	Copyright (c) 1996,1997 Hiroo Hayashi. All Rights Reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -33,6 +33,7 @@ package PerlSh;
 
 use strict;
 use Term::ReadLine;
+use Term::ReadLine::Gnu ':all';
 
 use vars qw($PS1 $PS2 $HISTFILE $HISTSIZE $INPUTRC $STRICT
 	    $HOSTNAME $LOGNAME);
@@ -66,10 +67,9 @@ sub toplevel {
 	$T->ReadHistory($HISTFILE)
 	    or warn "perlsh: cannot read history file: $!\n";
     }
-    $T->StoreVar('rl_completion_entry_function',
-		 \&perl_symbol_completion_function);
+    $rl_completion_entry_function = \&perl_symbol_completion_function;
 
-    $T->StoreVar('rl_special_prefixes', '$@');
+    $rl_special_prefixes = '$@';
 
     $SIG{'INT'} = \&quit;
 
@@ -120,7 +120,7 @@ sub prompt {
     # \h: hostname, \u: username, \!: history number
     s/\\h/$HOSTNAME/g;
     s/\\u/$LOGNAME/g;
-    s/\\!/$T->FetchVar('history_base')+$T->FetchVar('history_length')/eg;
+    s/\\!/$history_base+$history_length/eg;
     $_;
 }
 #
