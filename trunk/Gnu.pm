@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.31 1997-01-22 15:25:45 hayashi Exp $
+#	$Id: Gnu.pm,v 1.32 1997-01-24 15:00:33 hayashi Exp $
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
 #
@@ -137,9 +137,9 @@ my @histfn = qw( using_history		remove_history
 		 history_search		history_search_prefix
 
 		 read_history_range	write_history		append_history
-		 history_trancate_file
+		 history_trancate_file);
 
-		 $history_no_expand_chars
+my @histvar = qw($history_no_expand_chars
 		 $history_search_delimiter_chars
 		 $history_base
 		 $history_length
@@ -148,19 +148,29 @@ my @histfn = qw( using_history		remove_history
 		 $history_comment_char
 		 $history_quotes_inhibit_expansion );
 
-%EXPORT_TAGS = ( base_function		=> \@basefn,
+# Perl 5.002 and 5.003 cause segmentation fault if @histfn is added to
+# %EXPORT_TAGS.  But Perl 5.003_08 does not.  Do Perl 5.002 and 5.003
+# have any restrictions on the number of functions which can be
+# exported?  Or does this module have any trouble?
+%EXPORT_TAGS = (
+		 base_function		=> \@basefn,
 
-		 keybind_function	=> \@bindfn,
-		 misc_function		=> \@miscfn,
-		 callback_function	=> \@cbfn,
-		 completion_function	=> \@cmplfn,
-		 history_function	=> \@histfn,
+  		 keybind_function	=> \@bindfn,
+  		 misc_function		=> \@miscfn,
+  		 callback_function	=> \@cbfn,
+  		 completion_function	=> \@cmplfn,
+  		 history_function	=> \@histvar,
+# 		 history_function	=> [ @histfn, @histvar ],
+#		 all			=> [ @basefn, @bindfn, @miscfn,
+#  					     @cbfn, @cmplfn,
+#					     @histfn, @histvar ],
 		 all			=> [ @basefn, @bindfn, @miscfn,
-					     @cbfn, @cmplfn, @histfn ] );
+  					     @cbfn, @cmplfn, @histvar ],
+	       );
 
 Exporter::export_ok_tags(qw(base_function	keybind_function
-			    misc_function	callback_function
-			    completion_function	history_function));
+ 			    misc_function	callback_function
+ 			    completion_function	history_function));
 
 bootstrap Term::ReadLine::Gnu $VERSION;
 
@@ -359,7 +369,7 @@ sub GetHistory {
     @d;
 }
 
-=item C<ReadHistory(FILENAME [,FROM [,TO]])>
+=item C<ReadHistory([FILENAME [,FROM [,TO]]])>
 
 adds the contents of C<FILENAME> to the history list, a line at a
 time.  If C<FILENAME> is false, then read from F<~/.history>.  Start
@@ -372,10 +382,18 @@ successful, or false if not.
 
 sub ReadHistory {
     shift;
-    ! &read_history_range;
+    if (defined $_[2]) {
+	! read_history_range($_[0], $_[1], $_[2]);
+    } elsif (defined $_[1]) {
+	! read_history_range($_[0], $_[1]);
+    } elsif (defined $_[0]) {
+	! read_history_range($_[0]);
+    } else {
+	! read_history_range();
+    }
 }
 
-=item C<WriteHistory(FILENAME)>
+=item C<WriteHistory([FILENAME])>
 
 writes the current history to C<FILENAME>, overwriting C<FILENAME> if
 necessary.  If C<FILENAME> is false, then write the history list to
@@ -385,7 +403,11 @@ F<~/.history>.  Returns true if successful, or false if not.
 
 sub WriteHistory {
     shift;
-    ! &write_history;
+    if (defined $_[0]) {
+	! write_history($_[0]);
+    } else {
+	! write_history();
+    }
 }
 
 =item C<AddDefun(NAME, FUNC [,KEY])>
@@ -403,7 +425,11 @@ invalid KEY.
 
 sub AddDefun {
     my $self = shift;
-    &rl_add_defun;
+    if (defined $_[2]) {
+	rl_add_defun($_[0], $_[1], $_[2]);
+    } else {
+	rl_add_defun($_[0], $_[1]);
+    }
 }
 
 =item C<BindKey(KEY, FUNCTION [,MAP])>
@@ -416,7 +442,11 @@ in MAP.  Returns non-zero in case of error.
 
 sub BindKey {
     my $self = shift;
-    &rl_bind_key;
+    if (defined $_[2]) {
+	rl_bind_key($_[0], $_[1], $_[2]);
+    } else {
+	rl_bind_key($_[0], $_[1]);
+    }
 }
 
 =item C<UnbindKey(KEY [,MAP])>
@@ -427,7 +457,11 @@ Bind KEY to the null function.  Returns non-zero in case of error.
 
 sub UnbindKey {
     my $self = shift;
-    &rl_unbind_key;
+    if (defined $_[1]) {
+	rl_unbind_key($_[0], $_[1]);
+    } else {
+	rl_unbind_key($_[0]);
+    }
 }
 
 =item C<ParseAndBind(LINE)>
@@ -440,7 +474,7 @@ detail see 'GNU Readline Library Manual'.
 
 sub ParseAndBind {
     my $self = shift;
-    &rl_parse_and_bind;
+    rl_parse_and_bind($_[0]);
 }
 
 # The following functions are defined in ReadLine.pm.
@@ -476,11 +510,13 @@ is getting input B<(undocumented feature)>.
 
 =cut
 
-my %Features = (appname => 1, minline => 1, autohistory => 1,
+my %Features = (
+		appname => 1, minline => 1, autohistory => 1,
 		preput => 1, do_expand => 1, stifleHistory => 1,
 		getHistory => 1, setHistory => 1, addHistory => 1,
 		readHistory => 1, writeHistory => 1, parseAndBind => 1,
-		customCompletion => 1, tkRunning => 0);
+		customCompletion => 1, tkRunning => 0
+	       );
 
 sub Features { \%Features; }
 
@@ -543,7 +579,7 @@ my %_rl_vars
        rl_binding_keymap			=> ['K', 1],
       );
 
-sub rl_fetch_var ( $ ) {
+sub rl_fetch_var ($) {
     my $name = shift;
     if (! defined $_rl_vars{$name}) {
 	carp "Term::ReadLine::Gnu::FetchVar: Unknown variable name `$name'\n";
@@ -571,10 +607,10 @@ sub rl_fetch_var ( $ ) {
 
 sub FetchVar {
     my $self = shift;
-    rl_fetch_var;
+    rl_fetch_var($_[0]);
 }
 
-sub rl_store_var ( $$ ) {
+sub rl_store_var ($$) {
     my $name = shift;
     if (! defined $_rl_vars{$name}) {
 	carp "Term::ReadLine::Gnu::StoreVar: Unknown variable name `$name'\n";
@@ -615,7 +651,7 @@ sub rl_store_var ( $$ ) {
 
 sub StoreVar {
     my $self = shift;
-    rl_store_var;
+    rl_store_var($_[0], $_[1]);
 }
 
 #
@@ -672,21 +708,21 @@ sub UNDO_END	{ 3; }
 #
 #	Readline function wrappers
 #
-sub _str2map ( $ ) {
+sub _str2map ($) {
     return ref $_[0] ? $_[0]
 	: (rl_get_keymap_by_name($_[0]) || carp "unknown keymap name \`$_[0]\'\n");
 }
 
-sub _str2fn ( $ ) {
+sub _str2fn ($) {
     return ref $_[0] ? $_[0]
 	: (rl_named_function($_[0]) || carp "unknown function name \`$_[0]\'\n");
 }
 
-sub rl_copy_keymap ( $ )    { return _rl_copy_keymap(_str2map($_[0])); }
-sub rl_discard_keymap ( $ ) { return _rl_discard_keymap(_str2map($_[0])); }
-sub rl_set_keymap ( $ )     { return _rl_set_keymap(_str2map($_[0])); }
+sub rl_copy_keymap ($)    { return _rl_copy_keymap(_str2map($_[0])); }
+sub rl_discard_keymap ($) { return _rl_discard_keymap(_str2map($_[0])); }
+sub rl_set_keymap ($)     { return _rl_set_keymap(_str2map($_[0])); }
 
-sub rl_bind_key ( $$;$ ) {
+sub rl_bind_key ($$;$) {
     if (defined $_[2]) {
 	return _rl_bind_key($_[0], _str2fn($_[1]), _str2map($_[2]));
     } else {
@@ -694,7 +730,7 @@ sub rl_bind_key ( $$;$ ) {
     }
 }
 
-sub rl_unbind_key ( $;$ ) {
+sub rl_unbind_key ($;$) {
     if (defined $_[1]) {
 	return _rl_unbind_key($_[0], _str2map($_[1]));
     } else {
@@ -702,7 +738,7 @@ sub rl_unbind_key ( $;$ ) {
     }
 }
 
-sub rl_generic_bind ( $$$;$ ) {
+sub rl_generic_bind ($$$;$) {
     if      ($_[0] == ISFUNC) {
 	if (defined $_[3]) {
 	    _rl_generic_bind_function($_[1], _str2fn($_[2]), _str2map($_[3]));
@@ -726,7 +762,7 @@ sub rl_generic_bind ( $$$;$ ) {
     }
 }
 	    
-sub rl_call_function ( $;$$ ) {
+sub rl_call_function ($;$$) {
     if (defined $_[2]) {
 	return _rl_call_function(_str2fn($_[0]), $_[1], $_[2]);
     } elsif (defined $_[1]) {
@@ -736,7 +772,7 @@ sub rl_call_function ( $;$$ ) {
     }
 }
 
-sub rl_invoking_keyseqs ( $;$ ) {
+sub rl_invoking_keyseqs ($;$) {
     if (defined $_[1]) {
 	return _rl_invoking_keyseqs(_str2fn($_[0]), _str2map($_[1]));
     } else {
@@ -1164,8 +1200,11 @@ support TkRunning
 
 rl_add_defun() can define up to 16 functions.
 
+Perl 5.002 and 5.003 cause segmentation fault if @histfn is added to
+%EXPORT_TAGS.  But Perl 5.003_08 does not.  Whose bug is this?
+
 rl_message() does not work.
 
-Some other functions are not tested yet.
+Some of functions are not tested yet.
 
 =cut
