@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.74 1999-06-25 16:30:21 hayashi Exp $
+#	$Id: Gnu.pm,v 1.75 1999-12-30 05:02:11 hayashi Exp $
 #
 #	Copyright (c) 1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -159,6 +159,10 @@ sub new {
     # set rl_readline_name before .inputrc is read in rl_initialize()
     $Attribs{readline_name} = $name;
 
+    # some version of Perl cause segmentation fault, if XS module
+    # calls setenv() before the 1st assignment to $ENV{}.
+    $ENV{_TRL_DUMMY} = '';
+
     # initialize the GNU Readline Library and termcap library
     $self->initialize();
 
@@ -264,7 +268,8 @@ sub readline {			# should be ReadLine
 
     # add to history buffer
     $self->add_history($line) 
-	if ($self->{MinLength} > 0 && length($line) >= $self->{MinLength});
+	if (defined $self->{MinLength} && $self->{MinLength} > 0
+	    && length($line) >= $self->{MinLength});
 
     return $line;
 }
