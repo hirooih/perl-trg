@@ -1,4 +1,4 @@
-#	$Id: INSTALL,v 1.8 1997-08-24 15:25:30 hayashi Exp $
+#	$Id: INSTALL,v 1.9 1997-08-24 15:33:09 hayashi Exp $
 
 1. How to Install Term::ReadLine::Gnu
 
@@ -34,10 +34,10 @@
 
 		When I debug TRG, I sometimes make this statically
 		linked perl to use debugger.  But in this case this
-		perl works well.  This problem occures only when
+		perl works well.  This problem occurs only when
 		dynamic loading is used.
 
-		I found the core dump occured at calling free() in
+		I found the core dump occurred at calling free() in
 		bind.c:rl_invoking_keyseqs_in_map of the GNU readline
 		library.  So I suspect that memory cell which is
 		allocated by perl internal malloc() is freed by free()
