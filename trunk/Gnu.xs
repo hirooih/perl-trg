@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.78 1999-04-04 12:20:25 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.79 1999-04-24 02:13:23 hayashi Exp $
  *
  *	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
  *
@@ -485,6 +485,9 @@ attempted_completion_function_wrapper(text, start, end)
       xfree(matches[0]);
       matches[0] = matches[1];
       matches[1] = NULL;
+    } else if (count == 1 && !matches[0]) { /* in case of a list of undef */
+      xfree(matches);
+      matches = NULL;
     }
   } else {
     matches = NULL;
