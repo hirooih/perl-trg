@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.36 1997-01-18 16:10:08 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.37 1997-01-18 16:28:49 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -23,16 +23,16 @@ extern "C" {
 #include <readline/readline.h>
 #include <readline/history.h>
 
-extern char *rl_prompt;		/* should be defined in readline.h */
-extern int rl_completion_query_items; /* should be defined in readline.h */
-extern int rl_ignore_completion_duplicates; /* should be defined in readline.h */
-extern int rl_line_buffer_len;
-
-static char *dupstr (char *);	/* duplicate string */
+/* following variables should be defined in readline.h */
+extern char *rl_prompt;
+extern int rl_completion_query_items;
+extern int rl_ignore_completion_duplicates;
 
 /* from GNU Readline:xmalloc.c */
 extern char *xmalloc (int);
 extern char *xfree (char *);
+
+static char *dupstr (char *);	/* duplicate string */
 
 /*
  *	custom function support routines
@@ -304,26 +304,25 @@ static struct int_vars {
   int *var;
   int charp;
 } int_tbl[] = {
-  &rl_line_buffer_len,				0,	/* 0 */
-  &rl_point,					0,	/* 1 */
-  &rl_end,					0,	/* 2 */
-  &rl_mark,					0,	/* 3 */
-  &rl_done,					0,	/* 4 */
-  &rl_pending_input,				0,	/* 5 */
+  &rl_point,					0,	/* 0 */
+  &rl_end,					0,	/* 1 */
+  &rl_mark,					0,	/* 2 */
+  &rl_done,					0,	/* 3 */
+  &rl_pending_input,				0,	/* 4 */
 
-  &rl_completion_query_items,			0,	/* 6 */
-  &rl_completion_append_character,		0,	/* 7 : int */
-  &rl_ignore_completion_duplicates,		0,	/* 8 */
-  &rl_filename_completion_desired,		0,	/* 9 */
-  &rl_filename_quoting_desired,			0,	/* 10 */
-  &rl_inhibit_completion,			0,	/* 11 */
+  &rl_completion_query_items,			0,	/* 5 */
+  &rl_completion_append_character,		0,	/* 6 : int */
+  &rl_ignore_completion_duplicates,		0,	/* 7 */
+  &rl_filename_completion_desired,		0,	/* 8 */
+  &rl_filename_quoting_desired,			0,	/* 9 */
+  &rl_inhibit_completion,			0,	/* 10 */
 
-  &history_base,				0,	/* 12 */
-  &history_length,				0,	/* 13 */
-  (int *)&history_expansion_char,		1,	/* 14 */
-  (int *)&history_subst_char,			1,	/* 15 */
-  (int *)&history_comment_char,			1,	/* 16 */
-  &history_quotes_inhibit_expansion,		0	/* 17 */
+  &history_base,				0,	/* 11 */
+  &history_length,				0,	/* 12 */
+  (int *)&history_expansion_char,		1,	/* 13 */
+  (int *)&history_subst_char,			1,	/* 14 */
+  (int *)&history_comment_char,			1,	/* 15 */
+  &history_quotes_inhibit_expansion,		0	/* 16 */
 };
 
 /*
