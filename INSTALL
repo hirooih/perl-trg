@@ -1,6 +1,20 @@
-#	$Id: INSTALL,v 1.9 1997-08-24 15:33:09 hayashi Exp $
+#	$Id: INSTALL,v 1.10 1998-03-31 14:55:59 hayashi Exp $
 
 1. How to Install Term::ReadLine::Gnu
+
+1.0 Prerequisites
+
+	To use Term::Readline::Gnu, your Perl may have to use the
+	system malloc().  When you built Perl, make sure that you
+	answered no to the "Do you wish to attempt to use the mallloc
+	that comes with Perl?" configuration question.
+
+	You can check your Perl as;
+		$ perl -V | grep perl -V |grep usemymalloc
+	Printed line should include word "usemymalloc=n".
+
+	Since your Perl may work with "usemymalloc=y", try "make test"
+	before you recompile your Perl.
 
 1.1 Install GNU Readline library 2.1 and its header files.
 
@@ -17,48 +31,6 @@
 	$ make
 	$ make test
 	$ make install
-
-	If you use Solaris 2.5 and dynamic loading, "make test" causes
-	core dump.  I have not fixed this bug yet.  But TRG
-	(Term::Readline::Gnu) works if you link it statically as
-	follows;
-
-	$ perl Makefile.PL
-	$ make perl
-	$ cp perl /usr/local/bin	
-	$ make install		# install .pm file, pod file and so on.
-	$ perl t/readline.t	# try test program
-
-	I've done following things to debug this.  If you have any
-	suggestion, please let me know.
-
-		When I debug TRG, I sometimes make this statically
-		linked perl to use debugger.  But in this case this
-		perl works well.  This problem occurs only when
-		dynamic loading is used.
-
-		I found the core dump occurred at calling free() in
-		bind.c:rl_invoking_keyseqs_in_map of the GNU readline
-		library.  So I suspect that memory cell which is
-		allocated by perl internal malloc() is freed by free()
-		included by the system dynamic link library.  I try
-		make perl with usemymalloc=n.  But it still did not
-		work.
-
-		Next I added many printf()s. Then I found that a
-		malloc() allocated a memory cell and the cell cannot
-		be free()ed.  I put free() on the next line of the
-		malloc().  The malloc() returns a pointer which is not
-		NULL, but the free() on the next line causes core
-		dump.  This is very very strange.
-
-		Gnu readline library uses both malloc() and xmalloc()
-		and both free() and xfree().  So I tried to change all
-		malloc() to xmalloc() and change all free() to xfree()
-		by using macro.  But it still did not work.
-
-	That's all I've tried.  Any comments?
-
 
 2. How to Install GNU Readline Library
 
