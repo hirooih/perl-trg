@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.43 1997-03-22 17:45:25 hayashi Exp $
+#	$Id: Gnu.pm,v 1.44 1997-04-10 14:18:03 hayashi Exp $
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
 #
@@ -50,7 +50,7 @@ use strict;
 use vars qw($VERSION @ISA @EXPORT_OK %Attribs %Features);
 use Carp;
 
-$VERSION = '0.07';
+$VERSION = '0.08';
 
 require Exporter;
 require DynaLoader;
@@ -66,7 +66,7 @@ my $Next_Operate_Index;
 	    );
 %Features = (
 	     appname => 1, minline => 1, autohistory => 1,
-	     getHistory => 1, setHistory => 1, addHistory => 1,
+	     getHistory => 1, setHistory => 1, addhistory => 1,
 	     readHistory => 1, writeHistory => 1,
 	     preput => 1, tkRunning => 1, attribs => 1,
 	     stiflehistory => 1,
@@ -246,9 +246,14 @@ the actual C<readline> is present.
 
 =cut
 
-*addhistory = \&add_history;
-*AddHistory = \&add_history;	# for backward compatibility
+*addhistory = \&AddHistory;	# for backward compatibility
 
+sub AddHistory {
+    my $self = shift;
+    foreach (@_) {
+	$self->add_history($_);
+    }
+}
 =item C<IN>, C<OUT>
 
 return the file handles for input and output or C<undef> if
@@ -297,7 +302,7 @@ minimal interface: C<appname> should be present if the first argument
 to C<new> is recognized, and C<minline> should be present if
 C<MinLine> method is not dummy.  C<autohistory> should be present if
 lines are put into history automatically (maybe subject to
-C<MinLine>), and C<addHistory> if C<AddHistory> method is not dummy. 
+C<MinLine>), and C<addhistory> if C<addhistory> method is not dummy. 
 C<preput> means the second argument to C<readline> method is processed.
 C<getHistory> and C<setHistory> denote that the corresponding methods are 
 present. C<tkRunning> denotes that a Tk application may run while ReadLine
@@ -323,11 +328,8 @@ is getting input B<(undocumented feature)>.
 
 sub SetHistory {
     my $self = shift;
-    local($_);
     $self->clear_history();
-    foreach (@_) {
-	$self->add_history($_);
-    }
+    $self->AddHistory(@_);
 }
 
 sub GetHistory {
@@ -1016,7 +1018,7 @@ detail see 'GNU Readline Library Manual'.
 
 =over 4
 
-=item C<add_history(STRING)>
+=item C<addhistory(STRING[, STRING, ...])>
 
 	void	add_history(str string)
 
