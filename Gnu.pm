@@ -1,9 +1,9 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.83 2001-02-11 05:56:11 hayashi Exp $
+#	$Id: Gnu.pm,v 1.84 2001-02-12 13:52:46 hayashi Exp $
 #
-#	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -63,7 +63,7 @@ use Carp;
     use DynaLoader;
     use vars qw($VERSION @ISA @EXPORT_OK);
 
-    $VERSION = '1.09';
+    $VERSION = '1.10';
 
     # Term::ReadLine::Gnu::AU makes a function in
     # `Term::ReadLine::Gnu::XS' as a method.
@@ -493,7 +493,15 @@ use vars qw(%_rl_vars);
        rl_catch_signals				=> ['I', 19], # GPL 4.0
        rl_catch_sigwinch			=> ['I', 20], # GPL 4.0
        rl_already_prompted			=> ['I', 21], # GPL 4.1
-       rl_readline_state			=> ['I', 22], # GPL 4.2
+       rl_num_chars_to_read			=> ['I', 22], # GPL 4.2
+       rl_dispatching				=> ['I', 23], # GPL 4.2
+       rl_gnu_readline_p			=> ['I', 24], # GPL 4.2
+       rl_readline_state			=> ['I', 25], # GPL 4.2
+       rl_explicit_arg				=> ['I', 26], # GPL 4.2
+       rl_numeric_arg				=> ['I', 27], # GPL 4.2
+       rl_editing_mode				=> ['I', 28], # GPL 4.2
+       rl_attemped_completion_over		=> ['I', 29], # GPL 4.2
+       rl_completion_type			=> ['I', 30], # GPL 4.2
 
        rl_startup_hook				=> ['F', 0],
        rl_event_hook				=> ['F', 1],
@@ -877,6 +885,10 @@ detail see 'GNU Readline Library Manual'.
 
 	int	rl_message(str fmt, ...)
 
+=item C<crlf>
+
+	int	rl_crlf()			# GRL 4.2
+
 =item C<clear_message>
 
 	int	rl_clear_message()
@@ -888,6 +900,10 @@ detail see 'GNU Readline Library Manual'.
 =item C<restore_prompt>
 
 	void	rl_restore_prompt()
+
+=item C<expand_prompt>
+
+	int	rl_expand_prompt(str prompt)	# GRL 4.2
 
 =back
 
@@ -913,7 +929,7 @@ detail see 'GNU Readline Library Manual'.
 
 =back
 
-=item Utility Functions
+=item Character Input
 
 =over 4
 
@@ -921,25 +937,61 @@ detail see 'GNU Readline Library Manual'.
 
 	int	rl_read_key()
 
-=item C<getc(FILE)>
+=item C<getc(STREAM)>
 
-	int	rl_getc(FILE *)
+	int	rl_getc(FILE *STREAM)
 
 =item C<stuff_char(C)>
 
 	int	rl_stuff_char(int c)
 
+=item C<execute_next(C)>
+
+	int	rl_execute_next(int c)		# GRL 4.2
+
+=item C<clear_pending_input()>
+
+	int	rl_clear_pending_input()	# GRL 4.2
+
+=back
+
+=item Terminal Management
+
+=over 4
+
+=item C<prep_terminal(META_FLAG)>
+
+	void	rl_prep_terminal(int META_FLAG)	# GRL 4.2
+
+=item C<deprep_terminal()>
+
+	void	rl_deprep_terminal()		# GRL 4.2
+
+=item C<tty_set_default_bindings(KMAP)>
+
+	void	rl_tty_set_default_bindings([Keymap KMAP])	# GRL 4.2
+
+=item C<reset_terminal([TERMINAL_NAME])>
+
+	int	rl_reset_terminal(str terminal_name = getenv($TERM)) # GRL 4.2
+
+=back
+
+=item Utility Functions
+
+=over 4
+
 =item C<initialize>
 
 	int	rl_initialize()
 
-=item C<reset_terminal([TERMINAL_NAME])>
-
-	int	rl_reset_terminal(str terminal_name = getenv($TERM))
-
 =item C<ding>
 
 	int	rl_ding()
+
+=item C<alphabetic(C)>
+
+	int	rl_alphabetic(int C)
 
 =item C<display_match_list(MATCHES [,LEN [,MAX]])>
 
@@ -992,6 +1044,10 @@ When C<MAX> is ommited, the max length of an item in @matches is used.
 =item C<resize_terminal>
 
 	void	rl_resize_terminal()	# GRL 4.0
+
+=item C<set_screen_size(ROWS, COLS)>
+
+	void	rl_set_screen_size(int ROWS, int COLS)	# GRL 4.2
 
 =item C<set_signals>
 
@@ -1250,11 +1306,14 @@ Examples:
 	int rl_end
 	int rl_mark
 	int rl_done		
+	int rl_num_chars_to_read (GRL 4.2)
 	int rl_pending_input
+	int rl_dispatching (GRL 4.2)
 	int rl_erase_empty_line (GRL 4.0)
 	str rl_prompt (read only)
 	int rl_already_prompted (GRL 4.1)
 	str rl_library_version (read only)
+	int rl_gnu_readline_p (GRL 4.2)
 	str rl_terminal_name
 	str rl_readline_name
 	filehandle rl_instream
@@ -1264,9 +1323,16 @@ Examples:
 	pfunc rl_event_hook
 	pfunc rl_getc_function
 	pfunc rl_redisplay_function
-	pfunc rl_last_func (not documented)
+	pfunc rl_prep_term_function (GRL 4.2?)
+	pfunc rl_deprep_term_function (GRL 4.2?)
+	pfunc rl_last_func (GRL 4.2)
 	Keymap rl_executing_keymap (read only)
 	Keymap rl_binding_keymap (read only)
+	str rl_executing_macro (GRL 4.2)
+	int rl_readline_state (GRL 4.2)
+	int rl_explicit_arg (GRL 4.2)
+	int rl_numeric_arg (GRL 4.2)
+	int rl_editing_mode (GRL 4.2)
 
 =item Signal Handling Variables
 
@@ -1291,6 +1357,8 @@ Examples:
 	int rl_ignore_completion_duplicates
 	int rl_filename_completion_desired
 	int rl_filename_quoting_desired
+	int rl_attemped_completion_over (GRL 4.2)
+	int rl_completion_type (GRL 4.2)
 	int rl_inhibit_completion
 	pfunc rl_ignore_some_completion_function
 	pfunc rl_directory_completion_hook
