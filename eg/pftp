@@ -1,51 +1,65 @@
 #! /usr/local/bin/perl
 #
-#	$Id: pftp,v 1.2 1997-03-22 17:46:08 hayashi Exp $
+#	$Id: pftp,v 1.3 1997-03-25 17:22:20 hayashi Exp $
 #
-#	Copyright (c) 1996,1997 Hiroo Hayashi. All Rights Reserved.
+#	Copyright (c) 1997 Hiroo Hayashi.  All Rights Reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
 
-use strict;
+=head1 NAME
+
+pftp - a ftp client with GNU Readline support
+
+=head1 SYNOPSIS
+
+B<pftp> [B<-v>] [B<-d>] [B<-u>] [B<-g>] [B<-M>] [B<-h>] [I<host>]
+
+=head1 DESCRIPTION
+
+=head1 BUGS
+
+command 'lcd' does not work.
+
+No document.
+
+=cut
+
 use Term::ReadLine;
-use Net::FTP;			# libnet-1.03 or later is recommended
-use Net::Domain qw(hostdomain);
+use strict;
 use Net::Config;
+#use Net::Domain qw(hostdomain);
+use Net::FTP;			# libnet-1.05 or later is recommended
 use File::Listing;		# for parse_dir
 use Getopt::Std;
+#use Cwd 'chdir';
 
-use vars qw($HISTFILE $HISTSIZE $AUTOLOAD
-	   $opt_d $opt_v);
+use vars qw($AUTOLOAD
+	    $opt_v $opt_d $opt_u $opt_g $opt_M $opt_h);
 
 sub usage {
     print STDERR <<"EOM";
-usage :	$0 [-d] [-n] [-w] [-M] [-h] site_name
+usage :	$0 [-v] [-d] [-i] [-u] [-g] [-M] [-h] host
 	-v : verbose mode
 	-d : debug mode
+	-i : interactive mode (not implemented)
+	-u : disable autologin
+	-g : turn off glob
 	-M : show manual page
 	-h : show this message
 EOM
     exit 0;
 }
-getopts('dv') or &usage;
-&usage unless @ARGV == 1;
 
-$HISTFILE = ($ENV{HOME} || ((getpwuid($<))[7])) . "/.pftp_history";
-$HISTSIZE = 256;
-my %rdir;
-my $host = $ARGV[0];
+getopts('vdugMh') or &usage;
+&man if $opt_M;
+&usage if $opt_h;
 
-my $ftp = Net::FTP->new($host,
-			Debug => $opt_d);
+# setup Term::ReadLine::GNU
+my $HISTFILE = ($ENV{HOME} || (getpwuid($<))[7]) . "/.pftp_history";
+my $HISTSIZE = 256;
 
-#my $login = 'anonymous';
-#my $password = (getpwuid($<))[0] . '@' . hostdomain;
-#$ftp->login($login, $password);
-
-$ftp->login;
-$ftp->binary;			# default binary
-my $pwd = $ftp->pwd;
+my $HOSTFILE = ($ENV{HOME} || (getpwuid($<))[7]) . "/.pftp_hosts";
 
 my $term = Term::ReadLine->new('PFTP');
 my $attribs = $term->Attribs;
@@ -56,7 +70,46 @@ if (-f $HISTFILE) {
 	or warn "perlsh: cannot read history file: $!\n";
 }
 
-my @ftp_cmd_list = qw(ls dir get put pwd cwd);
+my $host;
+my @hosts = read_hosts($HOSTFILE);
+if (@ARGV) {
+    $host = shift;
+} else {
+    $attribs->{completion_word} = \@hosts;
+    $attribs->{completion_entry_function} =
+	$attribs->{'list_completion_function'};
+    $host = $term->readline('hostname> ');
+    $attribs->{completion_entry_function} = undef;
+}
+
+# make ftp connection
+my $ftp = Net::FTP->new($host,
+			Debug => $opt_d);
+die "$0: cannot connect \`$host\'\n" unless $ftp;
+
+print STDERR $ftp->message if $opt_v;
+write_hosts($HOSTFILE, $host, @hosts);
+
+if ($opt_u) {
+    my $login = $term->readline('login name> ', 'anonymous');
+    # Use Term::ReadKey!
+    my $password = $term->readline('password> ',
+				   (getpwuid($<))[0] . '@'
+				    . $NetConfig{inet_domain});
+    $ftp->login($login, $password);
+    print STDERR $ftp->message if $opt_v;
+} else {
+    $ftp->login;
+    print STDERR $ftp->message if $opt_v;
+}
+
+$ftp->binary;			# default binary
+print STDERR $ftp->message if $opt_v;
+
+my $pwd = $ftp->pwd;
+print STDERR $ftp->message if $opt_v;
+
+my @ftp_cmd_list = qw(cwd cd pwd ls dir get mget put mput lcd);
 
 $attribs->{attempted_completion_function} = sub {
     my ($text, $line, $start, $end) = @_;
@@ -81,19 +134,22 @@ while (defined($_ = $term->readline('pftp> '))) {
     }
     my $func = "cmd_" . $cmd;
     &$func(@args);
-    print STDERR $ftp->message if $opt_v;
 }
 use strict 'refs';
 $ftp->quit;
+print STDERR $ftp->message if $opt_v;
 
 $term->WriteHistory($HISTFILE)
     or warn "perlsh: cannot write history file: $!\n";
+
 exit (0);
 
 ########################################################################
 #	complete remote filename
+my %rdir;
+
 BEGIN {
-    my ($i, $file, $dir, $fdir);
+    my ($i, $file, $dir, $fdir, $cw);
 
     sub ftp_filename_completion_function ( $$ ) {
 	my($text, $state) = @_;
@@ -105,19 +161,10 @@ BEGIN {
 	    $dir = '' unless defined $dir; # to piecify -w
 	    $fdir = ($dir =~ m|^/|) ? $dir : "$pwd/$dir"; # full path name
 	    $fdir =~ s|//|/|g;
-	    unless ($rdir{$fdir}) {
-		my $d = $ftp->ls($fdir);
-		if ($d) {
-		    foreach (@{$d}) { s|.*/||; }
-		    $rdir{$fdir} = $d;
-		} else {
-		    return undef;
-		}
-	    }
+	    return undef unless defined ($cw = rdir($fdir));
 	} else {
 	    $i++;
 	}
-	my $cw = $rdir{$fdir};
 	for (; $i <= $#{$cw}; $i++) {
 	    return ($dir . $entry)
 		if (($entry = $cw->[$i]) =~ /^$file/);
@@ -133,12 +180,28 @@ sub AUTOLOAD {
     warn "command \`$AUTOLOAD\' is not defined or not implemented.\n";
 }
 
+sub rdir ( $ ) {		# get remote dir info and save it in %rdir
+    my $dir = shift;
+    return $rdir{$dir} if defined $rdir{$dir};
+
+    my $d = $ftp->ls($dir);
+    if ($d) {
+	foreach (@{$d}) {
+	    s|.*/||; # remove directory name  
+	}
+	return $rdir{$dir} = $d;
+    } else {
+	return undef;
+    }
+}
+
 sub cmd_cwd {
     if ($ftp->cwd(@_)) {
 	$pwd = $ftp->pwd();
     } else {
-	print STDERR "cwd: cannot chdir to \`$_\'\n"
+        print STDERR "cwd: cannot chdir to \`$_\'\n"
     }
+    print STDERR $ftp->message if $opt_v;
 }
 
 # Why this does not work?
@@ -155,32 +218,35 @@ sub cmd_pwd {
     } else {
 	print STDERR "pwd failed.\n";
     }
+    print STDERR $ftp->message if $opt_v;
 }
 
 sub cmd_ls {
-    my $dir = $ftp->ls(@_);
-    if ($dir) {
-	foreach (sort @{$dir}) {
+    my $dir = shift || $pwd;
+    my $d = rdir($dir);
+    if (defined $d) {
+	foreach (sort @{$d}) {
 	    print STDERR "$_\n";
 	}
-	foreach (@{$dir}) {
-	    s|.*/||;
-	}
-	$rdir{$pwd} = $dir;
     } else {
 	print STDERR "ls failed\n";
     }
+    print STDERR $ftp->message if $opt_v;
 }
 
 sub cmd_dir {
     my $dir = $ftp->dir(@_);
+    print STDERR $ftp->message if $opt_v;
+
     my @dir;
     if ($dir) {
 	foreach (@{$dir}) {
 	    print STDERR "$_\n";
+
 	    my $info = (parse_dir($_, '+0000'))[0]; # GMT
 	    next unless $info;	# ignore if parse_dir() can not phase.
 	    next unless $$info[0] =~ /^\.\.?$/; # ignore '.' and '..'
+	    $$info[0] =~ s|.*/||; # remove directory name
 	    push(@dir, $$info[0]);
 	}
 	$rdir{$pwd} = \@dir;
@@ -189,74 +255,75 @@ sub cmd_dir {
     }
 }
     
-__END__
+sub cmd_get {
+    $ftp->get(@_);
+    print STDERR $ftp->message if $opt_v;
+}
 
-my %cmds = (account	=> \&account,
-	    append	=> \&append,
-	    ascii	=> \&ascii,
-	    bell	=> \&bell,
-	    binary	=> \&binary,
-	    bye		=> \&bye,
-	    case	=> \&case,
-	    cd		=> \&cd,
-	    cdup	=> \&cdup,
-	    chmod	=> \&chmod,
-	    close	=> \&close,
-	    cr		=> \&cr,
-	    delete	=> \&delete,
-	    debug	=> \&debug,
-	    dir		=> \&dir,
-	    disconnet	=> \&close,
-	    form	=> \&form,
-	    get		=> \&get,
-	    glob	=> \&glob,
-	    hash	=> \&hash,
-	    help	=> \&help,
-	    idle	=> \&idle,
-	    lcd		=> \&lcd,
-	    ls		=> \&ls,
-	    macdef	=> \&macdef,
-	    mdelete	=> \&mdelete,
-	    mdir	=> \&mdir,
-	    mget	=> \&mget,
-	    mkdir	=> \&mkdir,
-	    mls		=> \&mls,
-	    mode	=> \&mode,
-	    modtime	=> \&modtime,
-	    mput	=> \&mput,
-	    newer	=> \&newer,
-	    nlist	=> \&nlist,
-	    nmap	=> \&nmap,
-	    ntrans	=> \&ntrans,
-	    open	=> \&open,
-	    prompt	=> \&prompt,
-	    proxy	=> \&proxy,
-	    put		=> \&put,
-	    pwd		=> \&pwd,
-	    quit	=> \&quit,
-	    quote	=> \&quote,
-	    recv	=> \&get,
-	    reget	=> \&reget,
-	    remotehlep	=> \&remotehlep,
-	    remotestatus=> \&remotestatus,
-	    rename	=> \&rename,
-	    reset	=> \&reset,
-	    restart	=> \&restart,
-	    rmdir	=> \&rmdir,
-	    runique	=> \&runique,
-	    send	=> \&put,
-	    sendport	=> \&sendport,
-	    site	=> \&site,
-	    size	=> \&size,
-	    status	=> \&status,
-	    struct	=> \&struct,
-	    sunique	=> \&sunique,
-	    system	=> \&system,
-	    tenex	=> \&tenex,
-	    trace	=> \&trace,
-	    type	=> \&type,
-	    umask	=> \&umask,
-	    user	=> \&user,
-	    verbose	=> \&verbose,
-	    ?		=> \&help);
+sub cmd_mget {
+    if ($opt_g) {
+	foreach (@_) {
+	    $ftp->get($_);
+	    print STDERR $ftp->message if $opt_v;
+	}
+    } else {
+	my $d = $ftp->ls(@_);
+	print STDERR $ftp->message if $opt_v;
+	foreach (sort @{$d}) {
+	    $ftp->get($_);
+	    print STDERR $ftp->message if $opt_v;
+	}
+    }
+}
 
+sub cmd_put {
+    $ftp->put(@_);
+    print STDERR $ftp->message if $opt_v;
+}
+
+sub cmd_mput {
+    my $f;
+    foreach $f (@_) {
+	foreach ($opt_g ? $f : glob $f) {
+	    $ftp->put($_);
+	    print STDERR $ftp->message if $opt_v;
+	}
+    }
+}
+
+sub cmd_lcd {
+    chdir @_;
+    chomp(my $pwd = `pwd`);
+    printf STDERR "local current directory is \`%s\'\n", $pwd;
+
+}
+
+################################################################
+sub read_hosts {
+    my $file = shift;
+    return () unless -f $file;
+    open(F, $file) or die "$0: cannot open file \`$file\'\n";
+    my @l = <F>;
+    close(F);
+    chomp @l;
+    return @l;
+}
+
+sub write_hosts {
+    my $file = shift;
+    my $lastline = '';
+    open(F, ">$file") or die "$0: cannot open file \`$file\'\n";
+    foreach (sort @_) {
+	print F ($_, "\n") if $_ ne $lastline;
+	$lastline =  $_;
+    }
+    close(F);
+}
+
+################################################################
+#	show man page
+sub man {
+    my $pager = $ENV{'PAGER'} || 'more';
+    exec "pod2man $0|nroff -man|$pager";
+    die "cannot exec pod2man, nroff, or $pager : $!\n";
+}
