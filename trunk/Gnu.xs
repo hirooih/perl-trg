@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.60 1998-09-27 15:22:25 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.61 1998-09-28 15:40:18 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -32,9 +32,11 @@ extern int rl_ignore_completion_duplicates;
 /* from GNU Readline:xmalloc.c */
 extern char *xmalloc (int);
 void rl_extend_line_buffer (int);
+extern char *tgetstr(const char *, char **);
 #else
 extern char *xmalloc ();
 void rl_extend_line_buffer ();
+extern char *tgetstr();
 #endif /* __STDC__ */
 
 /*
@@ -1653,8 +1655,6 @@ _rl_fetch_function(id)
 	}
 
 MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu::TermCap
-
-#include <termcap.h>
 
 void
 _tgetstr(id)
