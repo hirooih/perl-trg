@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.39 1997-01-19 16:27:42 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.40 1997-01-19 16:47:47 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -539,16 +539,17 @@ rl_make_keymap()
 	PROTOTYPE:
 
 void
-rl_discard_keymap()
-	PROTOTYPE:
+rl_discard_keymap(map)
+	Keymap map
+	PROTOTYPE: $
 
 Keymap
 rl_get_keymap()
 	PROTOTYPE:
 
 void
-rl_set_keymap(keymap)
-	Keymap keymap
+rl_set_keymap(map)
+	Keymap map
 	PROTOTYPE: $
 
 Keymap
