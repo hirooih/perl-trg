@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.49 1997-03-01 15:57:47 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.50 1997-03-07 15:15:00 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -32,9 +32,11 @@ extern int rl_ignore_completion_duplicates;
 /* from GNU Readline:xmalloc.c */
 extern char *xmalloc (int);
 extern char *xfree (char *);
+void rl_extend_line_buffer (int);
 #else
 extern char *xmalloc ();
 extern char *xfree ();
+void rl_extend_line_buffer ();
 #endif /* __STDC__ */
 
 static char *
@@ -78,8 +80,8 @@ static struct str_vars {
   int accessed;
   int readonly;
 } str_tbl[] = {
-  /* When you change length of rl_line_buffer, change
-     rl_line_buffer_len also. */
+  /* When you change length of rl_line_buffer, you must call
+     rl_extend_line_buffer().  See _rl_store_rl_line_buffer() */
   { &rl_line_buffer,				0, 0 },	/* 0 */
   { &rl_prompt,					0, 1 },	/* 1 */
   { &rl_library_version,			0, 1 },	/* 2 */
@@ -1272,6 +1274,30 @@ _rl_store_str(pstr, id)
 
 	  /* return variable value */
 	  sv_setpv(ST(0), *str_tbl[id].var);
+	}
+
+void
+_rl_store_rl_line_buffer(pstr)
+	const char *pstr
+	PROTOTYPE: $
+	CODE:
+	{
+	  size_t len;
+
+	  ST(0) = sv_newmortal();
+	  if (pstr) {
+	    len = strlen(pstr) + 1;
+
+	    /*
+	     * rl_extend_line_buffer() is not documented in the GNU
+	     * Readline Library Manual Edition 2.1.  But Chet Ramey
+	     * recommends me to use this function.
+	     */
+	    rl_extend_line_buffer(len);
+
+	    Copy(pstr, rl_line_buffer, len, char);
+	    sv_setpv(ST(0), rl_line_buffer);
+	  }
 	}
 
 void
