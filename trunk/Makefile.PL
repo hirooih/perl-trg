@@ -1,7 +1,7 @@
 #
 #	Makefile.PL for Term::ReadLine::Gnu
 #
-#	$Id: Makefile.PL,v 1.9 1998-05-08 17:37:26 hayashi Exp $
+#	$Id: Makefile.PL,v 1.10 1998-08-13 15:05:44 hayashi Exp $
 #
 #	Copyright (c) 1996,1997,1998 Hiroo Hayashi.  All rights reserved.
 #		<hiroo.hayashi@computer.org>
@@ -79,7 +79,7 @@ WriteMakefile(
 	(
 	IMPORTS	=> { xfree => 'emxlibcm.401' },	# Yuck!
 	) : () ),
-    'INC'	=> '-I$increadlinedir',
+    'INC'	=> "-I$increadlinedir",
     'dist'	=> { COMPRESS => 'gzip -9f', SUFFIX => 'gz' },
     'clean'	=> { FILES => 'rlver.c rlver' },
 );
