@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.72 1999-03-29 15:14:27 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.73 1999-03-31 16:03:54 hayashi Exp $
  *
  *	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
  *
@@ -451,6 +451,7 @@ attempted_completion_function_wrapper(text, start, end)
 
   SPAGAIN;
 
+  /* cf. ignore_some_completions_function_wrapper() */
   if (count > 0) {
     int i;
     int dopack = -1;
@@ -467,15 +468,23 @@ attempted_completion_function_wrapper(text, start, end)
 	matches[i] = dupstr(SvPV(v, na));
       } else {
 	matches[i] = NULL;
-	dopack = i;		/* lowest index of hole */
+	if (i != 0)
+	  dopack = i;		/* lowest index of hole */
       }
     }
-    if (dopack >= 0) {		/* pack undef items */
+    /* pack undef items */
+    if (dopack > 0) {		/* don't pack matches[0] */
       int j = dopack;
       for (i = dopack; i < count; i++) {
 	if (matches[i])
 	  matches[j++] = matches[i];
       }
+      matches[count = j] = NULL;
+    }
+    if (count == 2) {	/* only one match */
+      xfree(matches[0]);
+      matches[0] = matches[1];
+      matches[1] = NULL;
     }
   } else {
     matches = NULL;
@@ -614,7 +623,7 @@ char_is_quoted_p_wrapper(text, index)
   PUTBACK;
   FREETMPS;
   LEAVE;
-  return ret;
+  return ! ret;
 }
 
 /*
@@ -626,42 +635,82 @@ ignore_some_completions_function_wrapper(matches)
      char **matches;
 {
   dSP;
-  int i, l;
-  AV *av_matches;
+  int count, i, only_one_match;
   
-  /* copy C matches[] array into perl array */
-  av_matches = newAV();
+  only_one_match = matches[1] == NULL ? 1 : 0;
+
+  ENTER;
+  SAVETMPS;
+
+  PUSHMARK(sp);
 
   /* matches[0] is the maximal matching substring.  So it may NULL, even rest
    * of matches[] has values. */
   if (matches[0]) {
-    av_push(av_matches, sv_2mortal(newSVpv(matches[0], 0)));
-    xfree(matches[0]);
+    XPUSHs(sv_2mortal(newSVpv(matches[0], 0)));
+    /* xfree(matches[0]);*/
   } else {
-    av_push(av_matches, &sv_undef);
+    XPUSHs(&sv_undef);
   }
-
-  for (i = 1; matches[i]; i++)
-    if (matches[i]) {
-      av_push(av_matches, sv_2mortal(newSVpv(matches[i], 0)));
+  for (i = 1; matches[i]; i++) {
+      XPUSHs(sv_2mortal(newSVpv(matches[i], 0)));
       xfree(matches[i]);
-    } else {
-      av_push(av_matches, &sv_undef);
-    }
-
-  PUSHMARK(sp);
-  XPUSHs(newRV((SV *)av_matches)); /* push reference of array */
+  }
+  /*xfree(matches);*/
   PUTBACK;
 
-  perl_call_sv(fn_tbl[IGNORE_COMP].callback, G_DISCARD);
+  count = perl_call_sv(fn_tbl[IGNORE_COMP].callback, G_ARRAY);
 
-  /* rebuild matches[] */
-  l = av_len(av_matches) + 1;
-  if (i < l)
-    croak("Gnu.xs:ignore_some_completions_function_wrapper: matches array becomes longer.\n");
+  SPAGAIN;
 
-  for (i = 0; i < l; i++)
-    matches[i] = dupstr(SvPV(av_shift(av_matches), na));
+  if (only_one_match) {
+    if (count == 0) {		/* no match */
+      xfree(matches[0]);
+      matches[0] = NULL;
+    } /* else only one match */
+  } else if (count > 0) {
+    int i;
+    int dopack = -1;
+
+    /*
+     * The returned array may contain some undef items.
+     * Pack the array in such case.
+     */
+    matches[count] = NULL;
+    for (i = count - 1; i > 0; i--) { /* don't pop matches[0] */
+      SV *v = POPs;
+      if (SvOK(v)) {
+	matches[i] = dupstr(SvPV(v, na));
+      } else {
+	matches[i] = NULL;
+	dopack = i;		/* lowest index of undef */
+      }
+    }
+    /* pack undef items */
+    if (dopack > 0) {		/* don't pack matches[0] */
+      int j = dopack;
+      for (i = dopack; i < count; i++) {
+	if (matches[i])
+	  matches[j++] = matches[i];
+      }
+      matches[count = j] = NULL;
+    }
+    if (count == 1) {		/* no match */
+      xfree(matches[0]);
+      matches[0] = NULL;
+    } else if (count == 2) {	/* only one match */
+      xfree(matches[0]);
+      matches[0] = matches[1];
+      matches[1] = NULL;
+    }
+  } else {			/* no match */
+    xfree(matches[0]);
+    matches[0] = NULL;
+  }
+
+  PUTBACK;
+  FREETMPS;
+  LEAVE;
 }
 
 /*
