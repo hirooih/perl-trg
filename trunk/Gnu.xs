@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.100 2002-03-24 04:56:07 hiroo Exp $
+ *	$Id: Gnu.xs,v 1.101 2002-03-25 06:38:03 hiroo Exp $
  *
  *	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
  *
@@ -1146,20 +1146,19 @@ MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu::XS
 #
 
 # The function name "readline()" is reserved for a method name.
-void
+
+char *
 rl_readline(prompt = NULL)
 	CONST char *	prompt
     PROTOTYPE: ;$
     CODE:
 	{
-	  char *line_read = readline(prompt);
-
-	  SPAGAIN;		/* see the comment at completion_matches() */
+	  RETVAL = readline(prompt);
 
 	  ST(0) = sv_newmortal(); /* default return value is 'undef' */
-	  if (line_read) {
-	    sv_setpv(ST(0), line_read);
-	    xfree(line_read);
+	  if (RETVAL) {
+	    sv_setpv(ST(0), RETVAL);
+	    xfree(RETVAL);
 	  }
 	}
 
@@ -1249,6 +1248,7 @@ rl_get_keymap_by_name(name)
 	CONST char *	name
     PROTOTYPE: $
 
+# Do not free the string returned.
 char *
 rl_get_keymap_name(map)
 	Keymap map
@@ -1356,12 +1356,12 @@ _rl_generic_bind_macro(keyseq, macro, map = rl_get_keymap())
 
 void
 rl_parse_and_bind(line)
-	CONST char *	line
+	char *	line
     PROTOTYPE: $
     CODE:
 	{
 	  char *s = dupstr(line);
-	  rl_parse_and_bind(s);
+	  rl_parse_and_bind(s); /* Some NULs may be inserted in "s". */
 	  xfree(s);
 	}
 
@@ -1389,6 +1389,7 @@ rl_named_function(name)
 	CONST char *	name
     PROTOTYPE: $
 
+# Do not free the string returned.
 const char *
 rl_get_function_name(function)
 	rl_command_func_t *	function
@@ -1541,9 +1542,10 @@ rl_add_undo(what, start, end, text)
 	int what
 	int start
 	int end
-	const char *	text
+	char *	text
     PROTOTYPE: $$$$
     CODE:
+	/* rl_free_undo_list will free the duplicated memory */
 	rl_add_undo((enum undo_code)what, start, end, dupstr(text));
 
 void
@@ -1648,6 +1650,8 @@ rl_copy_text(start = 0, end = rl_end)
 	int start
 	int end
     PROTOTYPE: ;$$
+    CLEANUP:
+	xfree(RETVAL);
 
 int
 rl_kill_text(start = 0, end = rl_end)
@@ -1797,7 +1801,7 @@ rl_display_match_list(pmatches, plen = -1, pmax = -1)
 	  xfree(matches);
 	}
 
-#endif /* (RL_VERSION_MAJOR < 4) */
+#endif /* (RL_VERSION_MAJOR >= 4) */
 
 #
 #	2.4.11 Miscellaneous Functions
@@ -1855,6 +1859,7 @@ rl_set_paren_blink_timeout(usec)
 # rl_get_termcap() is documented by readline-4.2 but it has been implemented 
 # from 2.2.1.
 
+# Do not free the string returned.
 char *
 rl_get_termcap(cap)
 	CONST char *	cap
@@ -1863,6 +1868,7 @@ rl_get_termcap(cap)
 #
 #	2.4.12 Alternate Interface
 #
+
 void
 rl_callback_handler_install(prompt, lhandler)
 	const char *	prompt
@@ -2009,33 +2015,33 @@ rl_completion_matches(text, fn = NULL)
 	  }
 	}
 
-void
+char *
 rl_filename_completion_function(text, state)
 	const char *	text
 	int state
     PROTOTYPE: $$
     CODE:
 	{
-	  char *str = rl_filename_completion_function(text, state);
+	  RETVAL = rl_filename_completion_function(text, state);
 	  ST(0) = sv_newmortal();
-	  if (str) {
-	    sv_setpv(ST(0), str);
-	    xfree(str);
+	  if (RETVAL) {
+	    sv_setpv(ST(0), RETVAL);
+	    xfree(RETVAL);
 	  }
 	}
 
-void
+char *
 rl_username_completion_function(text, state)
 	const char *	text
 	int state
     PROTOTYPE: $$
     CODE:
 	{
-	  char *str = rl_username_completion_function(text, state);
+	  RETVAL = rl_username_completion_function(text, state);
 	  ST(0) = sv_newmortal();
-	  if (str) {
-	    sv_setpv(ST(0), str);
-	    xfree(str);
+	  if (RETVAL) {
+	    sv_setpv(ST(0), RETVAL);
+	    xfree(RETVAL);
 	  }
 	}
 
@@ -2073,50 +2079,39 @@ using_history()
 #
 #	2.3.2 History List Management
 #
-# TODO: typemap HIST_ENTRY
 
 void
 add_history(string)
 	CONST char *	string
     PROTOTYPE: $
 
-void
+HIST_ENTRY *
 remove_history(which)
 	int which
     PROTOTYPE: $
-    CODE:
-	{
-	  HIST_ENTRY *entry;
-	  entry = remove_history(which);
-	  ST(0) = sv_newmortal();
-	  if (entry) {
-	    if (entry->line) {
-	      sv_setpv(ST(0), entry->line);
-	    }
-	    xfree(entry->line);
-	    xfree(entry->data);
-	    xfree((char *)entry);
-	  }
+    OUTPUT:
+	RETVAL
+    CLEANUP:
+	if (RETVAL) {
+	  xfree(RETVAL->line);
+	  xfree(RETVAL->data);
+	  xfree((char *)RETVAL);
 	}
 
-void
+HIST_ENTRY *
 replace_history_entry(which, line)
 	int which
 	CONST char *	line
     PROTOTYPE: $$
     CODE:
-	{
-	  HIST_ENTRY *entry;
-	  entry = replace_history_entry(which, line, (char *)NULL);
-	  ST(0) = sv_newmortal();
-	  if (entry) {
-	    if (entry->line) {
-	      sv_setpv(ST(0), entry->line);
-	    }
-	    xfree(entry->line);
-	    xfree(entry->data);
-	    xfree((char *)entry);
-	  }
+	RETVAL = replace_history_entry(which, line, (char *)NULL);
+    OUTPUT:
+	RETVAL
+    CLEANUP:
+	if (RETVAL) {
+	  xfree(RETVAL->line);
+	  xfree(RETVAL->data);
+	  xfree((char *)RETVAL);
 	}
 
 void
@@ -2158,32 +2153,14 @@ int
 where_history()
     PROTOTYPE:
 
-void
+HIST_ENTRY *
 current_history()
     PROTOTYPE:
-    CODE:
-	{
-	  HIST_ENTRY *entry;
-	  entry = current_history();
-	  ST(0) = sv_newmortal();
-	  if (entry && entry->line) {
-	    sv_setpv(ST(0), entry->line);
-	  }
-	}
 
-void
+HIST_ENTRY *
 history_get(offset)
 	int offset
     PROTOTYPE: $
-    CODE:
-	{
-	  HIST_ENTRY *entry;
-	  entry = history_get(offset);
-	  ST(0) = sv_newmortal();
-	  if (entry && entry->line) {
-	    sv_setpv(ST(0), entry->line);
-	  }
-	}
 
 int
 history_total_bytes()
@@ -2197,31 +2174,13 @@ history_set_pos(pos)
 	int pos
     PROTOTYPE: $
 
-void
+HIST_ENTRY *
 previous_history()
     PROTOTYPE:
-    CODE:
-	{
-	  HIST_ENTRY *entry;
-	  entry = previous_history();
-	  ST(0) = sv_newmortal();
-	  if (entry && entry->line) {
-	    sv_setpv(ST(0), entry->line);
-	  }
-	}
 
-void
+HIST_ENTRY *
 next_history()
     PROTOTYPE:
-    CODE:
-	{
-	  HIST_ENTRY *entry;
-	  entry = next_history();
-	  ST(0) = sv_newmortal();
-	  if (entry && entry->line) {
-	    sv_setpv(ST(0), entry->line);
-	  }
-	}
 
 #
 #	2.3.5 Searching the History List
@@ -2351,6 +2310,8 @@ _history_arg_extract(line, first = 0 , last = DALLAR)
 	RETVAL = history_arg_extract(first, last, line);
     OUTPUT:
 	RETVAL
+    CLEANUP:
+	xfree(RETVAL);
 
 
 #
@@ -2637,7 +2598,7 @@ _rl_fetch_last_func()
 
 MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu::XS
 
-void
+char *
 tgetstr(id)
 	const char *	id
     PROTOTYPE: $
@@ -2652,7 +2613,8 @@ tgetstr(id)
 
 	  ST(0) = sv_newmortal();
 	  if (id) {
-	    sv_setpv(ST(0), tgetstr(id, &bp));
+	    RETVAL = tgetstr(id, &bp);
+	    sv_setpv(ST(0), RETVAL);
 	  }
 	}
 /*
