@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.65 1999-03-01 15:21:39 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.66 1999-03-07 17:07:03 hayashi Exp $
  *
  *	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
  *
@@ -40,8 +40,10 @@ extern "C" {
 
 /* from GNU Readline:xmalloc.c */
 extern char *xmalloc __P((int));
-void rl_extend_line_buffer __P((int));
 extern char *tgetstr __P((const char *, char **));
+#if (RLMAJORVER < 4)
+void rl_extend_line_buffer __P((int));
+#endif
 
 /*
  * Using xfree() in GNU Readline Library causes problem with Solaris
@@ -841,7 +843,7 @@ callback_handler_wrapper(line)
 
   perl_call_sv(callback_handler_callback, G_DISCARD);
 }
-
+
 /*
  * make separate name space for low level XS functions and there methods
  */
@@ -1642,6 +1644,12 @@ int
 history_is_stifled()
 	PROTOTYPE:
 
+#
+#	2.3.3 Information about the History List
+#
+
+# history_list() is implemented as a perl function in Gnu.pm.
+
 int
 where_history()
 	PROTOTYPE:
@@ -1905,9 +1913,8 @@ _rl_store_rl_line_buffer(pstr)
 	    len = strlen(pstr) + 1;
 
 	    /*
-	     * rl_extend_line_buffer() is not documented in the GNU
-	     * Readline Library Manual Edition 2.1.  But Chet Ramey
-	     * recommends me to use this function.
+	     * Old manual did not document this function, but can be
+	     * used.
 	     */
 	    rl_extend_line_buffer(len);
 
