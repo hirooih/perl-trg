@@ -2,7 +2,7 @@
 #
 #	XS.pm : perl function definition for Term::ReadLine::Gnu
 #
-#	$Id: XS.pm,v 1.14 2001-02-11 05:58:55 hayashi Exp $
+#	$Id: XS.pm,v 1.15 2001-02-12 15:04:14 hayashi Exp $
 #
 #	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
 #
@@ -197,6 +197,14 @@ sub rl_add_funmap_entry ($$) {
 	return;
     }
     return _rl_add_funmap_entry($_[0], _str2fn($_[1]));
+}
+
+sub rl_tty_set_default_bindings (;$) {
+    if (defined $_[0]) {
+	return _rl_tty_set_defaut_bindings(_str2map($_[1]));
+    } else {
+	return _rl_tty_set_defaut_bindings();
+    }
 }
 
 sub rl_message {
