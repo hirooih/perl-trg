@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.58 1998-04-14 16:41:54 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.59 1998-05-05 13:57:25 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -650,6 +650,37 @@ _rl_unbind_key(key, map = rl_get_keymap())
 	}
 	OUTPUT:
 	RETVAL
+
+#if (RLMAJORVER >= 2 && RLMINORVER >= 2)
+
+# rl_unbind_function_in_map() and rl_unbind_command_in_map() are introduced
+# by readline-2.2.
+
+int
+_rl_unbind_function_in_map(function, map = rl_get_keymap())
+	Function *function
+	Keymap map
+	PROTOTYPE: $;$
+	CODE:
+	{
+	  RETVAL = rl_unbind_function_in_map(function, map);
+	}
+	OUTPUT:
+	RETVAL
+
+int
+_rl_unbind_command_in_map(command, map = rl_get_keymap())
+	char *command
+	Keymap map
+	PROTOTYPE: $;$
+	CODE:
+	{
+	  RETVAL = rl_unbind_command_in_map(command, map);
+	}
+	OUTPUT:
+	RETVAL
+
+#endif /* readline-2.2 and later */
 
 int
 _rl_generic_bind_function(keyseq, function, map = rl_get_keymap())
