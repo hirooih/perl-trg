@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	history.t --- Term::ReadLine:GNU History Library Test Script
 #
-#	$Id: history.t,v 1.5 2001-03-10 05:06:42 hayashi Exp $
+#	$Id: history.t,v 1.6 2002-03-30 18:10:14 hiroo Exp $
 #
 #	Copyright (c) 1998 Hiroo Hayashi.  All rights reserved.
 #
@@ -13,6 +13,10 @@
 
 BEGIN {print "1..82\n"; $n = 1}
 END {print "not ok $n\n" unless $loaded;}
+if ($ENV{PERL_RL}) {
+    warn "You must unset the environment variable \`PERL_RL\'.\n";
+    exit 1;
+}
 
 $^W = 1;			# perl -w
 use strict;
