@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.67 1999-03-17 16:16:14 hayashi Exp $
+#	$Id: Gnu.pm,v 1.68 1999-03-27 01:31:18 hayashi Exp $
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -212,6 +212,15 @@ sub readline {			# should be ReadLine
     $prompt = RL_PROMPT_START_IGNORE . ${$Attribs{term_set}}[0] . RL_PROMPT_END_IGNORE
 	. $prompt
 	    . RL_PROMPT_START_IGNORE . ${$Attribs{term_set}}[1] . RL_PROMPT_END_IGNORE;
+
+    # `completion_function' support for compatibility with
+    # Term:ReadLine::Perl.  Prefer $completion_entry_function, since a
+    # program which uses $completion_entry_function should know
+    # Term::ReadLine::Gnu and have better completion function using
+    # the variable.
+    $Attribs{completion_entry_function} = $Attribs{_trp_completion_function}
+	if (!defined $Attribs{completion_entry_function}
+	    && defined $Attribs{completion_function});
 
     # TkRunning support
     if (not $Term::ReadLine::registered and $Term::ReadLine::toloop
@@ -544,18 +553,13 @@ foreach (keys %Term::ReadLine::Gnu::Var::_rl_vars) {
 	 rl_display_match_list
 	 filename_completion_function
 	 username_completion_function
-	 list_completion_function);
+	 list_completion_function
+         _trp_completion_function);
     # auto-split subroutine cannot be processed in the map loop above
     use strict 'refs';
     $Attribs{shadow_redisplay} = \&Term::ReadLine::Gnu::XS::shadow_redisplay;
     $Attribs{Tk_getc} = \&Term::ReadLine::Gnu::XS::Tk_getc;
 }
-
-#
-#	for compatibility with Term::ReadLine::Perl
-#
-tie $Attribs{completion_function}, 'Term::ReadLine::Gnu::Var',
-    'rl_attempted_completion_function';
 
 package Term::ReadLine::Gnu::AU;
 use Carp;
@@ -1219,7 +1223,9 @@ Examples:
 =item Function References
 
 	rl_getc
+	rl_redisplay
 	rl_callback_read_char
+	rl_display_match_list
 	filename_completion_function
 	username_completion_function
 	list_completion_function
@@ -1228,6 +1234,7 @@ Examples:
 
 	do_expand		# if true history expansion is enabled
 	completion_word		# for list_completion_function
+	completion_function	# for compatibility to Term::ReadLine::Perl
 
 =back
 
@@ -1267,7 +1274,7 @@ in Gnu.pm.  You can use it as follows;
     my $attribs = $term->Attribs;
     ...
     $attribs->{completion_entry_function} =
-	$attribs->{'list_completion_function'};
+	$attribs->{list_completion_function};
     ...
     $attribs->{completion_word} =
 	[qw(reference to a list of words which you want to use for completion)];
