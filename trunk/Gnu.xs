@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.53 1997-04-10 15:42:58 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.54 1997-07-13 15:11:42 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -813,7 +813,6 @@ rl_modifying(start = 0, end = rl_end)
 #
 #	2.4.6 Redisplay
 #
-# in info : int rl_redisplay()
 void
 rl_redisplay()
 	PROTOTYPE:
