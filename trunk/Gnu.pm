@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.66 1999-03-16 16:03:56 hayashi Exp $
+#	$Id: Gnu.pm,v 1.67 1999-03-17 16:16:14 hayashi Exp $
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -72,11 +72,12 @@ require Term::ReadLine::Gnu::XS;
 
 #	Global Variables
 
-use vars qw(%Attribs %Features @rl_term_set);
+use vars qw(%Attribs %Features);
 
 %Attribs  = (
 	     do_expand => 0,
 	     completion_word => [],
+	     term_set => ['', '', '', ''],
 	    );
 %Features = (
 	     appname => 1, minline => 1, autohistory => 1,
@@ -162,6 +163,9 @@ sub new {
 	local $^W = 0;		# Term::ReadLine is not warning flag free
 	# 'ue' (underline end) does not work on some terminal 
 	#$self->ornaments(1);
+	# Without the next line Term::ReadLine::Stub::ornaments is used.
+	# Why does Term::ReadLine::Gnu::AU selects it at first?!!!
+	undef &Term::ReadLine::Gnu::ornaments;
 	$self->ornaments('us,me,,');
     }
 
@@ -205,9 +209,9 @@ sub readline {			# should be ReadLine
 
     # ornament support (now prompt only)
     # non-printing characters must be told to readline
-    $prompt = RL_PROMPT_START_IGNORE . $rl_term_set[0] . RL_PROMPT_END_IGNORE
+    $prompt = RL_PROMPT_START_IGNORE . ${$Attribs{term_set}}[0] . RL_PROMPT_END_IGNORE
 	. $prompt
-	    . RL_PROMPT_START_IGNORE . $rl_term_set[1] . RL_PROMPT_END_IGNORE;
+	    . RL_PROMPT_START_IGNORE . ${$Attribs{term_set}}[1] . RL_PROMPT_END_IGNORE;
 
     # TkRunning support
     if (not $Term::ReadLine::registered and $Term::ReadLine::toloop
@@ -326,34 +330,6 @@ is getting input.
 =back
 
 =cut
-
-# This routine originates in Term::ReadLine.pm.
-
-# Debian GNU/Linux discourages users from using /etc/termcap.  A
-# subroutine ornaments() defined in Term::ReadLine.pm uses
-# Term::Caps.pm which requires /etc/termcap.
-
-# This module calls termcap (or its compatible) library, which the GNU
-# Readline Library already uses, instead of Term::Caps.pm.
-{
-    # Prompt-start, prompt-end, command-line-start, command-line-end
-    #     -- zero-width beautifies to emit around prompt and the command line.
-    @rl_term_set = ("","","","");
-    # string encoded:
-    my $rl_term_set = ',,,';
-
-    sub ornaments {
-	my $self = shift;
-	return $rl_term_set unless @_;
-	$rl_term_set = shift;
-	$rl_term_set ||= ',,,';
-	$rl_term_set = 'us,me,,' if $rl_term_set eq '1';
-	my @ts = split /,/, $rl_term_set, 4;
-	@rl_term_set
-	    = map {$_ ? $self->tgetstr($_) || '' : ''} @ts;
-	return $rl_term_set;
-    }
-}
 
 # Not tested yet.  How do I use this?
 sub newTTY {
@@ -557,7 +533,7 @@ foreach (keys %Term::ReadLine::Gnu::Var::_rl_vars) {
 #	add reference to some functions
 {
     my ($name, $fname);
-    no strict 'refs';
+    no strict 'refs';		# allow symbolic refernce
     map {
 	($name = $_) =~ s/^rl_//; # strip leading `rl_'
 	$fname = 'Term::ReadLine::Gnu::XS::' . $_;
@@ -568,8 +544,11 @@ foreach (keys %Term::ReadLine::Gnu::Var::_rl_vars) {
 	 rl_display_match_list
 	 filename_completion_function
 	 username_completion_function
-	 list_completion_function
-	 Tk_getc);
+	 list_completion_function);
+    # auto-split subroutine cannot be processed in the map loop above
+    use strict 'refs';
+    $Attribs{shadow_redisplay} = \&Term::ReadLine::Gnu::XS::shadow_redisplay;
+    $Attribs{Tk_getc} = \&Term::ReadLine::Gnu::XS::Tk_getc;
 }
 
 #
@@ -580,7 +559,7 @@ tie $Attribs{completion_function}, 'Term::ReadLine::Gnu::Var',
 
 package Term::ReadLine::Gnu::AU;
 use Carp;
-no strict;
+no strict qw(refs vars);
 
 sub AUTOLOAD {
     { $AUTOLOAD =~ s/.*:://; }	# preserve match data
