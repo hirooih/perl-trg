@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.29 1999-03-15 15:49:16 hayashi Exp $
+#	$Id: readline.t,v 1.30 1999-03-17 16:20:56 hayashi Exp $
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -11,14 +11,14 @@
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl t/readline.t'
 
-BEGIN {print "1..74\n"; $n = 1;}
+BEGIN {print "1..81\n"; $n = 1;}
 END {print "not ok 1\tfail to loading\n" unless $loaded;}
 
 my $verbose = defined @ARGV && ($ARGV[0] eq 'verbose');
 
 $^W = 1;			# perl -w
 use strict;
-use vars qw($loaded $res $n);
+use vars qw($loaded $n);
 eval "use ExtUtils::testlib;" or eval "use lib './blib';";
 use Term::ReadLine;
 use Term::ReadLine::Gnu qw(ISKMAP ISMACR ISFUNC);
@@ -29,14 +29,17 @@ print "ok 1\tloading\n"; $n++;
 
 # Perl-5.005 and later has Test.pm, but I define this here to support
 # older version.
+my $res;
+my $ok = 1;
 sub ok {
     my $what = shift || '';
 
     if ($res) {
 	print "ok $n\t$what\n";
     } else {
-	print "not ok $n";
+	print "not ok $n\t$what";
 	print @_ ? "\t@_\n" : "\n";
+	$ok = 0;
     }
     $n++;
 }
@@ -51,7 +54,7 @@ $res =  defined $t; ok('new');
 
 my $OUT;
 if ($verbose) {
-    $OUT = $t->OUT || \*STDOUT;
+    $OUT = $t->Attribs->{outstream};
 } else {
     open(NULL, '>/dev/null') or die "cannot open \`/dev/null\': $!\n";
     $OUT = \*NULL;
@@ -93,11 +96,11 @@ $res = $a->{point} == 0;			ok;
 $res = $a->{end} == 0;				ok;
 $res = $a->{mark} == 0;				ok;
 $res = $a->{done} == 0;				ok;
-$res = $a->{pending_input} == 0;		ok;
+$res = $a->{pending_input} == 0;		ok('pending_input');
 $res = $a->{erase_empty_line} == 0;		ok;
 $res = ! defined($a->{prompt});			ok;
 $res = ! defined($a->{terminal_name});		ok;
-$res = $a->{readline_name} eq 'ReadLineTest';	ok;
+$res = $a->{readline_name} eq 'ReadLineTest';	ok('readline_name');
 
 # !!!TODO!!!
 # rl_instream, rl_outstream
@@ -105,9 +108,9 @@ $res = $a->{readline_name} eq 'ReadLineTest';	ok;
 # rl_getc_function, rl_redisplay_function
 
 # not defined here
-$res = ! defined($a->{executing_keymap});	ok;
+$res = ! defined($a->{executing_keymap});	ok('executing_keymap');
 # anonymous keymap
-$res = defined($a->{binding_keymap});		ok;
+$res = defined($a->{binding_keymap});		ok('binding_keymap');
 
 ########################################################################
 # 2.4 Readline Convenience Functions
@@ -120,13 +123,6 @@ sub reverse_line {		# reverse a whole line
     
     $t->modifying(0, $a->{end}); # save undo information
     $a->{line_buffer} = reverse $a->{line_buffer};
-}
-
-sub display_readline_version {	# show version
-    my($count, $key) = @_;	# ignored in this sample function
-    print $OUT "\nTerm::ReadLine::Gnu version: $Term::ReadLine::Gnu::VERSION";
-    print $OUT "\nGNU Readline Library version: $a->{library_version}\n";
-    $t->on_new_line();
 }
 
 # From the GNU Readline Library Manual
@@ -167,29 +163,6 @@ sub invert_case_line {
     return 0;
 }
 
-# sample function of rl_message()
-sub change_ornaments {
-    my($count, $key) = @_;	# ignored in this sample function
-    $t->save_prompt;
-    $t->message("[S]tandout, [U]nderlining, [B]old, [R]everse, [V]isible bell");
-    my $c = chr $t->read_key;
-    if ($c =~ /s/i) {
-	$t->ornaments('so,me,,');
-    } elsif ($c =~ /u/i) {
-	$t->ornaments('us,me,,');
-    } elsif ($c =~ /b/i) {
-	$t->ornaments('md,me,,');
-    } elsif ($c =~ /r/i) {
-	$t->ornaments('mr,me,,');
-    } elsif ($c =~ /v/i) {
-	$t->ornaments('vb,,,');
-    } else {
-	$t->ding;
-    }
-    $t->restore_prompt;
-    $t->clear_message;
-}
-
 ########################################################################
 # 2.4.1 Naming a Function
 
@@ -197,9 +170,10 @@ my ($func, $type);
 
 # test add_defun
 $res = (! defined($t->named_function('reverse-line'))
-	&& ! defined($t->named_function('display-readline-version'))
 	&& ! defined($t->named_function('invert-case-line'))
-	&& ! defined($t->named_function('change-ornaments')));
+	&& defined($t->named_function('operate-and-get-next'))
+	&& defined($t->named_function('display-readline-version'))
+	&& defined($t->named_function('change-ornaments')));
 ok('add_defun');
 
 ($func, $type) = $t->function_of_keyseq("\ct");
@@ -207,13 +181,12 @@ $res = $type == ISFUNC && $t->get_function_name($func) eq 'transpose-chars';
 ok;
 
 $t->add_defun('reverse-line',		  \&reverse_line, ord "\ct");
-$t->add_defun('display-readline-version', \&display_readline_version);
 $t->add_defun('invert-case-line',	  \&invert_case_line);
-$t->add_defun('change-ornaments',	  \&change_ornaments);
 
 $res = (defined($t->named_function('reverse-line'))
-	&& defined($t->named_function('display-readline-version'))
 	&& defined($t->named_function('invert-case-line'))
+	&& defined($t->named_function('operate-and-get-next'))
+	&& defined($t->named_function('display-readline-version'))
 	&& defined($t->named_function('change-ornaments')));
 ok;
 
@@ -447,29 +420,43 @@ ok('default key binding',
 
 $INSTR = "abcdefgh\cM";
 $line = $t->readline("self insert> ");
-$res = $line eq 'abcdefgh'; ok('self insert',$line);
+$res = $line eq 'abcdefgh'; ok('self insert', $line);
 
 $INSTR = "\cAe\cFf\cBg\cEh\cH ij kl\eb\ebm\cDn\cM";
 $line = $t->readline("cursor move> ", 'abcd'); # default string
-$res = $line eq 'eagfbcd mnj kl'; ok('cursor move',$line);
+$res = $line eq 'eagfbcd mnj kl'; ok('cursor move', $line);
 
 # test reverse_line, display_readline_version, invert_case_line
 $INSTR = "\cXvabcdefgh XYZ\e6\cB\e4\ec\cT\cM";
 $line = $t->readline("custom commands> ");
-$res = $line eq 'ZYx HGfedcba'; ok('custom commands',$line);
+$res = $line eq 'ZYx HGfedcba'; ok('custom commands', $line);
 
 # test undo of reverse_line
 $INSTR = "abcdefgh\cTi\c_\c_\cM";
 $line = $t->readline("test undo> ");
-$res = $line eq 'abcdefgh'; ok('undo',$line);
+$res = $line eq 'abcdefgh'; ok('undo', $line);
 
 # test macro, change_ornaments
 $INSTR = "1234\e?i\eoB\cM\cM";
 $line = $t->readline("keyboard macro> ");
-$res = $line eq "[insert text from beginning of line]1234"; ok('macro',$line);
+$res = $line eq "[insert text from beginning of line]1234"; ok('macro', $line);
 $INSTR = "\cM";
 $line = $t->readline("bold face prompt> ");
-$res = $line eq ''; ok('ornaments',$line);
+$res = $line eq ''; ok('ornaments', $line);
+
+# test operate_and_get_next
+$INSTR = "one\cMtwo\cMthree\cM\cP\cP\cP\cO\cO\cO\cM";
+$line = $t->readline("> ");	# one
+$line = $t->readline("> ");	# two
+$line = $t->readline("> ");	# three
+$line = $t->readline("> ");
+$res = $line eq 'one';	 ok('operate_and_get_next 1', $line);
+$line = $t->readline("> ");
+$res = $line eq 'two';	 ok('operate_and_get_next 2', $line);
+$line = $t->readline("> ");
+$res = $line eq 'three'; ok('operate_and_get_next 3', $line);
+$line = $t->readline("> ");
+$res = $line eq 'one';	 ok('operate_and_get_next 4', $line);
 
 ########################################################################
 # test history expansion
@@ -488,19 +475,19 @@ sub prompt {
 
 $INSTR = "!1\cM";
 $line = $t->readline(prompt);
-$res = $line eq 'abcdefgh'; ok('history 1');
+$res = $line eq 'abcdefgh'; ok('history 1', $line);
 
 $INSTR = "123\cM";		# too short
 $line = $t->readline(prompt);
 $INSTR = "!!\cM";
 $line = $t->readline(prompt);
-$res = $line eq 'abcdefgh'; ok('history 2');
+$res = $line eq 'abcdefgh'; ok('history 2', $line);
 
 $INSTR = "1234\cM";
 $line = $t->readline(prompt);
 $INSTR = "!!\cM";
 $line = $t->readline(prompt);
-$res = $line eq '1234'; ok('history 3');
+$res = $line eq '1234'; ok('history 3', $line);
 
 ########################################################################
 # test custom completion function
@@ -554,14 +541,24 @@ $a->{attempted_completion_function} = undef;
 $a->{startup_hook} = sub { $a->{point} = 10; };
 $INSTR = "insert\cM";
 $line = $t->readline("rl_startup_hook test>", "cursor is, <- here");
-$res = $line eq 'cursor is,insert <- here'; ok('startup_hook',$line);
+$res = $line eq 'cursor is,insert <- here'; ok('startup_hook', $line);
 $a->{startup_hook} = undef;
 
 $a->{pre_input_hook} = sub { $a->{point} = 10; };
 $INSTR = "insert\cM";
 $line = $t->readline("rl_pre_input_hook test>", "cursor is, <- here");
-$res = $line eq 'cursor is,insert <- here'; ok('pre_input_hook',$line);
+$res = $line eq 'cursor is,insert <- here'; ok('pre_input_hook', $line);
 $a->{pre_input_hook} = undef;
+
+#########################################################################
+# test redisplay_function
+$a->{redisplay_function} = $a->{shadow_redisplay};
+$INSTR = "\cX\cVThis is a password.\cM";
+$line = $t->readline("password> ");
+$res = $line eq 'This is a password.'; ok('redisplay_function', $line);
+undef $a->{redisplay_function};
+
+print "ok $n\n"; $n++;
 
 #########################################################################
 # test rl_display_match_list
@@ -573,6 +570,7 @@ if ($version > 4.0 - 0.1) {
     $t->display_match_list(\@match_list);
     $t->parse_and_bind('set print-completions-horizontally off');
 }
+print "ok $n\n"; $n++;
 
 ########################################################################
 # test ornaments
@@ -604,44 +602,19 @@ print "ok $n\n"; $n++;
 ########################################################################
 # end of non-interactive test
 unless ($verbose) {
-    print STDERR "ok\tTry \`perl -Mblib t/readline.t verbose\', if you will.\n";
+    print STDERR "ok\tTry \`perl -Mblib t/readline.t verbose\', if you will.\n" if $ok;
     exit 0;
 }
 ########################################################################
 # interactive test
 
-$a->{getc_function} = undef;
-
-# fix warning message !!!
-#  my $timer = 30;			# 50 x 0.1 = 5.0 sec timer
-#  $a->{event_hook} = sub {
-#      if ($timer-- < 0) {
-#  #	$t->call_function('accept-line');
-#  	$a->{pending_input} = ord "\cM";
-#  	undef $a->{event_hook};
-#  #	$a->{done} = 1;
-#      }
-#  };
-#  $line = $t->readline("input in 5 seconds> ");
-#  print "<$line>\n";
-
+########################################################################
 # test redisplay_function
-$a->{redisplay_function} = sub {
-#    my $oldfh = select($OUT); $| = 1;
-    print $OUT ($t->tgetstr('cr'), # carriage return
-		$t->tgetstr('ce'), # clear to EOL
-		$a->{prompt}, '*' x length($a->{line_buffer}));
-    print $OUT ($t->tgetstr('le') # cursor left
-		x (length($a->{line_buffer}) - $a->{point}));
-#    $| = 0; select($oldfh);
-};
 
-my $oldfh = select($OUT); $| = 1; select($oldfh);
+$a->{redisplay_function} = $a->{shadow_redisplay};
 $line = $t->readline("password> ");
-$oldfh = select($OUT); $| = 0; select($oldfh);
-print "$line\n";
+print "<$line>\n";
 undef $a->{redisplay_function};
-
 
 ########################################################################
 # test rl_getc_function and rl_getc()
@@ -657,16 +630,32 @@ print $OUT "\n" unless defined $t->readline("convert to uppercase>");
 $a->{getc_function} = undef;
 
 ########################################################################
+# test event_hook
+$a->{getc_function} = undef;
+
+my $timer = 20;			# 20 x 0.1 = 2.0 sec timer
+$a->{event_hook} = sub {
+    if ($timer-- < 0) {
+	$a->{done} = 1;
+	undef $a->{event_hook};
+	0;
+    }
+};
+$line = $t->readline("input in 2 seconds> ");
+undef $a->{event_hook};
+print "<$line>\n";
+
+########################################################################
 # convert control charactors to printable charactors (ex. "\cx" -> '\C-x')
 sub toprint {
     join('',
 	 map{$_ eq "\e" ? '\M-': ord($_)<32 ? '\C-'.lc(chr(ord($_)+64)) : $_}
-	 (split('',$_[0])));
+	 (split('', $_[0])));
 }
 
 my %TYPE = (0 => 'Function', 1 => 'Keymap', 2 => 'Macro');
 
-print $OUT "\nTry the following commands.\n";
+print $OUT "\n# Try the following commands.\n";
 foreach ("\co", "\ct", "\cx",
 	 "\cx\cv", "\cxv", "\ec",
 	 "\e?f", "\e?v", "\e?i", "\eo") {
