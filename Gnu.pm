@@ -1,9 +1,9 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.92 2003-03-17 01:29:39 hiroo Exp $
+#	$Id: Gnu.pm,v 1.93 2003-10-01 02:18:40 hiroo Exp $
 #
-#	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 2003 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -316,7 +316,7 @@ sub readline {			# should be ReadLine
     }
 
     # add to history buffer
-    $self->add_history($line) 
+    $self->add_history($line)
 	if (defined $self->{MinLength} && $self->{MinLength} > 0
 	    && length($line) >= $self->{MinLength});
 
@@ -505,26 +505,27 @@ use vars qw(%_rl_vars);
        history_length				=> ['I', 12],
        history_max_entries			=> ['I', 13],
        max_input_history			=> ['I', 13], # before GRL 4.2
-       history_expansion_char			=> ['C', 14],
-       history_subst_char			=> ['C', 15],
-       history_comment_char			=> ['C', 16],
-       history_quotes_inhibit_expansion		=> ['I', 17],
-       rl_erase_empty_line			=> ['I', 18], # GRL 4.0
-       rl_catch_signals				=> ['I', 19], # GRL 4.0
-       rl_catch_sigwinch			=> ['I', 20], # GRL 4.0
-       rl_already_prompted			=> ['I', 21], # GRL 4.1
-       rl_num_chars_to_read			=> ['I', 22], # GRL 4.2
-       rl_dispatching				=> ['I', 23], # GRL 4.2
-       rl_gnu_readline_p			=> ['I', 24], # GRL 4.2
-       rl_readline_state			=> ['I', 25], # GRL 4.2
-       rl_explicit_arg				=> ['I', 26], # GRL 4.2
-       rl_numeric_arg				=> ['I', 27], # GRL 4.2
-       rl_editing_mode				=> ['I', 28], # GRL 4.2
-       rl_attempted_completion_over		=> ['I', 29], # GRL 4.2
-       rl_completion_type			=> ['I', 30], # GRL 4.2
-       rl_readline_version			=> ['I', 31], # GRL 4.2a
-       rl_completion_suppress_append		=> ['I', 32], # GRL 4.3
-       rl_completion_mark_symlink_dirs		=> ['I', 33], # GRL 4.3
+       history_write_timestamps			=> ['I', 14], # GRL 5.0
+       history_expansion_char			=> ['C', 15],
+       history_subst_char			=> ['C', 16],
+       history_comment_char			=> ['C', 17],
+       history_quotes_inhibit_expansion		=> ['I', 18],
+       rl_erase_empty_line			=> ['I', 19], # GRL 4.0
+       rl_catch_signals				=> ['I', 20], # GRL 4.0
+       rl_catch_sigwinch			=> ['I', 21], # GRL 4.0
+       rl_already_prompted			=> ['I', 22], # GRL 4.1
+       rl_num_chars_to_read			=> ['I', 23], # GRL 4.2
+       rl_dispatching				=> ['I', 24], # GRL 4.2
+       rl_gnu_readline_p			=> ['I', 25], # GRL 4.2
+       rl_readline_state			=> ['I', 26], # GRL 4.2
+       rl_explicit_arg				=> ['I', 27], # GRL 4.2
+       rl_numeric_arg				=> ['I', 28], # GRL 4.2
+       rl_editing_mode				=> ['I', 29], # GRL 4.2
+       rl_attempted_completion_over		=> ['I', 30], # GRL 4.2
+       rl_completion_type			=> ['I', 31], # GRL 4.2
+       rl_readline_version			=> ['I', 32], # GRL 4.2a
+       rl_completion_suppress_append		=> ['I', 33], # GRL 4.3
+       rl_completion_mark_symlink_dirs		=> ['I', 34], # GRL 4.3
 
        rl_startup_hook				=> ['F', 0],
        rl_event_hook				=> ['F', 1],
@@ -768,6 +769,11 @@ Bind C<KEY> to the C<FUNCTION>.  C<FUNCTION> is the name added by the
 C<add_defun> method.  If optional argument C<MAP> is specified, binds
 in C<MAP>.  Returns non-zero in case of error.
 
+=item C<bind_key_if_unbound(KEY, FUNCTION [,MAP])>
+
+	int	rl_bind_key_if_unbound(int key, FunctionPtr|str function,
+			    	       Keymap|str map = rl_get_keymap()) #GRL5.0
+
 =item C<unbind_key(KEY [,MAP])>
 
 	int	rl_unbind_key(int key, Keymap|str map = rl_get_keymap())
@@ -784,10 +790,20 @@ Bind C<KEY> to the null function.  Returns non-zero in case of error.
 	int	rl_unbind_command(str command,
 				  Keymap|str map = rl_get_keymap())
 
+=item C<bind_keyseq(KEYSEQ, FUNCTION [,MAP])>
+
+	int	rl_bind_keyseq(str keyseq, FunctionPtr|str function,
+			       Keymap|str map = rl_get_keymap()) # GRL 5.0
+
 =item C<set_key(KEYSEQ, FUNCTION [,MAP])>
 
 	int	rl_set_key(str keyseq, FunctionPtr|str function,
-				  Keymap|str map = rl_get_keymap())
+			   Keymap|str map = rl_get_keymap())
+
+=item C<bind_keyseq_if_unbound(KEYSEQ, FUNCTION [,MAP])>
+
+	int	rl_bind_keyseq_if_unbound(str keyseq, FunctionPtr|str function,
+					  Keymap|str map = rl_get_keymap()) # GRL 5.0
 
 =item C<generic_bind(TYPE, KEYSEQ, DATA, [,MAP])>
 
@@ -1010,6 +1026,10 @@ detail see 'GNU Readline Library Manual'.
 
 	void	rl_tty_set_default_bindings([Keymap KMAP])	# GRL 4.2
 
+=item C<tty_unset_default_bindings(KMAP)>
+
+	void	rl_tty_unset_default_bindings([Keymap KMAP])	# GRL 5.0
+
 =item C<reset_terminal([TERMINAL_NAME])>
 
 	int	rl_reset_terminal(str terminal_name = getenv($TERM)) # GRL 4.2
@@ -1208,6 +1228,10 @@ This is equivalent with 'stifle_history(undef)'.
 sets the history of input, from where it can be used if the actual
 C<readline> is present.
 
+=item C<add_history_time(STRING)>
+
+	void	add_history_time(str string)	# GRL 5.0
+
 =item C<remove_history(WHICH)>
 
 	str	remove_history(int which)
@@ -1241,6 +1265,10 @@ C<readline> is present.
 =item C<history_get(OFFSET)>
 
 	str	history_get(offset)
+
+=item C<history_get_time(OFFSET)>
+
+	time_t	history_get_time(offset)
 
 =item C<history_total_bytes>
 
@@ -1449,6 +1477,7 @@ Examples:
 	int history_base
 	int history_length
 	int history_max_entries (called `max_input_history'. read only)
+	int history_write_timestamps (GRL 5.0)
 	char history_expansion_char
 	char history_subst_char
 	char history_comment_char
@@ -1827,6 +1856,12 @@ interface to the DBD modules.
 It provides a friendly way to play with the Ghostscript interpreter,
 including command history and auto-completion of Postscript font names
 and reserved words.
+
+=item vshnu (the New Visual Shell)
+
+	http://www.cs.indiana.edu/~kinzler/vshnu/
+
+A visual shell and CLI shell supplement.
 
 =back
 
