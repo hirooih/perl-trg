@@ -1,7 +1,7 @@
 #
 #	Makefile.PL for Term::ReadLine::Gnu
 #
-#	$Id: Makefile.PL,v 1.18 1999-07-19 13:26:12 hayashi Exp $
+#	$Id: Makefile.PL,v 1.19 1999-12-26 08:15:36 hayashi Exp $
 #
 #	Copyright (c) 1999 Hiroo Hayashi.  All rights reserved.
 #		<hiroo.hayashi@computer.org>
@@ -76,7 +76,7 @@ EOF
 close(F);
 
 # compile it
-$comp_cmd = "$Config{cc} $RLINC $Config{ccflags} $defs $frlver -o rlver $RLLIB $libs $Config{ldflags}";
+$comp_cmd = "$Config{cc} $RLINC $Config{ccflags} $defs $frlver -o rlver $RLLIB $Config{ldflags} $libs";
 print $comp_cmd, "\n";
 system($comp_cmd);
 if ($?) {
@@ -111,7 +111,7 @@ $defs .= " -DRLMAJORVER=$rlmajorver -DRLMINORVER=$rlminorver";
 WriteMakefile(
     'NAME'	=> 'Term::ReadLine::Gnu',
     'VERSION_FROM' => 'Gnu.pm',
-    'LIBS'	=> [ $libs ],
+    'LIBS'	=> [ "$RLLIB $libs" ],
     'LDFLAGS'	=> "$RLLIB $Config{ldflags}",
     'LDDLFLAGS'	=> "$RLLIB $Config{lddlflags}",
     'DEFINE'	=> $defs,
