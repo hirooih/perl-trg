@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.12 1996-12-25 15:13:32 hayashi Exp $
+#	$Id: Gnu.pm,v 1.13 1996-12-26 16:01:25 hayashi Exp $
 #
 #	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
 #
@@ -84,6 +84,7 @@ sub new {
     my $class = ref($this) || $this;
 
     my $name = shift;
+    rl_store_var('rl_readline_name', $name);
 
     my ($instream, $outstream);
     if (!@_) {
@@ -109,7 +110,6 @@ sub new {
 		CompletionWordList	=> \@Completion_Word_List,
 	       };
     bless $self, $class;
-    $self->StoreVar('rl_readline_name', $name);
     $self;
 }
 
@@ -283,6 +283,26 @@ sub UnbindKey {
     rl_unbind_key(ord $key);
 }
 
+#
+#	a sample custom function
+#	defined in this module for compatibility with Term::ReadLine::Perl
+#
+sub F_OperateAndGetNext {
+    ## Operate - accept the current line and fetch from the
+    ## history the next line relative to current line for default.
+    my ($count, $key) = @_;
+
+    rl_do_named_function("accept-line", $count, $key);
+
+    # are there cleaner way?
+    my $history_base   = rl_fetch_var('history_base');
+    my $history_length = rl_fetch_var('history_length');
+    my $history_offset = rl_fetch_var('history_offset');
+    warn ("[$history_base,$history_length,$history_offset]\n");
+    # check if we have a next history entry
+    #$rl_Operate = ++$rl_HistoryIndex < $#rl_History;
+}
+
 =item C<FetchVar(VARIABLE_NAME), StoreVar(VARIABLE_NAME)>
 
 Fetch and store a value of a GNU Readline Library variable.  See
@@ -330,10 +350,13 @@ my %_rl_vars
 
 sub FetchVar {
     my $self = shift;
+    rl_fetch_var(@_);
+}
+
+sub rl_fetch_var ($) {
     my $name = shift;
     if (! defined $_rl_vars{$name}) {
-	my $myname = ref $self;
-	carp "${myname}::FetchVar: Unknown variable name `$name'\n";
+	carp "Term::ReadLine::Gnu::FetchVar: Unknown variable name `$name'\n";
 	return undef ;
     }
     
@@ -348,18 +371,20 @@ sub FetchVar {
 	my $func = $id;
 	return $func;		# return value which saved in perl variable
     } else {
-	my $myname = ref $self;
-	carp "${myname}::FetchVar: Illegal type `$type'\n";
+	carp "Term::ReadLine::Gnu::FetchVar: Illegal type `$type'\n";
 	return undef;
     }
 }
 
 sub StoreVar {
     my $self = shift;
+    rl_store_var(@_);
+}
+
+sub rl_store_var ($$) {
     my $name = shift;
     if (! defined $_rl_vars{$name}) {
-	my $myname = ref $self;
-	carp "${myname}::StoreVar: Unknown variable name `$name'\n";
+	carp "Term::ReadLine::Gnu::StoreVar: Unknown variable name `$name'\n";
 	return undef ;
     }
     
@@ -367,7 +392,7 @@ sub StoreVar {
     my ($type, $id) = @{$_rl_vars{$name}};
     if ($type eq 'S') {
 	if ($name eq 'rl_line_buffer') {
-	    $self->StoreVar('rl_line_buffer_len', length($value) + 1);
+	    rl_store_var('rl_line_buffer_len', length($value) + 1);
 	}
 	return _rl_store_str($value, $id);
     } elsif ($type eq 'I') {
@@ -387,8 +412,7 @@ sub StoreVar {
 	    return undef;
 	}
     } else {
-	my $myname = ref $self;
-	carp "${myname}::StoreVar: Illegal type `$type'\n";
+	carp "Term::ReadLine::Gnu::StoreVar: Illegal type `$type'\n";
 	return undef;
     }
 }
