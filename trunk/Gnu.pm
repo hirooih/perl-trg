@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.64 1999-03-15 14:31:32 hayashi Exp $
+#	$Id: Gnu.pm,v 1.65 1999-03-16 15:51:50 hayashi Exp $
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -71,10 +71,9 @@ use Carp;
 require Term::ReadLine::Gnu::XS;
 
 #	Global Variables
-my $Operate_Index;
-my $Next_Operate_Index;
 
-use vars qw(%Attribs %Features @rl_term_set);
+use vars qw(%Attribs %Features @rl_term_set
+	    $Operate_Index $Next_Operate_Index);
 
 %Attribs  = (
 	     do_expand => 0,
