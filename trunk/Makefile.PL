@@ -1,7 +1,7 @@
 #
 #	Makefile.PL for Term::ReadLine::Gnu
 #
-#	$Id: Makefile.PL,v 1.15 1999-05-17 14:33:22 hayashi Exp $
+#	$Id: Makefile.PL,v 1.16 1999-05-26 17:05:58 hayashi Exp $
 #
 #	Copyright (c) 1996,1997,1998 Hiroo Hayashi.  All rights reserved.
 #		<hiroo.hayashi@computer.org>
@@ -31,7 +31,7 @@ $defs = ($Config{strings} =~ m|/string.h$|) ? '-DHAVE_STRING_H' : '';
 # Search libtermcap, libncurses, or libcurses in this order.
 # I emulate the behavior of configure script for bash, and don't know
 # why AIX prefers curses.
-$PREFER_CURSES = $Config{osname} eq 'aix';
+$PREFER_CURSES = $Config{osname} eq 'aix' || $Config{osname} eq 'hpux';
 $TERMCAP_LIB = (! $PREFER_CURSES && &search_lib('-ltermcap'))
     || &search_lib('-lncurses')
     || &search_lib('-lcurses');
@@ -88,10 +88,13 @@ print "It seems that you have the GNU Readline Library version $rlver.\n";
 ($rlmajorver, $rlminorver) = split('\.', $rlver);
 $defs .= " -DRLMAJORVER=$rlmajorver -DRLMINORVER=$rlminorver";
 
+# generate a Makefile
 WriteMakefile(
     'NAME'	=> 'Term::ReadLine::Gnu',
     'VERSION_FROM' => 'Gnu.pm',
-    'LIBS'	=> [ "-L$libreadlinedir $libs" ],
+    'LIBS'	=> [ $libs ],
+    'LDFLAGS'	=> "-L$libreadlinedir $Config{ldflags}",
+    'LDDLFLAGS'	=> "-L$libreadlinedir $Config{lddlflags}",
     'DEFINE'	=> $defs,
     ($os2_usedll ? 
 	(
