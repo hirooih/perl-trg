@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.49 1998-03-06 16:55:32 hayashi Exp $
+#	$Id: Gnu.pm,v 1.50 1998-03-26 15:40:48 hayashi Exp $
 #
 #	Copyright (c) 1996,1997,1998 Hiroo Hayashi.  All rights reserved.
 #
@@ -49,7 +49,7 @@ History Library Manual'.
 use strict;
 use Carp;
 
-BEGIN {
+{
     use Exporter ();
     use DynaLoader;
     use vars qw($VERSION @ISA @EXPORT_OK);
@@ -112,6 +112,7 @@ sub UNDO_END	{ 3; }
 #
 #	Methods Definition
 #
+
 =over 4
 
 =item C<ReadLine>
@@ -356,13 +357,7 @@ sub SetHistory {
 
 sub GetHistory {
     my $self = shift;
-    my ($i, $history_base, $history_length, @d);
-    $history_base   = $Attribs{history_base};
-    $history_length = $Attribs{history_length};
-    for ($i = $history_base; $i < $history_base + $history_length; $i++) {
-	push(@d, $self->history_get($i));
-    }
-    @d;
+    $self->history_list();
 }
 
 sub ReadHistory {
@@ -380,7 +375,7 @@ use Carp;
 use strict;
 
 #
-#	Readline function wrappers
+#	Readline Library function wrappers
 #
 
 # Convert keymap name to Keymap if the argument is not reference to Keymap
@@ -506,12 +501,41 @@ sub operate_and_get_next {
 rl_add_defun('operate-and-get-next', \&operate_and_get_next, ord "\co");
 
 #
-#	for compatibility with Term::ReadLine::Gnu
+#	for compatibility with Term::ReadLine::Perl
 #
 sub filename_list {
     shift;
     my ($text) = @_;
     return completion_matches($text, \&filename_completion_function);
+}
+
+#
+#	History Library function wrappers
+#
+sub history_list () {
+    my ($i, $history_base, $history_length, @d);
+    $history_base   = $Term::ReadLine::Gnu::Attribs{history_base};
+    $history_length = $Term::ReadLine::Gnu::Attribs{history_length};
+    for ($i = $history_base; $i < $history_base + $history_length; $i++) {
+	push(@d, history_get($i));
+    }
+    @d;
+}
+
+sub history_arg_extract ( ;$$$ ) {
+    my ($line, $first, $last) = @_;
+    $line  = $_      unless defined $line;
+    $first = 0       unless defined $first;
+    $last  = ord '$' unless defined $last; # '
+    $first = ord '$' if defined $first and $first eq '$'; # '
+    $last  = ord '$' if defined $last  and $last  eq '$'; # '
+    &_history_arg_extract($line, $first, $last);
+}
+
+*read_history = \&read_history_range;
+
+sub get_history_event ( $$;$ ) {
+    _get_history_event($_[0], $_[1], defined $_[2] ? ord $_[2] : 0);
 }
 
 #
@@ -551,10 +575,11 @@ use vars qw(%_rl_vars);
        rl_inhibit_completion			=> ['I', 10],
        history_base				=> ['I', 11],
        history_length				=> ['I', 12],
-       history_expansion_char			=> ['C', 13],
-       history_subst_char			=> ['C', 14],
-       history_comment_char			=> ['C', 15],
-       history_quotes_inhibit_expansion		=> ['I', 16],
+       max_input_history			=> ['I', 13],
+       history_expansion_char			=> ['C', 14],
+       history_subst_char			=> ['C', 15],
+       history_comment_char			=> ['C', 16],
+       history_quotes_inhibit_expansion		=> ['I', 17],
 
        rl_startup_hook				=> ['F', 0],
        rl_event_hook				=> ['F', 1],
@@ -1029,7 +1054,14 @@ detail see 'GNU Readline Library Manual'.
 	int	stifle_history(int max|undef)
 
 stifles the history list, remembering only the last C<MAX> entries.
-If C<MAX> is undef,  remembers all entries.
+If C<MAX> is undef, remembers all entries.  This is a replacement
+of unstifle_history().
+
+=item C<unstifle_history>
+
+	int	unstifle_history()
+
+This is equivalent with 'stifle_history(undef)'.
 
 =item C<SetHistory(LINE1 [, LINE2, ...])>
 
@@ -1102,14 +1134,19 @@ returns the history of input as a list, if actual C<readline> is present.
 
 =over 4
 
-=item C<history_search(STRING [,DIRECTION [,POS]])>
+=item C<history_search(STRING [,DIRECTION])>
 
-	int	history_search(str string,
-			       int direction = -1, int pos = where_history())
+	int	history_search(str string, int direction = -1)
 
 =item C<history_search_prefix(STRING [,DIRECTION])>
 
 	int	history_search_prefix(str string, int direction = -1)
+
+=item C<history_search_pos(STRING [,DIRECTION [,POS]])>
+
+	int	history_search_pos(str string,
+				   int direction = -1,
+				   int pos = where_history())
 
 =back
 
@@ -1119,6 +1156,9 @@ returns the history of input as a list, if actual C<readline> is present.
 
 =item C<ReadHistory([FILENAME [,FROM [,TO]]])>
 
+	int	read_history(str filename = '~/.history',
+			     int from = 0, int to = -1)
+
 	int	read_history_range(str filename = '~/.history',
 				   int from = 0, int to = -1)
 
@@ -1127,7 +1167,8 @@ time.  If C<FILENAME> is false, then read from F<~/.history>.  Start
 reading at line C<FROM> and end at C<TO>.  If C<FROM> is omitted or
 zero, start at the beginning.  If C<TO> is omitted or less than
 C<FROM>, then read until the end of the file.  Returns true if
-successful, or false if not.
+successful, or false if not.  C<read_history()> is an aliase of
+C<read_history_range()>.
 
 =item C<WriteHistory([FILENAME])>
 
@@ -1156,6 +1197,24 @@ F<~/.history>.  Returns true if successful, or false if not.
 =item C<history_expand(LINE)>
 
 	(int result, str expansion) history_expand(str line)
+
+=item C<history_arg_extract(LINE, [FIRST [,LAST]])>
+
+	str history_arg_extract(str line, int first = 0, int last = '$')
+
+=cut
+
+# '	to make emacs font-lock happy
+
+=item C<get_history_event(STRING, CINDEX [,QCHAR])>
+
+	(str text, int cindex) = get_history_event(str  string,
+						   int  cindex,
+						   char qchar = '\0')
+
+=item C<history_tokenize(LINE)>
+
+	(@str)	history_tokenize(str line)
 
 =back
 
@@ -1224,7 +1283,7 @@ Examples:
 
 	int history_base
 	int history_length
-	int max_input_history (not implemented)
+	int max_input_history (read only)
 	char history_expansion_char
 	char history_subst_char
 	char history_comment_char
@@ -1399,7 +1458,7 @@ GNU History Library Manual
 
 Term::ReadLine
 
-Term::ReadLine::Perl (Term-ReadLine-xx.tar.gz)
+Term::ReadLine::Perl (Term-ReadLine-Perl-xx.tar.gz)
 
 =head1 AUTHOR
 
@@ -1419,9 +1478,6 @@ Test routines for following variable and functions are required.
 	rl_callback_handler_remove()
 
 	rl_complete_internal()
-
-	history_search()
-	history_search_prefix()
 
 =head1 BUGS
 
