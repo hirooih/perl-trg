@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.14 1996-12-28 14:56:55 hayashi Exp $
+#	$Id: Gnu.pm,v 1.15 1996-12-29 13:49:31 hayashi Exp $
 #
 #	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
 #
@@ -90,7 +90,7 @@ sub new {
 
     my ($instream, $outstream);
     if (!@_) {
-	my ($IN,$OUT) = Term::ReadLine::Stub::findConsole();
+	my ($IN,$OUT) = Term::ReadLine::Stub::findConsole(); # !!!
 	open(IN,"<$IN")   || croak "Cannot open $IN for read";
 	open(OUT,">$OUT") || croak "Cannot open $OUT for write";
 	_rl_set_instream (fileno($instream  = \*IN));
@@ -186,7 +186,7 @@ If MAX is undef,  remembers all entries.
 
 sub StifleHistory {
     my $self = shift;
-    _stifle_history($self->{MaxHist} = shift);
+    stifle_history($self->{MaxHist} = shift);
 }
 
 =item C<SetHistory(LINE1, LINE2, ...)>
@@ -355,6 +355,10 @@ my %_rl_vars
        history_subst_char			=> ['C', 16],
        history_comment_char			=> ['C', 17],
        history_quotes_inhibit_expansion		=> ['I', 18],
+#         history_expansion_char			=> ['C', 14],
+#         history_subst_char			=> ['C', 15],
+#         history_comment_char			=> ['C', 16],
+#         history_quotes_inhibit_expansion		=> ['I', 17],
 
        rl_completion_entry_function		=> ['F', 'filename'],
        rl_attempted_completion_function		=> ['F', undef],
@@ -582,7 +586,6 @@ GNU History Library Manual' for each variable.
     'rl_inhibit_completion'
     'history_base'
     'history_length'
-    'history_offset'
     'history_expansion_char'
     'history_subst_char'
     'history_comment_char'
@@ -713,8 +716,6 @@ perl(1).
 Hiroo Hayashi, hayashi@pdcd.ilab.toshiba.co.jp
 
 =head1 TODO
-
-support OperateAndGetNext command
 
 support TkRunning
 
