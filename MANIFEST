@@ -7,3 +7,4 @@ Makefile.PL
 README
 perlsh
 t/readline.t
+typemap
