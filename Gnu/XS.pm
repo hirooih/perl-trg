@@ -2,7 +2,7 @@
 #
 #	XS.pm : perl function definition for Term::ReadLine::Gnu
 #
-#	$Id: XS.pm,v 1.8 1999-05-04 17:48:24 hayashi Exp $
+#	$Id: XS.pm,v 1.9 2000-04-01 14:39:59 hayashi Exp $
 #
 #	Copyright (c) 1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -234,12 +234,16 @@ sub get_history_event ( $$;$ ) {
 # This module calls termcap (or its compatible) library, which the GNU
 # Readline Library already uses, instead of Term::Caps.pm.
 
+# Some terminals do not support 'ue' (underline end).
+use vars qw(%term_no_ue);
+%term_no_ue = ( kterm => 1 );
 
 sub ornaments {
     return $rl_term_set unless @_;
     $rl_term_set = shift;
     $rl_term_set ||= ',,,';
-    $rl_term_set = 'us,me,,' if $rl_term_set eq '1';
+    $rl_term_set = $term_no_ue{$ENV{TERM}} ? 'us,me,,' : 'us,ue,,'
+	if $rl_term_set eq '1';
     my @ts = split /,/, $rl_term_set, 4;
     my @rl_term_set
 	= map {$_ ? tgetstr($_) || '' : ''} @ts;
@@ -389,7 +393,7 @@ sub list_completion_function ( $$ ) {
 #
 sub _trp_completion_function ( $$ ) {
     my($text, $state) = @_;
-    
+
     my $cf;
     return undef unless defined ($cf = $Attribs{completion_function});
     
@@ -399,8 +403,11 @@ sub _trp_completion_function ( $$ ) {
 	# the first call
 	$_i = 0;		# clear index
 	@_matches = &$cf($text,
-			$Attribs{line_buffer},
-			$Attribs{point} - length($text));
+			 $Attribs{line_buffer},
+			 $Attribs{point} - length($text));
+	# return here since $#_matches is 0 instead of -1 when
+	# @_matches = undef
+	return undef unless defined $_matches[0];
     }
     
     for (; $_i <= $#_matches; $_i++) {
