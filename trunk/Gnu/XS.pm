@@ -2,9 +2,9 @@
 #
 #	XS.pm : perl function definition for Term::ReadLine::Gnu
 #
-#	$Id: XS.pm,v 1.5 1999-03-27 01:33:39 hayashi Exp $
+#	$Id: XS.pm,v 1.6 1999-04-10 05:18:47 hayashi Exp $
 #
-#	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 1999 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -382,4 +382,29 @@ sub shadow_redisplay {
     print $OUT (tgetstr('le') # cursor left
 		x (length($Attribs{line_buffer}) - $Attribs{point}));
     $oldfh = select($OUT); $| = 0; select($oldfh);
+}
+
+# callback handler wrapper function for CallbackHandlerInstall method
+sub _ch_wrapper {
+    my $line = shift;
+
+    if (defined $line) {
+	if ($Attribs{do_expand}) {
+	    my $result;
+	    ($result, $line) = history_expand($line);
+	    my $outstream = $Attribs{outstream};
+	    print $outstream "$line\n" if ($result);
+	    
+	    # return without adding line into history
+	    if ($result < 0 || $result == 2) {
+		return '';	# don't return `undef' which means EOF.
+	    }
+	}
+	
+	# add to history buffer
+	add_history($line) 
+	    if ($Attribs{MinLength} > 0
+		&& length($line) >= $Attribs{MinLength});
+    }
+    &{$Attribs{_callback_handler}}($line);
 }
