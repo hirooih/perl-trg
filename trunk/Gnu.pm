@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- GNU Readline wrapper module
 #
-#	$Id: Gnu.pm,v 1.3 1996-11-15 15:55:23 hayashi Exp $
+#	$Id: Gnu.pm,v 1.4 1996-11-19 15:52:41 hayashi Exp $
 #
 #	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
 #
@@ -28,6 +28,9 @@ Term::ReadLine::Gnu - Perl extension for GNU readline library
 =head1 DESCRIPTION
 
 This is an implementation of Term::ReadLine using GNU readline library.
+
+For more detail of the GNU Readline Library, see GNU Readline Library
+Texinfo Manual.
 
 =cut
 
@@ -103,9 +106,9 @@ sub new ($;$$$) {
 
 =item C<readline(PROMPT[,PREPUT])>
 
-gets an input line, I<possibly> with actual C<readline> support.
-Trailing newline is removed.  Returns C<undef> on C<EOF>.  C<PREPUT>
-is an optional argument meaning the initial value of input.
+gets an input line, with actual C<GNU readline> support.  Trailing
+newline is removed.  Returns C<undef> on C<EOF>.  C<PREPUT> is an
+optional argument meaning the initial value of input.
 
 The optional argument C<PREPUT> is granted only if the value C<preput>
 is in C<Features>.
@@ -188,7 +191,7 @@ sub GetHistory () {
 =item C<ReadHistory(FILENAME [,FROM [,TO]])>
 
 adds the contents of C<FILENAME> to the history list, a line at a
-time.  If C<FILENAME> is false, then read from C<~/.history>.  Start
+time.  If C<FILENAME> is false, then read from F<~/.history>.  Start
 reading at line C<FROM> and end at C<TO>.  If C<FROM> is omitted or
 zero, start at the beginning.  If C<TO> is omittied or less than
 C<FROM>, then read until the end of the file.  Returns true if
@@ -205,7 +208,7 @@ sub ReadHistory ($;$$$) {
 
 writes the current history to C<FILENAME>, overwriting C<FILENAME> if
 necessary.  If C<FILENAME> is false, then write the history list to
-C<~/.history>.  Returns true if successful, or false if not.
+F<~/.history>.  Returns true if successful, or false if not.
 
 =cut
 
@@ -218,7 +221,7 @@ sub WriteHistory ($;$) {
 
 If argument C<MAX> is specified, it is an advice on minimal size of
 line to be included into history.  C<undef> means do not include
-anything into history. Returns the old value.
+anything into history.  Returns the old value.
 
 =cut
 
@@ -229,7 +232,20 @@ sub MinLine ($$) {
     $old_minlength;
 }
 
-=item C<$rl_completion_entry_function>
+=item C<ParseAndBind(LINE)>
+
+Parse LINE as if it had been read from the F<~/.inputrc> file and
+perform any key bindings and variable assignments found.  For more
+detail see GNU Readline Library Texinfo manual.
+
+=cut
+
+sub ParseAndBind ($$) {
+    my $self = shift;
+    rl_parse_and_bind(shift);
+}
+
+=item C<$Term::ReadLine::rl_completion_entry_function>
 
 This variable holds reference refers to a generator function for
 C<completion_matches()>.
@@ -292,9 +308,9 @@ sub STORE ($$) {
 
 #	End of Term::ReadLine::Gnu::CEF
 
-=item C<$rl_attempted_completion_function>
+=item C<$Term::ReadLine::rl_attempted_completion_function>
 
-A pointer to an alternative function to create matches.
+A reference to an alternative function to create matches.
 
 The function is called with TEXT, LINE_BUFFER, START, and END.
 LINE_BUFFER is a current input buffer string.  START and END are
@@ -340,7 +356,7 @@ sub STORE ($$) {
 
 #	End of Term::ReadLine::Gnu::ACF
 
-=item C<completion_matches(TEXT, ENTRY_FUNC)>
+=item C<Term::ReadLine::completion_matches(TEXT, ENTRY_FUNC)>
 
 Returns an array of strings which is a list of completions for TEXT.
 If there are no completions, returns C<undef>.  The first entry
@@ -363,7 +379,7 @@ C<$rl_completion_entry_function>.
 
 =cut
 
-=item C<$rl_basic_word_break_characters>
+=item C<$Term::ReadLine::rl_basic_word_break_characters>
 
 The basic list of characters that signal a break between words for the
 completer routine.  The default value of this variable is the
@@ -454,7 +470,7 @@ sub OUT ($) { shift->{OUT}; }
 =item C<findConsole>
 
 returns an array with two strings that give most appropriate names for
-files for input and output using conventions C<"<$in">, C<"E<gt>out">.
+files for input and output using conventions C<"E<lt>$in">, C<"E<gt>$out">.
 
 =item C<Features>
 
@@ -475,7 +491,7 @@ is getting input B<(undocumented feature)>.
 my %Features = (appname => 1, minline => 1, autohistory => 1,
 		preput => 1, do_expand => 1, stifleHistory => 1,
 		getHistory => 1, setHistory => 1, addHistory => 1,
-		readHistory => 1, writeHistory => 1,
+		readHistory => 1, writeHistory => 1, parseAndBind => 1,
 		tkRunning => 0);
 
 sub Features () { \%Features; }
@@ -485,28 +501,64 @@ __END__
 
 =back
 
+=head1 FILES
+
+=over 4
+
+=item F<~/.inputrc>
+
+Readline init file.  Using this file it is possible that you would
+like to use a different set of keybindings.  When a program which uses
+the Readline library starts up, the init file is read, and the key
+bindings are set.
+
+Conditional key binding is also available.  The program name which is
+specified by the first argument of C<new> method is used as the
+application construct.
+
+For example, when your program call C<new> method like this;
+
+	...
+	$term = new Term::ReadLine 'PerlSh';
+	...
+
+your F<~/.inputrc> can define keybindings only for it as follows;
+
+	...
+	$if PerlSh
+	Meta-Rubout: backward-kill-word
+	"\C-x\C-r": re-read-init-file
+        "\e[11~": "Function Key 1"
+	$endif
+	...
+
+=back
+
 =head1 EXPORTS
 
-None
+By default none.  Following names can be exported explicitly.
+
+	$rl_completion_entry_function
+	$rl_attempted_completion_function
+	completion_matches
+	@completion_word_list
+	list_completion_function
+	$rl_basic_word_break_characters
+
+And export tag, C<custom_comption>, is defined for these names.
+
+=head1 SEE ALSO
+
+GNU Readline Library Texinfo Manual
+
+Term::ReadLine
+
+Term::ReadLine::Perl (Term-ReadLine-xx.tar.gz)
+
+perl(1).
 
 =head1 AUTHOR
 
 Hiroo Hayashi, hayashi@pdcd.ilab.toshiba.co.jp
-
-=head1 SEE ALSO
-
-Term::ReadLine
-
-Term::ReadLine::Perl
-
-perl(1).
-
-=head1 TODO
-
-Perlsh: variable name completion support, POD document
-
-keybind function
-
-document
 
 =cut
