@@ -2,9 +2,9 @@
 #
 #	XS.pm : perl function definition for Term::ReadLine::Gnu
 #
-#	$Id: XS.pm,v 1.19 2002-07-27 06:58:26 hiroo Exp $
+#	$Id: XS.pm,v 1.20 2002-07-28 03:39:49 hiroo Exp $
 #
-#	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 2002 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -182,7 +182,7 @@ sub rl_generic_bind ($$$;$) {
 	carp("Term::ReadLine::Gnu::rl_generic_bind: invalid \`type\'\n");
     }
 }
-	    
+
 sub rl_call_function ($;$$) {
     if (defined $_[2]) {
 	return _rl_call_function(_str2fn($_[0]), $_[1], $_[2]);
@@ -295,9 +295,6 @@ use vars qw(%term_no_ue);
 %term_no_ue = ( kterm => 1 );
 
 sub ornaments {
-#print $ENV{TERM}, "\n";
-#print "tgetstr = [" . tgetstr('us') . "]\n";
-#print "tgetstr = [" . tgetstr('ue') . "]\n";
     return $rl_term_set unless @_;
     $rl_term_set = shift;
     $rl_term_set ||= ',,,';
@@ -310,7 +307,6 @@ sub ornaments {
 	    my $t;
 	    ($_ and $t = tgetstr($_))
 		? (Term::ReadLine::Gnu::RL_PROMPT_START_IGNORE
-#		   . ($t =~ s/\$<\d>//, $t)
 		   . $t
 		   . Term::ReadLine::Gnu::RL_PROMPT_END_IGNORE)
 		    : '';
@@ -424,11 +420,15 @@ sub Tk_getc {
 #	$line = $t->readline("password> ");
 sub shadow_redisplay {
     @_tstrs = _tgetstrs() unless $_tstrs_init;
+    # remove prompt start/end mark from prompt string
+    my $prompt = $Attribs{prompt}; my $s;
+    $s = Term::ReadLine::Gnu::RL_PROMPT_START_IGNORE; $prompt =~ s/$s//g;
+    $s = Term::ReadLine::Gnu::RL_PROMPT_END_IGNORE;   $prompt =~ s/$s//g;
     my $OUT = $Attribs{outstream};
     my $oldfh = select($OUT); $| = 1; select($oldfh);
     print $OUT ($_tstrs[0],	# carriage return
 		$_tstrs[1],	# clear to EOL
-		$Attribs{prompt}, '*' x length($Attribs{line_buffer}));
+		$prompt, '*' x length($Attribs{line_buffer}));
     print $OUT ($_tstrs[2]	# cursor left
 		x (length($Attribs{line_buffer}) - $Attribs{point}));
     $oldfh = select($OUT); $| = 0; select($oldfh);
@@ -458,13 +458,13 @@ sub _ch_wrapper {
 	    ($result, $line) = history_expand($line);
 	    my $outstream = $Attribs{outstream};
 	    print $outstream "$line\n" if ($result);
-	    
+
 	    # return without adding line into history
 	    if ($result < 0 || $result == 2) {
 		return '';	# don't return `undef' which means EOF.
 	    }
 	}
-	
+
 	# add to history buffer
 	add_history($line) 
 	    if ($Attribs{MinLength} > 0
@@ -478,7 +478,7 @@ sub _ch_wrapper {
 #
 sub list_completion_function ( $$ ) {
     my($text, $state) = @_;
-    
+
     $_i = $state ? $_i + 1 : 0;	# clear counter at the first call
     my $cw = $Attribs{completion_word};
     for (; $_i <= $#{$cw}; $_i++) {
@@ -496,7 +496,7 @@ sub _trp_completion_function ( $$ ) {
 
     my $cf;
     return undef unless defined ($cf = $Attribs{completion_function});
-    
+
     if ($state) {
 	$_i++;
     } else {
@@ -509,7 +509,7 @@ sub _trp_completion_function ( $$ ) {
 	# @_matches = undef
 	return undef unless defined $_matches[0];
     }
-    
+
     for (; $_i <= $#_matches; $_i++) {
 	return $_matches[$_i] if ($_matches[$_i] =~ /^\Q$text/);
     }
