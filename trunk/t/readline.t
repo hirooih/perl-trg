@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.41 2001-10-28 03:52:42 hayashi Exp $
+#	$Id: readline.t,v 1.42 2001-10-28 04:10:14 hayashi Exp $
 #
 #	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
 #
@@ -300,6 +300,7 @@ sub bind_my_function {
     } else {
 	$t->bind_key(ord "o", 'change-ornaments', 'emacs-meta');
     }
+    $t->bind_key(ord "^", 'history-expand-line', 'emacs-meta');
     
     # make an original map
     $helpmap = $t->make_bare_keymap();
@@ -335,6 +336,7 @@ $res = (is_boundp("\cT", 'reverse-line')
 	&& is_boundp("\cXv",   'display-readline-version')
 	&& is_boundp("\ec",    'invert-case-line')
 	&& is_boundp("\eo",    'change-ornaments')
+	&& is_boundp("\e^",    'history-expand-line')
 	&& is_boundp("\e?f",   'dump-functions')
 	&& is_boundp("\e?v",   'dump-variables')
 	&& ($version <= 0x0201 or is_boundp("\e?m",   'dump-macros')));
@@ -924,7 +926,7 @@ my %TYPE = (0 => 'Function', 1 => 'Keymap', 2 => 'Macro');
 
 print $OUT "\n# Try the following commands.\n";
 foreach ("\co", "\ct", "\cx",
-	 "\cx\cv", "\cxv", "\ec",
+	 "\cx\cv", "\cxv", "\ec", "\e^",
 	 "\e?f", "\e?v", "\e?m", "\e?i", "\eo") {
     my ($p, $type) = $t->function_of_keyseq($_);
     printf $OUT "%-9s: ", toprint($_);
