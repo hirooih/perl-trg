@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.61 1998-09-28 15:40:18 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.62 1999-02-22 16:15:12 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -95,6 +95,16 @@ rl_get_function_name (function)
       return (funmap[i]->name);
   return NULL;
 }
+
+#if (RLMAJORVER < 4)
+/*
+ * Before GNU Readline Library Version 4.0, rl_save_prompt() was
+ * _rl_save_prompt and rl_restore_prompt() was _rl_restore_prompt().
+ */
+void rl_save_prompt() { _rl_save_prompt(); }
+void rl_restore_prompt() { _rl_restore_prompt(); }
+#endif /* (RLMAJORVER < 4) */
+
 
 /*
  *	string variable table for _rl_store_str(), _rl_fetch_str()
@@ -653,7 +663,7 @@ _rl_unbind_key(key, map = rl_get_keymap())
 	OUTPUT:
 	RETVAL
 
-#if (RLMAJORVER >= 2 && RLMINORVER >= 2)
+#if (RLMAJORVER >= 2 && RLMINORVER >= 2 || RLMAJORVER > 2)
 
 # rl_unbind_function_in_map() and rl_unbind_command_in_map() are introduced
 # by readline-2.2.
@@ -905,11 +915,11 @@ rl_clear_message()
 	PROTOTYPE:
 
 void
-_rl_save_prompt()
+rl_save_prompt()
 	PROTOTYPE:
 
 void
-_rl_restore_prompt()
+rl_restore_prompt()
 	PROTOTYPE:
 
 #
