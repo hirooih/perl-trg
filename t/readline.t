@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.4 1996-12-03 15:10:57 hayashi Exp $
+#	$Id: readline.t,v 1.5 1996-12-03 16:31:25 hayashi Exp $
 #
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl t/readline.t'
@@ -12,7 +12,9 @@ END {print "not ok 1\n" unless $loaded;}
 $^W = 1;			# perl -w
 use strict;
 use vars qw($loaded);
-use Term::ReadLine qw(:custom_completion);
+use Term::ReadLine;
+#import Term::ReadLine::Gnu qw(:custom_completion);
+
 $loaded = 1;
 print "ok 1\n";
 
@@ -73,8 +75,11 @@ $term->readline("filename completion (default)>", "this is default string");
 $term->StoreVar('rl_completion_entry_function', 'username');
 $term->readline("username completion>");
 
-@completion_word_list = qw(list of words which you want to use for completion);
-$term->StoreVar('rl_completion_entry_function', \&list_completion_function);
+@{$term->{CompletionWordList}} =
+    qw(list of words which you want to use for completion);
+#$term->StoreVar('rl_completion_entry_function', \&list_completion_function);
+$term->StoreVar('rl_completion_entry_function',
+		\&Term::ReadLine::Gnu::list_completion_function);
 $term->readline("custom completion>");
 
 $term->StoreVar('rl_completion_entry_function', 'filename');
@@ -85,7 +90,7 @@ sub sample_completion {
 #    print $OUT "\n[$text:$line:$start:$end]\n";
     # If first word then username completion, else filename completion
     if (substr($line, 0, $start) =~ /^\s*$/) {
-	return completion_matches($text, 'username');
+	return Term::ReadLine::Gnu::completion_matches($text, 'username');
     } else {
 	return ();
     }
