@@ -1,6 +1,6 @@
 #! /usr/local/bin/perl
 #
-#	$Id: perlsh,v 1.19 1999-03-27 03:11:50 hayashi Exp $	
+#	$Id: perlsh,v 1.20 1999-04-03 17:26:59 hayashi Exp $	
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi. All Rights Reserved.
 #
@@ -83,7 +83,12 @@ sub toplevel {
     }
     $attribs->{attempted_completion_function} = \&attempt_perl_completion;
 
-    $SIG{INT} = 'IGNORE';
+    $SIG{INT} = sub {
+	$term->modifying;
+	$term->delete_text;
+	$attribs->{point} = $attribs->{end} = 0;
+	$term->redisplay;
+    };
 
     my ($strict, $command, @result);
     $strict = $STRICT ? '' : 'no strict;';
