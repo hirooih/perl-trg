@@ -1,7 +1,7 @@
 #
-#	Gnu.pm --- GNU Readline wrapper module
+#	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.8 1996-11-24 14:34:27 hayashi Exp $
+#	$Id: Gnu.pm,v 1.9 1996-12-01 15:43:11 hayashi Exp $
 #
 #	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
 #
@@ -15,7 +15,7 @@ package Term::ReadLine::Gnu;
 
 =head1 NAME
 
-Term::ReadLine::Gnu - Perl extension for GNU readline library
+Term::ReadLine::Gnu - Perl extension for the GNU Readline/History Library
 
 =head1 SYNOPSIS
 
@@ -27,10 +27,11 @@ Term::ReadLine::Gnu - Perl extension for GNU readline library
 
 =head1 DESCRIPTION
 
-This is an implementation of Term::ReadLine using GNU readline library.
+This is an implementation of Term::ReadLine using the GNU
+Readline/History Library.
 
-For more detail of the GNU Readline Library, see GNU Readline Library
-Texinfo Manual.
+For more detail of the GNU Readline/History Library, see 'GNU
+Readline Library Manual' and 'GNU History Library Manual'.
 
 =cut
 
@@ -42,7 +43,7 @@ require Exporter;
 require DynaLoader;
 
 @ISA = qw(Term::ReadLine::Stub Exporter DynaLoader);
-$VERSION = '0.03';
+$VERSION = '0.04';
 
 bootstrap Term::ReadLine::Gnu $VERSION;
 
@@ -76,7 +77,7 @@ sub new {
     my $class = ref($this) || $this;
 
     my $name;
-    _rl_set_readline_name($name = shift) if (@_); # Name
+    $this->StoreVar('rl_readline_name', ($name = shift)) if (@_); # Name
 
     my ($instream, $outstream);
     if (!@_) {
@@ -235,7 +236,7 @@ sub MinLine {
 
 Parse LINE as if it had been read from the F<~/.inputrc> file and
 perform any key bindings and variable assignments found.  For more
-detail see GNU Readline Library Texinfo manual.
+detail see 'GNU Readline Library Manual'.
 
 =cut
 
@@ -244,117 +245,114 @@ sub ParseAndBind {
     rl_parse_and_bind(shift);
 }
 
-=item C<$Term::ReadLine::rl_completion_entry_function>
+=item C<FetchVar(VARIABLE_NAME), StoreVar(VARIABLE_NAME)>
 
-This variable holds reference refers to a generator function for
-C<completion_matches()>.
-
-A generator function is called repeatedly from
-C<completion_matches()>, returning a string each time.  The arguments
-to the generator function are TEXT and STATE.  TEXT is the partial
-word to be completed.  STATE is zero the first time the function is
-called, allowing the generator to perform any necessary
-initialization, and a positive non-zero integer for each subsequent
-call.  When the generator function returns C<undef> this signals
-C<completion_matches()> that there are no more possibilities left.
-
-If the value is false or equals C<'filename'>, built-in
-C<filename_completion_function> is used.  If the value equals
-C<'username'>, build-in C<username_completion_function> is used.
-
-A sample generator function, C<list_completion_function>, is defined
-in Gnu.pm.  You can use it as follows;
-
-     use Term::ReadLine qw(@completion_word_list list_completion_function);
-     ...
-     my $term = new Term::ReadLine 'sample';
-     ...
-     @completion_word_list = qw(list of words which you want to use for completion);
-     $rl_completion_entry_function = \&list_completion_function;
-     $term->readline("custom completion>");
-
-See also C<completion_matches>.
+Fetch and store a value of a GNU Readline Library variable.  See
+section VARIABLES.
 
 =cut
 
+my %_rl_vars
+    = (
+       rl_line_buffer				=> ['S', 0],
+       rl_library_version			=> ['S', 1],
+       rl_readline_name				=> ['S', 2],
+       rl_basic_word_break_characters		=> ['S', 3],
+       rl_basic_quote_characters		=> ['S', 4],
+       rl_completer_word_break_characters	=> ['S', 5],
+       rl_completer_quote_characters		=> ['S', 6],
+       rl_filename_quote_characters		=> ['S', 7],
+       rl_special_prefixes			=> ['S', 8],
+       history_no_expand_chars			=> ['S', 9],
+       history_search_delimiter_chars		=> ['S', 10],
+       
+       rl_buffer_len				=> ['I', 0],
+       rl_point					=> ['I', 1],
+       rl_end					=> ['I', 2],
+       rl_mark					=> ['I', 3],
+       rl_done					=> ['I', 4],
+       rl_pending_input				=> ['I', 5],
+       rl_completion_query_items		=> ['I', 6],
+       rl_completion_append_character		=> ['C', 7],
+       rl_ignore_completion_duplicates		=> ['I', 8],
+       rl_filename_completion_desired		=> ['I', 9],
+       rl_filename_quoting_desired		=> ['I', 10],
+       rl_inhibit_completion			=> ['I', 11],
+       history_base				=> ['I', 12],
+       history_length				=> ['I', 13],
+       history_expansion_char			=> ['C', 14],
+       history_subst_char			=> ['C', 15],
+       history_comment_char			=> ['C', 16],
+       history_quotes_inhibit_expansion		=> ['I', 17],
+
+       rl_completion_entry_function		=> ['F', 'filename'],
+       rl_attempted_completion_function		=> ['F', undef],
+      );
+
+sub FetchVar {
+    my $self = shift;
+    my $name = shift;
+    if (! defined $_rl_vars{$name}) {
+	carp "unknown variable name `$name'\n";
+	return undef ;
+    }
+    
+    my ($type, $id) = @{$_rl_vars{$name}};
+    if ($type eq 'S') {
+	return Term::ReadLine::Gnu::Str::_rl_fetch_str($id);
+    } elsif ($type eq 'I') {
+	return Term::ReadLine::Gnu::Int::_rl_fetch_int($id);
+    } elsif ($type eq 'C') {
+	return chr(Term::ReadLine::Gnu::Int::_rl_fetch_int($id));
+    } elsif ($type eq 'F') {
+	my $func = $id;
+	return $func;		# return value which saved in perl variable
+    } else {
+	carp "Illegal type `$type'\n";
+	return undef;
+    }
+}
+
+sub StoreVar {
+    my $self = shift;
+    my $name = shift;
+    if (! defined $_rl_vars{$name}) {
+	carp "unknown variable name `$name'\n";
+	return undef ;
+    }
+    
+    my $value = shift;
+    my ($type, $id) = @{$_rl_vars{$name}};
+    if ($type eq 'S') {
+	if ($name eq 'rl_line_buffer') {
+	    $self->StoreVar('rl_line_buffer_len', length($value) + 1);
+	}
+	return Term::ReadLine::Gnu::Str::_rl_store_str($value, $id);
+    } elsif ($type eq 'I') {
+	return Term::ReadLine::Gnu::Int::_rl_store_int($value, $id);
+    } elsif ($type eq 'C') {
+	return chr(Term::ReadLine::Gnu::Int::_rl_store_int(ord($value), $id));
+    } elsif ($type eq 'F') {
+	my $func = $id;
+	if ($name eq 'rl_completion_entry_function') {
+	    _rl_store_completion_entry_function($value);
+	    return $_rl_vars{$name}[1] = $value;
+	} elsif ($name eq 'rl_attempted_completion_function') {
+	    _rl_store_attempted_completion_function($value);
+	    return $_rl_vars{$name}[1] = $value;
+	} else {
+	    warn "Internal error: Check Gnu.pm\n";
+	    return undef;
+	}
+    } else {
+	carp "Illegal type `$type'\n";
+	return undef;
+    }
+}
+
 #
-#	access methods for $rl_completion_entry_function
+#	Custom Completion Support
 #
-package Term::ReadLine::Gnu::CEF;
-use Carp;
-use strict;
-
-sub TIESCALAR {
-    my $class = shift;
-    my $self = shift;
-    Term::ReadLine::Gnu::_rl_store_completion_entry_function($self);
-    return bless \$self, $class;
-}
-
-sub FETCH {
-    my $self = shift;
-    confess "wrong type" unless ref $self;
-    return $$self;
-}
-
-sub STORE {
-    my $self = shift;
-    confess "wrong type" unless ref $self;
-    $$self = shift;
-    Term::ReadLine::Gnu::_rl_store_completion_entry_function($$self);
-    return $$self;
-}
-
-#	End of Term::ReadLine::Gnu::CEF
-
-=item C<$Term::ReadLine::rl_attempted_completion_function>
-
-A reference to an alternative function to create matches.
-
-The function is called with TEXT, LINE_BUFFER, START, and END.
-LINE_BUFFER is a current input buffer string.  START and END are
-indices in LINE_BUFFER saying what the boundaries of TEXT are.
-
-If this function exists and returns null list or C<undef>, or if this
-variable is set to C<undef>, then an internal function
-C<rl_complete()> will call the value of
-C<$rl_completion_entry_function> to generate matches, otherwise the
-array of strings returned will be used.
-
-The default value of this variable is C<undef>.
-
-=cut
-
-#
-#	access methods for $rl_attempted_completion_function
-#
-package Term::ReadLine::Gnu::ACF;
-use Carp;
-use strict;
-
-sub TIESCALAR {
-    my $class = shift;
-    my $self = shift;
-    Term::ReadLine::Gnu::_rl_store_attempted_completion_function($self);
-    return bless \$self, $class;
-}
-
-sub FETCH {
-    my $self = shift;
-    confess "wrong type" unless ref $self;
-    return $$self;
-}
-
-sub STORE {
-    my $self = shift;
-    confess "wrong type" unless ref $self;
-    $$self = shift;
-    Term::ReadLine::Gnu::_rl_store_attempted_completion_function($$self);
-    return $$self;
-}
-
-#	End of Term::ReadLine::Gnu::ACF
-
 =item C<Term::ReadLine::completion_matches(TEXT, ENTRY_FUNC)>
 
 Returns an array of strings which is a list of completions for TEXT.
@@ -378,106 +376,17 @@ C<$rl_completion_entry_function>.
 
 =cut
 
-=item C<$Term::ReadLine::rl_basic_word_break_characters>
-
-The basic list of characters that signal a break between words for the
-completer routine.  The default value of this variable is the
-characters which break words for completion in Bash, i.e.,
-C<" \t\n\"\\'`\@\$><=;|&{(">.
-
-=cut
-
-#
-#	access methods for $rl_basic_word_break_characters
-#
-package Term::ReadLine::Gnu::BWBC;
-use Carp;
-use strict;
-
-sub TIESCALAR {
-    my $class = shift;
-    my $self = shift;
-    Term::ReadLine::Gnu::_rl_store_basic_word_break_characters($self);
-    return bless \$self, $class;
-}
-
-sub FETCH {
-    my $self = shift;
-    confess "wrong type" unless ref $self;
-    return $$self;
-}
-
-sub STORE {
-    my $self = shift;
-    confess "wrong type" unless ref $self;
-    $$self = shift;
-    Term::ReadLine::Gnu::_rl_store_basic_word_break_characters($$self);
-    return $$self;
-}
-
-#	End of Term::ReadLine::Gnu::CWBC
-
-=item C<$Term::ReadLine::rl_completer_word_break_characters>
-
-The list of characters that signal a break between words for
-C<rl_complete_internal ()>.  The default list is the value of
-C<$Term::ReadLine::rl_basic_word_break_characters>, i.e.,
-C<" \t\n\"\\'`\@\$><=;|&{(">.
-
-=cut
-
-#
-#	access methods for $rl_completer_word_break_characters
-#
-package Term::ReadLine::Gnu::CWBC;
-use Carp;
-use strict;
-
-sub TIESCALAR {
-    my $class = shift;
-    my $self = shift;
-    Term::ReadLine::Gnu::_rl_store_completer_word_break_characters($self);
-    return bless \$self, $class;
-}
-
-sub FETCH {
-    my $self = shift;
-    confess "wrong type" unless ref $self;
-    return $$self;
-}
-
-sub STORE {
-    my $self = shift;
-    confess "wrong type" unless ref $self;
-    $$self = shift;
-    Term::ReadLine::Gnu::_rl_store_completer_word_break_characters($$self);
-    return $$self;
-}
-
-#	End of Term::ReadLine::Gnu::CWBC
+# Term::Readline::completion_matches() is defined in Gnu.xs
 
 package Term::ReadLine;
 
-use vars qw($rl_completion_entry_function $rl_attempted_completion_function
-	    @completion_word_list $rl_basic_word_break_characters
-	    $rl_completer_word_break_characters
+use vars qw(@completion_word_list
 	    %EXPORT_TAGS @EXPORT_OK);
 
-%EXPORT_TAGS = (custom_completion => [qw($rl_completion_entry_function
-					 $rl_attempted_completion_function
-					 completion_matches
+%EXPORT_TAGS = (custom_completion => [qw(completion_matches
 					 @completion_word_list
-					 list_completion_function
-					 $rl_basic_word_break_characters
-					 $rl_completer_word_break_characters)]);
+					 list_completion_function)]);
 Exporter::export_ok_tags('custom_completion');
-
-tie $rl_completion_entry_function, 'Term::ReadLine::Gnu::CEF', undef;
-tie $rl_attempted_completion_function, 'Term::ReadLine::Gnu::ACF', undef;
-tie $rl_basic_word_break_characters, 'Term::ReadLine::Gnu::BWBC',
-    " \t\n\"\\'`\@\$><=;|&{(";	# default value of the GNU Readline Library
-tie $rl_completer_word_break_characters, 'Term::ReadLine::Gnu::CWBC',
-    " \t\n\"\\'`\@\$><=;|&{(";	# default value of the GNU Readline Library
 
 BEGIN {
     my $i;
@@ -538,8 +447,138 @@ my %Features = (appname => 1, minline => 1, autohistory => 1,
 
 sub Features { \%Features; }
 
+#
+#	string variable access function
+#
+package Term::ReadLine::Gnu::Str;
+use Carp;
+use strict;
+
+sub TIESCALAR {
+    my $class = shift;
+    my $id = shift;
+    my $self = [$id, _rl_fetch_str($id)];
+    return bless $self, $class;
+}
+
+sub FETCH {
+    my $self = shift;
+    confess "wrong type" unless ref $self;
+    return _rl_fetch_str($self->[0]);
+}
+
+sub STORE {
+    my $self = shift;
+    confess "wrong type" unless ref $self;
+    return _rl_store_str(shift, $self->[0]);
+}
+
+#	End of Term::ReadLine::Gnu::Str;
+
 1;
 __END__
+
+=back
+
+=head1 VARIABLES
+
+Following GNU Readline Library variables can be accessed through
+FetchVar and StoreVar methods.  See 'GNU Readline Library Manual' and '
+GNU History Library Manual' for each variable.
+
+    'rl_line_buffer'
+    'rl_library_version'
+    'rl_readline_name'
+    'rl_basic_word_break_characters'
+    'rl_basic_quote_characters'
+    'rl_completer_word_break_characters'
+    'rl_completer_quote_characters'
+    'rl_filename_quote_characters'
+    'rl_special_prefixes'
+    'history_no_expand_chars'
+    'history_search_delimiter_chars'
+       
+    'rl_buffer_len'
+    'rl_point'
+    'rl_end'
+    'rl_mark'
+    'rl_done'
+    'rl_pending_input'
+    'rl_completion_query_items'
+    'rl_completion_append_character'
+    'rl_ignore_completion_duplicates'
+    'rl_filename_completion_desired'
+    'rl_filename_quoting_desired'
+    'rl_inhibit_completion'
+    'history_base'
+    'history_length'
+    'history_expansion_char'
+    'history_subst_char'
+    'history_comment_char'
+    'history_quotes_inhibit_expansion'
+
+    'rl_completion_entry_function'
+    'rl_attempted_completion_function'
+
+=over 4
+
+=item C<rl_completion_entry_function>
+
+This variable holds reference refers to a generator function for
+C<completion_matches()>.
+
+A generator function is called repeatedly from
+C<completion_matches()>, returning a string each time.  The arguments
+to the generator function are TEXT and STATE.  TEXT is the partial
+word to be completed.  STATE is zero the first time the function is
+called, allowing the generator to perform any necessary
+initialization, and a positive non-zero integer for each subsequent
+call.  When the generator function returns C<undef> this signals
+C<completion_matches()> that there are no more possibilities left.
+
+If the value is false or equals C<'filename'>, built-in
+C<filename_completion_function> is used.  If the value equals
+C<'username'>, build-in C<username_completion_function> is used.
+
+A sample generator function, C<list_completion_function>, is defined
+in Gnu.pm.  You can use it as follows;
+
+    use Term::ReadLine qw(@completion_word_list list_completion_function);
+    ...
+    my $term = new Term::ReadLine 'sample';
+    ...
+    @completion_word_list = qw(list of words which you want to use for completion);
+    $term->StoreVar('rl_completion_entry_function', \&list_completion_function);
+    $term->readline("custom completion>");
+
+See also C<completion_matches>.
+
+=item C<rl_attempted_completion_function>
+
+A reference to an alternative function to create matches.
+
+The function is called with TEXT, LINE_BUFFER, START, and END.
+LINE_BUFFER is a current input buffer string.  START and END are
+indices in LINE_BUFFER saying what the boundaries of TEXT are.
+
+If this function exists and returns null list or C<undef>, or if this
+variable is set to C<undef>, then an internal function
+C<rl_complete()> will call the value of
+C<$rl_completion_entry_function> to generate matches, otherwise the
+array of strings returned will be used.
+
+The default value of this variable is C<undef>.  You can use it as follows;
+
+    sub sample_completion {
+        my ($text, $line, $start, $end) = @_;
+        # If first word then username completion, else filename completion
+        if (substr($line, 0, $start) =~ /^\s*$/) {
+    	    return completion_matches($text, 'username');
+        } else {
+    	    return ();
+        }
+    }
+    $term->StoreVar('rl_attempted_completion_function', \&sample_completion);
 
 =back
 
@@ -580,19 +619,18 @@ your F<~/.inputrc> can define keybindings only for it as follows;
 
 By default none.  Following names can be exported explicitly.
 
-	$rl_completion_entry_function
-	$rl_attempted_completion_function
 	completion_matches
 	@completion_word_list
 	list_completion_function
-	$rl_basic_word_break_characters
-	$rl_completer_word_break_characters
 
-And export tag, C<custom_comption>, is defined for these names.
+And export tag, C<custom_completion>, is defined for these names.
+(Suggest me other implementaions!)
 
 =head1 SEE ALSO
 
-GNU Readline Library Texinfo Manual
+GNU Readline Library Manual
+
+GNU History Library Manual
 
 Term::ReadLine
 
@@ -608,6 +646,9 @@ Hiroo Hayashi, hayashi@pdcd.ilab.toshiba.co.jp
 
 support OperateAndGetNext command
 
-Merge TIE functions by using inheritance.  (How can I do this?)
+support TkRunning
+
+Better interface to 'completion_matches' and 'list_completion_function'.
 
 =cut
+
