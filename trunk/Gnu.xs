@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.73 1999-03-31 16:03:54 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.74 1999-04-03 09:39:07 hayashi Exp $
  *
  *	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
  *
@@ -623,7 +623,7 @@ char_is_quoted_p_wrapper(text, index)
   PUTBACK;
   FREETMPS;
   LEAVE;
-  return ! ret;
+  return ret;
 }
 
 /*
@@ -723,17 +723,21 @@ directory_completion_hook_wrapper(textp)
 {
   dSP;
   int count;
-  char *ret;
+  SV *sv;
+  int ret;
+  char *rstr;
   
   ENTER;
   SAVETMPS;
 
-  PUSHMARK(sp);
   if (textp && *textp) {
-    XPUSHs(sv_2mortal(newSVpv(*textp, 0)));
+    sv = sv_2mortal(newSVpv(*textp, 0));
   } else {
-    XPUSHs(&sv_undef);
+    sv = &sv_undef;
   }
+
+  PUSHMARK(sp);
+  XPUSHs(sv);
   PUTBACK;
 
   count = perl_call_sv(fn_tbl[DIR_COMP].callback, G_SCALAR);
@@ -743,15 +747,19 @@ directory_completion_hook_wrapper(textp)
   if (count != 1)
     croak("Gnu.xs:directory_completion_hook_wrapper: Internal error\n");
 
-  ret = POPp;			/* warns unless string */
+  ret = POPi;
+
+  rstr = SvPV(sv, na);
+  if (strcmp(*textp, rstr) != 0) {
+    xfree(*textp);
+    *textp = dupstr(rstr);
+  }
+
   PUTBACK;
   FREETMPS;
   LEAVE;
 
-  if (strcmp(*textp, ret) != 0) {
-    xfree(*textp);
-    *textp = dupstr(ret);
-  }
+  return ret;
 }
 
 /*
