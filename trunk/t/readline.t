@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.17 1997-03-18 17:27:02 hayashi Exp $
+#	$Id: readline.t,v 1.18 1997-03-22 14:26:05 hayashi Exp $
 #
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl t/readline.t'
@@ -177,8 +177,8 @@ $attribs->{completion_entry_function} =
     $attribs->{'username_completion_function'};
 $term->readline("username completion>");
 
-@{$attribs->{completion_word}} =
-    qw(list of words which you want to use for completion);
+$attribs->{completion_word} =
+    [qw(list of words which you want to use for completion)];
 $attribs->{completion_entry_function} = $attribs->{'list_completion_function'};
 $term->readline("list completion>");
 
