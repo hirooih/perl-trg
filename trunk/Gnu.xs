@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.71 1999-03-19 16:01:13 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.72 1999-03-29 15:14:27 hayashi Exp $
  *
  *	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
  *
@@ -341,7 +341,7 @@ getc_function_wrapper(fp)
 }
 
 static void
-redisplay_function_wrapper()	{ return void_arg_func_wrapper(REDISPLAY_FN); }
+redisplay_function_wrapper()	{ void_arg_func_wrapper(REDISPLAY_FN); }
 
 static int
 pre_input_hook_wrapper() { return void_arg_func_wrapper(PRE_INPUT_HOOK); }
@@ -438,7 +438,11 @@ attempted_completion_function_wrapper(text, start, end)
   } else {
     XPUSHs(&sv_undef);
   }
-  XPUSHs(sv_2mortal(newSVpv(rl_line_buffer, 0)));
+  if (rl_line_buffer) {
+    XPUSHs(sv_2mortal(newSVpv(rl_line_buffer, 0)));
+  } else {
+    XPUSHs(&sv_undef);
+  }
   XPUSHs(sv_2mortal(newSViv(start)));
   XPUSHs(sv_2mortal(newSViv(end)));
   PUTBACK;
@@ -447,24 +451,34 @@ attempted_completion_function_wrapper(text, start, end)
 
   SPAGAIN;
 
-  matches = NULL;
-
-  if (count > 1) {
+  if (count > 0) {
     int i;
+    int dopack = -1;
 
+    /*
+     * The returned array may contain some undef items.
+     * Pack the array in such case.
+     */
     matches = (char **)xmalloc (sizeof(char *) * (count + 1));
     matches[count] = NULL;
-    for (i = count - 1; i >= 0; i--)
-      matches[i] = dupstr(POPp);
-
-  } else if (count == 1) {	/* return NULL if undef is returned */
-    SV *v = POPs;
-
-    if (SvOK(v)) {
-      matches = (char **)xmalloc (sizeof(char *) * 2);
-      matches[0] = dupstr(SvPV(v, na));
-      matches[1] = NULL;
+    for (i = count - 1; i >= 0; i--) {
+      SV *v = POPs;
+      if (SvOK(v)) {
+	matches[i] = dupstr(SvPV(v, na));
+      } else {
+	matches[i] = NULL;
+	dopack = i;		/* lowest index of hole */
+      }
     }
+    if (dopack >= 0) {		/* pack undef items */
+      int j = dopack;
+      for (i = dopack; i < count; i++) {
+	if (matches[i])
+	  matches[j++] = matches[i];
+      }
+    }
+  } else {
+    matches = NULL;
   }
 
   PUTBACK;
