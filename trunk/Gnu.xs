@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.74 1999-04-03 09:39:07 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.75 1999-04-03 15:57:20 hayashi Exp $
  *
  *	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
  *
@@ -175,9 +175,9 @@ static struct str_vars {
 
 #if (RLMAJORVER < 4)
 /* define dummy variable */
-static int rl_erase_empty_line;
-static int rl_catch_signals;
-static int rl_catch_sigwinch;
+static int rl_erase_empty_line = 0;
+static int rl_catch_signals = 1;
+static int rl_catch_sigwinch = 1;
 #endif /* (RLMAJORVER < 4) */
 
 static struct int_vars {
