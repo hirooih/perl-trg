@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.79 2000-04-06 16:54:25 hayashi Exp $
+#	$Id: Gnu.pm,v 1.80 2000-11-22 15:22:10 hayashi Exp $
 #
 #	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
 #
@@ -590,8 +590,8 @@ foreach (keys %Term::ReadLine::Gnu::Var::_rl_vars) {
 	 rl_redisplay
 	 rl_callback_read_char
 	 rl_display_match_list
-	 filename_completion_function
-	 username_completion_function
+	 rl_filename_completion_function
+	 rl_username_completion_function
 	 list_completion_function
          _trp_completion_function);
     # auto-split subroutine cannot be processed in the map loop above
@@ -798,7 +798,7 @@ detail see 'GNU Readline Library Manual'.
 
 =item C<free_undo_list>
 
-	void	free_undo_list()
+	void	rl_free_undo_list()
 
 =item C<do_undo>
 
@@ -900,7 +900,7 @@ detail see 'GNU Readline Library Manual'.
 
 =item C<ding>
 
-	int	ding()
+	int	rl_ding()
 
 =item C<display_match_list(MATCHES [,LEN [,MAX]])>
 
@@ -974,16 +974,16 @@ When C<MAX> is ommited, the max length of an item in @matches is used.
 
 =item C<completion_matches(TEXT [,FUNC])>
 
-	(@str)	completion_matches(str text,
-				   pfunc func = filename_completion_function)
+	(@str)	rl_completion_matches(str text,
+				      pfunc func = filename_completion_function)
 
 =item C<filename_completion_function(TEXT, STATE)>
 
-	str	filename_completion_function(str text, int state)
+	str	rl_filename_completion_function(str text, int state)
 
 =item C<username_completion_function(TEXT, STATE)>
 
-	str	username_completion_function(str text, int state)
+	str	rl_username_completion_function(str text, int state)
 
 =item C<list_completion_function(TEXT, STATE)>
 
@@ -1276,8 +1276,8 @@ Examples:
 	rl_redisplay
 	rl_callback_read_char
 	rl_display_match_list
-	filename_completion_function
-	username_completion_function
+	rl_filename_completion_function
+	rl_username_completion_function
 	list_completion_function
 	shadow_redisplay
 	Tk_getc
