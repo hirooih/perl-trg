@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.53 1998-05-05 14:10:27 hayashi Exp $
+#	$Id: Gnu.pm,v 1.54 1998-05-08 17:42:21 hayashi Exp $
 #
 #	Copyright (c) 1996,1997,1998 Hiroo Hayashi.  All rights reserved.
 #
@@ -54,7 +54,7 @@ use Carp;
     use DynaLoader;
     use vars qw($VERSION @ISA @EXPORT_OK);
 
-    $VERSION = '1.00';
+    $VERSION = '1.01';
 
     @ISA = qw(Term::ReadLine::Stub Term::ReadLine::Gnu::AU
 	      Exporter DynaLoader);
