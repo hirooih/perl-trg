@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.87 2001-03-12 15:34:03 hayashi Exp $
+#	$Id: Gnu.pm,v 1.88 2001-10-28 03:55:36 hayashi Exp $
 #
 #	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
 #
@@ -504,6 +504,7 @@ use vars qw(%_rl_vars);
        rl_editing_mode				=> ['I', 28], # GRL 4.2
        rl_attempted_completion_over		=> ['I', 29], # GRL 4.2
        rl_completion_type			=> ['I', 30], # GRL 4.2
+       rl_readline_version			=> ['I', 31], # GRL 4.2a
 
        rl_startup_hook				=> ['F', 0],
        rl_event_hook				=> ['F', 1],
@@ -692,7 +693,7 @@ C<FunctionPtr>.
   Example:
 	# name name `reverse-line' to a function reverse_line(),
 	# and bind it to "\C-t"
-	$term->add_defun('reverse-line', \&reverse_line, "\ct");
+	$term->add_defun('reverse-line', \&reverse_line, ord "\ct");
 
 =back
 
@@ -1045,6 +1046,10 @@ When C<MAX> is ommited, the max length of an item in @matches is used.
 
 	int	rl_set_paren_blink_timeout(usec)	# GRL 4.2
 
+=item C<get_termcap(cap)>
+
+	str	rl_get_termcap(cap)
+
 =over 4
 
 =back
@@ -1357,6 +1362,7 @@ Examples:
 	str rl_prompt (read only)
 	int rl_already_prompted (GRL 4.1)
 	str rl_library_version (read only)
+	int rl_readline_version (read only)
 	int rl_gnu_readline_p (GRL 4.2)
 	str rl_terminal_name
 	str rl_readline_name
@@ -1367,8 +1373,8 @@ Examples:
 	pfunc rl_event_hook
 	pfunc rl_getc_function
 	pfunc rl_redisplay_function
-	pfunc rl_prep_term_function (GRL 4.2?)
-	pfunc rl_deprep_term_function (GRL 4.2?)
+	pfunc rl_prep_term_function (GRL 4.2)
+	pfunc rl_deprep_term_function (GRL 4.2)
 	pfunc rl_last_func (GRL 4.2)
 	Keymap rl_executing_keymap (read only)
 	Keymap rl_binding_keymap (read only)
@@ -1627,11 +1633,14 @@ C<list_completion_function>.
 
 =over 4
 
+=item C<history-expand-line>
+
+The equivalent of the Bash C<history-expand-line> editing command.
+
 =item C<operate-and-get-next>
 
-The equivalent of the Korn shell C<C-o>
-C<operate-and-get-next-history-line> editing command and the Bash
-C<operate-and-get-next>.
+The equivalent of the Korn shell C<operate-and-get-next-history-line>
+editing command and the Bash C<operate-and-get-next>.
 
 This command is bound to C<\C-o> by default for the compatibility with
 the Bash and C<Term::ReadLine::Perl>.
