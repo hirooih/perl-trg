@@ -2,7 +2,7 @@
 #
 #	XS.pm : perl function definition for Term::ReadLine::Gnu
 #
-#	$Id: XS.pm,v 1.18 2002-03-30 04:12:28 hiroo Exp $
+#	$Id: XS.pm,v 1.19 2002-07-27 06:58:26 hiroo Exp $
 #
 #	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
 #
@@ -225,6 +225,17 @@ sub rl_message {
     _rl_message($line);
 }
 
+sub rl_completion_mode {
+    # libreadline.* in Debian GNU/Linux 2.0 tells wrong value as '2.1-bash'
+    my ($version) = $Attribs{library_version}
+	=~ /(\d+\.\d+)/;
+    if ($version < 4.3) {
+	carp "rl_completion_mode() is not supported.  Ignored\n";
+	return;
+    }
+    return _rl_completion_mode(_str2fn($_[0]));
+}
+
 #
 #	for compatibility with Term::ReadLine::Perl
 #
@@ -284,6 +295,9 @@ use vars qw(%term_no_ue);
 %term_no_ue = ( kterm => 1 );
 
 sub ornaments {
+#print $ENV{TERM}, "\n";
+#print "tgetstr = [" . tgetstr('us') . "]\n";
+#print "tgetstr = [" . tgetstr('ue') . "]\n";
     return $rl_term_set unless @_;
     $rl_term_set = shift;
     $rl_term_set ||= ',,,';
@@ -296,6 +310,7 @@ sub ornaments {
 	    my $t;
 	    ($_ and $t = tgetstr($_))
 		? (Term::ReadLine::Gnu::RL_PROMPT_START_IGNORE
+#		   . ($t =~ s/\$<\d>//, $t)
 		   . $t
 		   . Term::ReadLine::Gnu::RL_PROMPT_END_IGNORE)
 		    : '';
