@@ -1,74 +1,78 @@
 #! /usr/local/bin/perl
 #
-#	Copyright (c) 1992 Bagginses and Company. All Rights Reserved.
+#	Copyright (c) 1996 Hiroo Hayashi. All Rights Reserved.
 #
-#	$Id: perlsh,v 1.1 1996-11-11 16:46:19 hayashi Exp $	
+#	$Id: perlsh,v 1.2 1996-11-12 15:35:59 hayashi Exp $	
 #
 
-#push (@INC, '/home/hayashi/bin');
-#$readline'rl_NoInitFromFile = 1;
-#require 'readline.pl';
+package PerlSh;
+
+use strict;
 use Term::ReadLine;
 
-$rc =  ((getpwuid($<))[7]) . "/.perlshrc";
-
-if (-f $rc)
-{
-  package main;
-  do $rc;
-}
-
-package interpreter;
-
-my $term = new Term::ReadLine 'PerlShell';
+use vars qw($PS1 $PS2 $HISTFILE $HISTSIZE $INPUTRC);
 
 $PS1 = '> ';
 $PS2 = '? ';
+$HISTFILE = ($ENV{HOME} || ((getpwuid($<))[7])) . "/.perlsh_history";
+$HISTSIZE = 256;
+$INPUTRC = ($ENV{HOME} || ((getpwuid($<))[7])) . "/.perlshrc";
 
-sub reader
-{
-  my ($line, $command);
-  $command = '';
+package main;
+if (-f $PerlSh::INPUTRC) {
+  do $PerlSh::INPUTRC;
+}
 
-  while (1)
-  {
-    $line = $term->readline($command ? $PS2 : $PS1);
-    &quit if (! $line);
+package PerlSh;
 
-    if ($line =~ /\\$/)
-    {
-      chop $line; $command .= " $line";
+use vars qw($term);
+
+&toplevel;			# never returns
+
+sub toplevel {
+    $term = new Term::ReadLine 'PerlSh';
+    $term->StifleHistory($HISTSIZE);
+    if (-f $HISTFILE) {
+	$term->ReadHistory($HISTFILE)
+	    or warn "perlsh: cannot read history file: $!\n";
     }
-    else
-    { $command .= " $line"; return $command; }
-  }
+
+    sub quit {
+	$term->WriteHistory($HISTFILE)
+	    or warn "perlsh: cannot write history file: $!\n";
+	exit (0);
+    }
+    $SIG{'INT'} = \&quit;
+
+    my ($command, @result);
+    while (defined($command = &reader)) {
+	no strict;
+	@result = eval ("package main; $command");
+	use strict;
+	if ($@) { print "Error: $@\n"; next; }
+	printer (@result);
+    }
+    &quit;
 }
 
-sub evaluator
-{ eval ($_[0]); }
-
-sub printer
-{
-  local (@res) = @_;
-  local ($i);
-  foreach $i (@res) { print "$i\n"; }
+sub reader {
+    my ($line, $command);
+    $command = '';
+    while (1) {
+	$line = $term->readline($command ? $PS2 : $PS1);
+	return undef unless (defined $line);
+	
+	if ($line =~ /\\$/) {
+	    chop $line; $command .= " $line";
+	} else {
+	    $command .= " $line";
+	    return $command;
+	}
+    }
 }
 
-sub quit
-{ exit (0); }
-
-sub toplevel
-{
-  local ($command, @result);
-
-  while (1)
-  {
-    $command = &reader;
-    @result = eval ("package main; $command");
-    if ($@)
-    { print "Error: $@\n" if $@; next; }
-    &printer (@result);
-  }
+sub printer {
+    my (@res) = @_;
+    my ($i);
+    foreach $i (@res) { print "$i\n"; }
 }
-
-&toplevel;
