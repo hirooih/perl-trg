@@ -1,22 +1,89 @@
 #! /usr/local/bin/perl
 #
+#	$Id: perlsh,v 1.3 1996-11-18 16:47:27 hayashi Exp $	
+#
 #	Copyright (c) 1996 Hiroo Hayashi. All Rights Reserved.
 #
-#	$Id: perlsh,v 1.2 1996-11-12 15:35:59 hayashi Exp $	
-#
+#	This program is free software; you can redistribute it and/or
+#	modify it under the same terms as Perl itself.
+
+=head1 NAME
+
+perlsh - one line perl evaluator with line editing function
+
+=head1 SYNOPSIS
+
+  perlsh
+
+=head1 DESCRIPTION
+
+This program reads input a line, and evaluates it by perl interpreter,
+and prints the result.  If the result is a list value then each value
+of the list is printed line by line.  This program can be used as a
+very strong calculator which has whole perl functions.
+
+This is a sample program Term::ReadLine::Gnu module.  When you input a
+line, the line editing function of GNU Readline Library is available.
+The variable name completion function is also available.
+
+Before invoking, this program reads F<$HOME/.perlshrc> and evaluates
+the content of the file.
+
+When this program is terminated, the content of the history buffer is
+saved in a file F<$HOME/.perlsh_history>, and it is read at next
+invoking.
+
+=head1 VARIABLES
+
+You can customize the behavior of C<perlsh> by setting following
+variables in F<$HOME/.perlshrc>;
+
+=over 4
+
+=item C<$PerlSh::PS1>
+
+The primary prompt string.  The default value is "$ ".
+
+=item C<$PerlSh::PS2>
+
+The secondary prompt string.  The default value is "> ".
+
+=item C<$PerlSh::HISTFILE>
+
+The name of the file to which the command history is saved.  The
+default value is C<$HOME/.perlsh_history>.
+
+=item C<$PerlSh::HISTSIZE>
+
+If not C<undef>, this is the maximum number of commands to remember in
+the history.  The default value is 256.
+
+=item C<$PerlSh::STRICT>
+
+If true, restrict unsafe constructs.  See C<use strict> in perl man
+page.  The default value is 0;
+
+=over
+
+=head1 AUTHOR
+
+Hiroo Hayashi, hayashi@pdcd.ilab.toshiba.co.jp
+
+=cut
 
 package PerlSh;
 
 use strict;
-use Term::ReadLine;
+use Term::ReadLine qw(:custom_completion);
 
-use vars qw($PS1 $PS2 $HISTFILE $HISTSIZE $INPUTRC);
+use vars qw($PS1 $PS2 $HISTFILE $HISTSIZE $INPUTRC $STRICT);
 
-$PS1 = '> ';
-$PS2 = '? ';
+$PS1 = '$ ';
+$PS2 = '> ';
 $HISTFILE = ($ENV{HOME} || ((getpwuid($<))[7])) . "/.perlsh_history";
 $HISTSIZE = 256;
 $INPUTRC = ($ENV{HOME} || ((getpwuid($<))[7])) . "/.perlshrc";
+$STRICT = 0;
 
 package main;
 if (-f $PerlSh::INPUTRC) {
@@ -36,23 +103,28 @@ sub toplevel {
 	$term->ReadHistory($HISTFILE)
 	    or warn "perlsh: cannot read history file: $!\n";
     }
+    $rl_completion_entry_function = \&symbol_completion_function;
 
-    sub quit {
-	$term->WriteHistory($HISTFILE)
-	    or warn "perlsh: cannot write history file: $!\n";
-	exit (0);
-    }
+    # remove `$' & `@' from the default value
+    $rl_basic_word_break_characters = " \t\n\"\\'`><=;|&{(";
+
     $SIG{'INT'} = \&quit;
 
-    my ($command, @result);
+    my ($strict, $command, @result);
+    $strict = $STRICT ? '' : 'no strict;';
     while (defined($command = &reader)) {
-	no strict;
-	@result = eval ("package main; $command");
+	@result = eval ("$strict package main; $command");
 	use strict;
 	if ($@) { print "Error: $@\n"; next; }
 	printer (@result);
     }
     &quit;
+}
+
+sub quit {
+    $term->WriteHistory($HISTFILE)
+	or warn "perlsh: cannot write history file: $!\n";
+    exit (0);
 }
 
 sub reader {
@@ -75,4 +147,87 @@ sub printer {
     my (@res) = @_;
     my ($i);
     foreach $i (@res) { print "$i\n"; }
+}
+
+#
+#	variable name completion
+#
+BEGIN {
+    my $i;
+    use vars qw(@symbol_list);
+
+    sub symbol_completion_function ($$) {
+	my($text, $state) = @_;
+
+	if ($state) {
+	    $i++;
+	} else {
+	    # the first call
+	    $i = 0;		# clear index
+	    if ($text =~ /^(\@|\$\#)/) {
+		@symbol_list = symbol_array($1);
+	    } elsif ($text =~ /^(\%)/) {
+		@symbol_list = symbol_hash($1);
+	    } elsif ($text =~ /^(\$)/) {
+		@symbol_list = (symbol_scalar($1),
+				symbol_array($1, '['),
+				symbol_hash($1, '{'));
+	    } else {
+		@symbol_list = ();
+	    }
+	}
+
+	my $entry;
+	$text = quotemeta($text); # $foo -> \$foo
+	for (; $i <= $#symbol_list; $i++) {
+	    $entry = $symbol_list[$i];
+	    return $entry if ($entry =~ /^$text/);
+	}
+	return undef;
+    }
+}
+
+# return scalar variable name list
+sub symbol_scalar ($) {
+    my ($pre) = @_;
+    my ($key, $val, @list);
+    no strict 'vars';
+    local(*stab) = eval("*main::");
+    while (($key,$val) = each(%stab)) {
+	next if $key =~ /^_</;
+	local(*entry) = $val;
+	# How can I distinguish a variable which is not defined
+	#	from one which has undefined value?
+	push (@list, $pre . $key)
+	    if (defined $entry or ! defined @entry && ! defined %entry);
+    }
+    return @list;
+}
+
+# return array variable name list
+sub symbol_array ($;$) {
+    my ($pre, $pos) = @_;
+    my ($key, $val, @list);
+    no strict 'vars';
+    local(*stab) = eval("*main::");
+    while (($key,$val) = each(%stab)) {
+	local(*entry) = $val;
+	push (@list, $pre . $key . $pos)
+	    if (defined @entry or ! defined %entry && ! defined $entry);
+    }
+    return @list;
+}
+
+# return hash variable name list
+sub symbol_hash ($;$) {
+    my ($pre, $pos) = @_;
+    my ($key, $val, @list);
+    local(*stab) = eval("*main::");
+    no strict 'vars';
+    while (($key,$val) = each(%stab)) {
+	local(*entry) = $val;
+	push (@list, $pre . $key . $pos)
+	    if (defined %entry or ! defined $entry && ! defined @entry);
+    }
+    return @list;
 }
