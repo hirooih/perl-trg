@@ -1,6 +1,6 @@
 #! /usr/local/bin/perl
 #
-#	$Id: perlsh,v 1.23 2000-04-02 16:01:12 hayashi Exp $	
+#	$Id: perlsh,v 1.24 2001-10-28 03:59:15 hayashi Exp $	
 #
 #	Copyright (c) 2000 Hiroo Hayashi. All Rights Reserved.
 #
@@ -60,6 +60,7 @@ use vars qw($term $attribs);	# to access as `$PerlSh::term' from prompt
 $term = new Term::ReadLine 'PerlSh';
 $attribs = $term->Attribs;
 
+$term->bind_key(ord "^", 'history-expand-line', 'emacs-meta');
 $term->bind_key(ord "\cv", 'display-readline-version', 'emacs-ctlx');
 $term->bind_key(ord "\cc", 'abort'); # not works yet FIXME!!!
 
