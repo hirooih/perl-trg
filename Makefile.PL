@@ -1,7 +1,7 @@
 #
 #	Makefile.PL for Term::ReadLine::Gnu
 #
-#	$Id: Makefile.PL,v 1.4 1996-11-24 13:59:12 hayashi Exp $
+#	$Id: Makefile.PL,v 1.5 1997-01-12 16:41:21 hayashi Exp $
 #
 #	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
 #
@@ -16,9 +16,10 @@ use Config;
 
 $defs = ($Config{strings} =~ m|/string.h$|) ? '-DHAVE_STRING_H' : '';
 
-$os2_usedll = 0;		# Ignore outside of OS/2. Set to 1 if linking
-				# with readline.dll under OS/2.
-				# ftp.math.ohio-state.edu:/pub/users/ilya/os2
+# Ignore outside of OS/2. Set to 1 if linking with readline.dll under
+# OS/2.
+# ftp.math.ohio-state.edu:/pub/users/ilya/os2
+$os2_usedll = $Config{osname} eq 'os2';
 if ($os2_usedll == 0) {
     $libs = '-lreadline -ltermcap';
 } else {
