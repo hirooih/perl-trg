@@ -1,6 +1,6 @@
 #! /usr/local/bin/perl
 #
-#	$Id: perlsh,v 1.3 1996-11-18 16:47:27 hayashi Exp $	
+#	$Id: perlsh,v 1.4 1996-11-19 16:14:09 hayashi Exp $	
 #
 #	Copyright (c) 1996 Hiroo Hayashi. All Rights Reserved.
 #
@@ -25,49 +25,6 @@ very strong calculator which has whole perl functions.
 This is a sample program Term::ReadLine::Gnu module.  When you input a
 line, the line editing function of GNU Readline Library is available.
 The variable name completion function is also available.
-
-Before invoking, this program reads F<$HOME/.perlshrc> and evaluates
-the content of the file.
-
-When this program is terminated, the content of the history buffer is
-saved in a file F<$HOME/.perlsh_history>, and it is read at next
-invoking.
-
-=head1 VARIABLES
-
-You can customize the behavior of C<perlsh> by setting following
-variables in F<$HOME/.perlshrc>;
-
-=over 4
-
-=item C<$PerlSh::PS1>
-
-The primary prompt string.  The default value is "$ ".
-
-=item C<$PerlSh::PS2>
-
-The secondary prompt string.  The default value is "> ".
-
-=item C<$PerlSh::HISTFILE>
-
-The name of the file to which the command history is saved.  The
-default value is C<$HOME/.perlsh_history>.
-
-=item C<$PerlSh::HISTSIZE>
-
-If not C<undef>, this is the maximum number of commands to remember in
-the history.  The default value is 256.
-
-=item C<$PerlSh::STRICT>
-
-If true, restrict unsafe constructs.  See C<use strict> in perl man
-page.  The default value is 0;
-
-=over
-
-=head1 AUTHOR
-
-Hiroo Hayashi, hayashi@pdcd.ilab.toshiba.co.jp
 
 =cut
 
@@ -231,3 +188,70 @@ sub symbol_hash ($;$) {
     }
     return @list;
 }
+
+__END__
+
+=pod
+
+Before invoking, this program reads F<~/.perlshrc> and evaluates the
+content of the file.
+
+When this program is terminated, the content of the history buffer is
+saved in a file F<~/.perlsh_history>, and it is read at next
+invoking.
+
+=head1 VARIABLES
+
+You can customize the behavior of C<perlsh> by setting following
+variables in F<~/.perlshrc>;
+
+=over 4
+
+=item C<$PerlSh::PS1>
+
+The primary prompt string.  The default value is "$ ".
+
+=item C<$PerlSh::PS2>
+
+The secondary prompt string.  The default value is "> ".
+
+=item C<$PerlSh::HISTFILE>
+
+The name of the file to which the command history is saved.  The
+default value is C<~/.perlsh_history>.
+
+=item C<$PerlSh::HISTSIZE>
+
+If not C<undef>, this is the maximum number of commands to remember in
+the history.  The default value is 256.
+
+=item C<$PerlSh::STRICT>
+
+If true, restrict unsafe constructs.  See C<use strict> in perl man
+page.  The default value is 0;
+
+=over
+
+=head1 FILES
+
+=over 4
+
+=item F<~/.perlshrc>
+
+=item F<~/.perlsh_history>
+
+=item F<~/.inputrc>
+
+=back
+
+=head1 SEE ALSO
+
+Term::ReadLine::Gnu
+
+GNU Readline Library Texinfo Manual
+
+=head1 AUTHOR
+
+Hiroo Hayashi, hayashi@pdcd.ilab.toshiba.co.jp
+
+=cut
