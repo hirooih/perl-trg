@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.81 1999-05-04 17:24:26 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.82 1999-05-17 14:32:34 hayashi Exp $
  *
  *	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
  *
@@ -20,6 +20,9 @@ extern "C" {
 #endif
 
 #include <stdio.h>
+#ifdef __CYGWIN__
+#include <sys/termios.h>
+#endif /* __CYGWIN__ */
 #include <readline/readline.h>
 #include <readline/history.h>
 
@@ -2094,6 +2097,19 @@ _rl_store_iostream(stream, id)
 	    break;
 	  case 1:
 	    RETVAL = rl_outstream = stream;
+#ifdef __CYGWIN__
+	    {
+	      /* Cygwin b20.1 library converts NL to CR-NL
+		 automatically.  But it does not do it on a file
+		 stream made by Perl.  Set terminal attribute
+		 explicitly */
+		struct termios tio;
+		tcgetattr(fileno(rl_outstream), &tio);
+		tio.c_iflag |= ICRNL;
+		tio.c_oflag |= ONLCR;
+		tcsetattr(fileno(rl_outstream), TCSADRAIN, &tio);
+	    }
+#endif /* __CYGWIN__ */
 	    break;
 	  default:
 	    warn("Gnu.xs:_rl_store_iostream: Illegal `id' value: `%d'", id);
