@@ -1,9 +1,10 @@
 #
 #	Makefile.PL for Term::ReadLine::Gnu
 #
-#	$Id: Makefile.PL,v 1.5 1997-01-12 16:41:21 hayashi Exp $
+#	$Id: Makefile.PL,v 1.6 1998-03-26 15:41:31 hayashi Exp $
 #
-#	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 1996,1997,1998 Hiroo Hayashi.  All rights reserved.
+#		<hiroo.hayashi@computer.org>
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
