@@ -2,9 +2,9 @@
 #
 #	XS.pm : perl function definition for Term::ReadLine::Gnu
 #
-#	$Id: XS.pm,v 1.16 2001-02-27 17:23:26 hayashi Exp $
+#	$Id: XS.pm,v 1.17 2001-10-28 03:53:54 hayashi Exp $
 #
-#	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -36,6 +36,7 @@ use vars qw(*rl_unbind_function_in_map *rl_unbind_command_in_map);
 *rl_unbind_function_in_map = \&unbind_function;
 *rl_unbind_command_in_map  = \&unbind_command;
 
+rl_add_defun('history-expand-line',	 \&history_expand_line);
 # bind operate-and-get-next to \C-o by default for the compatibility
 # with bash and Term::ReadLine::Perl
 rl_add_defun('operate-and-get-next',	 \&operate_and_get_next, ord "\co");
@@ -229,8 +230,8 @@ sub rl_filename_list {
     my ($text) = @_;
 
     # lcd : lowest common denominator
-    my ($lcd, @matches) = completion_matches($text,
-					     \&filename_completion_function);
+    my ($lcd, @matches) = rl_completion_matches($text,
+						\&rl_filename_completion_function);
     return @matches ? @matches : $lcd;
 }
 
@@ -304,6 +305,23 @@ sub ornaments {
 #
 #	a sample custom function
 #
+
+# The equivalent of the Bash shell M-^ history-expand-line editing
+# command.
+
+# This routine was borrowed from bash.
+sub history_expand_line {
+    my ($count, $key) = @_;
+    my ($expanded, $new_line) = history_expand($Attribs{line_buffer});
+    if ($expanded > 0) {
+  	rl_modifying(0, $Attribs{end}); # save undo information
+  	$Attribs{line_buffer} = $new_line;
+    } elsif ($expanded < 0) {
+  	my $OUT = $Attribs{outstream};
+  	print $OUT "\n$new_line\n";
+  	rl_on_new_line();
+    }				# $expanded == 0 : no change
+}
 
 # The equivalent of the Korn shell C-o operate-and-get-next-history-line
 # editing command. 
