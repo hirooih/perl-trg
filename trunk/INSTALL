@@ -1,4 +1,4 @@
-#	$Id: INSTALL,v 1.6 1997-02-04 16:19:43 hayashi Exp $
+#	$Id: INSTALL,v 1.7 1997-07-13 14:56:34 hayashi Exp $
 
 1. How to Install Term::ReadLine::Gnu
 
@@ -21,17 +21,48 @@
 
 2. How to Install GNU Readline Library
 
-Now this module supports only GNU Readline Library 2.1 which is
-included in the GNU Bash version 2.0 distribution which was released
-on Chirstmas of 1996.  (There is a plan to make standalone package in
-the near future, but not yet.)
+Now this module supports only GNU Readline Library 2.1.
+(readline-2.1.tar.gz or library which is included in the GNU Bash
+version 2.0 or later)
 
 In following example, the install prefix directory is
 `/usr/local/gnu'.  If you install the library and header files in
 another directory, you must edit `LIBS' and/or `INC' section in
 Makefile.PL.
 
-2.1. libreadline.a in bash-2.0.tar.gz
+2.1. readline-2.1.tar.gz
+
+	1. get and extract readline-2.1.tar.gz
+
+	2. add following patch;
+========================================================================
+*** Makefile.in.orig	Wed Jun  4 00:29:31 1997
+--- Makefile.in	Sun Jul 13 23:31:09 1997
+***************
+*** 194,200 ****
+  	-test -n "$(RANLIB)" && -$(RANLIB) -t $(libdir)/libreadline.a
+  	-( if test -d doc ; then \
+  		cd doc && \
+! 		${MAKE} ${MFLAGS} infodir=$(infodir) INSTALL_DATA=$(INSTALL_DATA) $@; \
+  	  fi )
+  
+  installdirs: $(srcdir)/support/mkdirs
+--- 194,200 ----
+  	-test -n "$(RANLIB)" && -$(RANLIB) -t $(libdir)/libreadline.a
+  	-( if test -d doc ; then \
+  		cd doc && \
+! 		${MAKE} ${MFLAGS} infodir=$(infodir) INSTALL_DATA="$(INSTALL_DATA)" $@; \
+  	  fi )
+  
+  installdirs: $(srcdir)/support/mkdirs
+========================================================================
+
+	3. configure
+		$ ./configure --prefix=/usr/local/gnu
+	4. make and install
+		$ make install
+
+2.2. libreadline.a in bash-2.0.tar.gz
 
 	The libreadline.a which is made when you make bash does not
 	work as stand-alone library.  You must make it without defining
@@ -92,15 +123,6 @@ Makefile.PL.
 	6. make
 		$ make
 	7. install
-		$ make install
-
-2.2. readline-2.1.tar.gz (not released yet)
-
-	1. get and extract readline-2.1.tar.gz
-
-	2. configure
-		$ ./configure --prefix=/usr/local/gnu
-	3. make and install
 		$ make install
 
 EOF
