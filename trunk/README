@@ -1,8 +1,8 @@
-$Id: README,v 1.12 1998-09-27 16:09:18 hayashi Exp $
+$Id: README,v 1.13 1999-02-22 16:35:40 hayashi Exp $
 
 Term::ReadLine::Gnu --- GNU Readline Library Wrapper Module
 
-	Copyright (c) 1996,1997,1998 Hiroo Hayashi.  All rights reserved.
+	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
 
 	This program is free software; you can redistribute it and/or
 	modify it under the same terms as Perl itself.
@@ -57,6 +57,14 @@ Author:
 
 
 Revision History:
+
+1.04  1999-02-23
+	- fix a bug by which $if-$endif feature in ~/.inputrc was
+	  disabled.
+	- works with GNU Readline Library version 4.0 in which some
+	  function names were changed.  New functions, that are
+	  introduced in the new library, were not supported in this
+	  release.
 
 1.03  1998-09-27
 	- fix a bug when prompt string includes non-printing
