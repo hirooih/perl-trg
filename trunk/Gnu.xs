@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.90 2001-02-12 13:59:17 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.91 2001-02-27 17:22:53 hayashi Exp $
  *
  *	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
  *
@@ -97,6 +97,7 @@ static int rl_explicit_arg = 0;
 static int rl_numeric_arg = 0;
 static int rl_editing_mode = 0;
 static int rl_readline_state = 0;
+static Function *rl_directory_rewrite_hook = NULL;
 
 static void
 rl_free_undo_list ()
@@ -107,15 +108,17 @@ rl_free_undo_list ()
 static int
 rl_crlf ()
 {
-  crlf ();
+  return crlf ();
 }
 
+#if (RLMAJORVER >= 4)
 static void
 rl_tty_set_default_bindings (keymap)
 Keymap keymap;
 {
   rltty_set_default_bindings (keymap);
 }
+#endif /* (RLMAJORVER >= 4) */
 
 static int
 rl_ding ()
@@ -146,6 +149,14 @@ rl_filename_completion_function (s, i)
 {
   return filename_completion_function ((char *)s, i);
 }
+
+/*
+ * In Readline 4.2 many variables, function arguments, and function
+ * return values are now declared `const' where appropriate.
+ */
+#define CONST
+#else  /* (RLMAJORVER < 4 || RLMAJORVER = 4 && RLMINORVER < 2) */
+#define CONST const
 #endif /* (RLMAJORVER < 4 || RLMAJORVER = 4 && RLMINORVER < 2) */
 
 /*
@@ -331,12 +342,13 @@ static void completion_display_matches_hook_wrapper __P((char **matches,
 							 int len, int max));
 static int prep_term_function_wrapper __P((int meta_flag));
 static int deprep_term_function_wrapper __P((void));
+static int directory_rewrite_hook_wrapper __P((char **));
 
 enum { STARTUP_HOOK, EVENT_HOOK, GETC_FN, REDISPLAY_FN,
        CMP_ENT, ATMPT_COMP,
        FN_QUOTE, FN_DEQUOTE, CHAR_IS_QUOTEDP,
        IGNORE_COMP, DIR_COMP, HIST_INHIBIT_EXP,
-       PRE_INPUT_HOOK, COMP_DISP_HOOK, PREP_TERM, DEPREP_TERM
+       PRE_INPUT_HOOK, COMP_DISP_HOOK, PREP_TERM, DEPREP_TERM, DIR_REWRITE
 };
 
 static struct fn_vars {
@@ -420,6 +432,12 @@ static struct fn_vars {
     (Function *)rl_deprep_terminal,
     (Function *)deprep_term_function_wrapper,
     NULL
+  },
+  {
+    (Function **)&rl_directory_rewrite_hook,			/* 16 */
+    NULL,
+    (Function *)directory_rewrite_hook_wrapper,
+    NULL
   }
 };
 
@@ -481,6 +499,52 @@ vintfunc_wrapper(type, arg)
   PUTBACK;
   FREETMPS;
   LEAVE;
+  return ret;
+}
+
+static int
+icppfunc_wrapper(type, arg)
+     int type;
+     char **arg;
+{
+  dSP;
+  int count;
+  SV *sv;
+  int ret;
+  char *rstr;
+  
+  ENTER;
+  SAVETMPS;
+
+  if (arg && *arg) {
+    sv = sv_2mortal(newSVpv(*arg, 0));
+  } else {
+    sv = &PL_sv_undef;
+  }
+
+  PUSHMARK(sp);
+  XPUSHs(sv);
+  PUTBACK;
+
+  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+
+  SPAGAIN;
+
+  if (count != 1)
+    croak("Gnu.xs:icppfunc_wrapper: Internal error\n");
+
+  ret = POPi;
+
+  rstr = SvPV(sv, PL_na);
+  if (strcmp(*arg, rstr) != 0) {
+    xfree(*arg);
+    *arg = dupstr(rstr);
+  }
+
+  PUTBACK;
+  FREETMPS;
+  LEAVE;
+
   return ret;
 }
 
@@ -854,45 +918,7 @@ static int
 directory_completion_hook_wrapper(textp)
      char **textp;
 {
-  dSP;
-  int count;
-  SV *sv;
-  int ret;
-  char *rstr;
-  
-  ENTER;
-  SAVETMPS;
-
-  if (textp && *textp) {
-    sv = sv_2mortal(newSVpv(*textp, 0));
-  } else {
-    sv = &PL_sv_undef;
-  }
-
-  PUSHMARK(sp);
-  XPUSHs(sv);
-  PUTBACK;
-
-  count = perl_call_sv(fn_tbl[DIR_COMP].callback, G_SCALAR);
-
-  SPAGAIN;
-
-  if (count != 1)
-    croak("Gnu.xs:directory_completion_hook_wrapper: Internal error\n");
-
-  ret = POPi;
-
-  rstr = SvPV(sv, PL_na);
-  if (strcmp(*textp, rstr) != 0) {
-    xfree(*textp);
-    *textp = dupstr(rstr);
-  }
-
-  PUTBACK;
-  FREETMPS;
-  LEAVE;
-
-  return ret;
+  return icppfunc_wrapper(DIR_COMP, textp);
 }
 
 /*
@@ -1000,6 +1026,16 @@ static int
 deprep_term_function_wrapper()	{ return voidfunc_wrapper(DEPREP_TERM); }
 
 /*
+ * call a perl function as rl_directory_completion_hook
+ */
+static int
+directory_rewrite_hook_wrapper(dirname)
+     char **dirname;
+{
+  return icppfunc_wrapper(DIR_REWRITE, dirname);
+}
+
+/*
  *	If you need more custom functions, define more funntion_wrapper_xx()
  *	and add entry on fntbl[].
  */
@@ -1100,13 +1136,13 @@ MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu::XS
 # The function name "readline()" is reserved for a method name.
 void
 rl_readline(prompt = NULL)
-	char *prompt
+	CONST char *prompt
 	PROTOTYPE: ;$
 	CODE:
 	{
 	  char *line_read = readline(prompt);
 
-	  SPAGAIN;		/* see comment at completion_matches() !!!*/
+	  SPAGAIN;		/* see the comment at completion_matches() */
 
 	  ST(0) = sv_newmortal(); /* default return value is 'undef' */
 	  if (line_read) {
@@ -1123,7 +1159,7 @@ rl_readline(prompt = NULL)
 #
 rl_command_func_t *
 rl_add_defun(name, fn, key = -1)
-	char *name
+	const char *name
 	SV *fn
 	int key
 	PROTOTYPE: $$;$
@@ -1204,7 +1240,7 @@ _rl_set_keymap(map)
 
 Keymap
 rl_get_keymap_by_name(name)
-	char *name
+	CONST char *name
 	PROTOTYPE: $
 
 char *
@@ -1259,7 +1295,7 @@ _rl_unbind_function(function, map = rl_get_keymap())
 
 int
 _rl_unbind_command(command, map = rl_get_keymap())
-	char *command
+	CONST char *command
 	Keymap map
 	PROTOTYPE: $;$
 	CODE:
@@ -1289,9 +1325,47 @@ _rl_set_key(keyseq, function, map = rl_get_keymap())
 
 #endif /* readline-4.2 and later */
 
+# rl_macro_bind() is documented by readline-4.2 but it has been implemented 
+# from 2.2.1.
+# It is equivalent with 
+# rl_generic_bind(ISMACR, keyseq, (char *)macro_keys, map).
+int
+_rl_macro_bind(keyseq, macro, map = rl_get_keymap())
+	CONST char *keyseq
+	CONST char *macro
+	Keymap map
+	PROTOTYPE: $$;$
+	CODE:
+	{
+	  RETVAL = rl_macro_bind(keyseq, macro, map);
+	}
+	OUTPUT:
+	RETVAL
+
+# rl_variable_bind() is documented by readline-4.2 but it has been implemented 
+# from 2.2.1.
+
+int
+rl_variable_bind(name, value)
+	CONST char *name
+	CONST char *value
+	PROTOTYPE: $$
+
+# rl_push_macro_input() is documented by readline-4.2 but it has been
+# implemented from 2.2.1.
+
+void
+rl_push_macro_input(macro)
+	const char *macro
+	PROTOTYPE: $
+	CODE:
+	{
+	  rl_push_macro_input(dupstr(macro));
+	}
+
 int
 _rl_generic_bind_function(keyseq, function, map = rl_get_keymap())
-	char *keyseq
+	CONST char *keyseq
 	rl_command_func_t *function
 	Keymap map
 	PROTOTYPE: $$;$
@@ -1304,7 +1378,7 @@ _rl_generic_bind_function(keyseq, function, map = rl_get_keymap())
 
 int
 _rl_generic_bind_keymap(keyseq, keymap, map = rl_get_keymap())
-	char *keyseq
+	CONST char *keyseq
 	Keymap keymap
 	Keymap map
 	PROTOTYPE: $$;$
@@ -1317,25 +1391,31 @@ _rl_generic_bind_keymap(keyseq, keymap, map = rl_get_keymap())
 
 int
 _rl_generic_bind_macro(keyseq, macro, map = rl_get_keymap())
-	char *keyseq
-	char *macro
+	CONST char *keyseq
+	const char *macro
 	Keymap map
 	PROTOTYPE: $$;$
 	CODE:
 	{
-	  RETVAL = rl_generic_bind(ISMACR, keyseq, macro, map);
+	  RETVAL = rl_generic_bind(ISMACR, keyseq, dupstr(macro), map);
 	}
 	OUTPUT:
 	RETVAL
 
 void
 rl_parse_and_bind(line)
-	char *line
+	const char *line
 	PROTOTYPE: $
+	CODE:
+	{
+	  char *s = dupstr(line);
+	  rl_parse_and_bind(s);
+	  xfree(s);
+	}
 
 int
 rl_read_init_file(filename = NULL)
-	char *filename
+	CONST char *filename
 	PROTOTYPE: ;$
 
 #
@@ -1356,7 +1436,7 @@ _rl_call_function(function, count = 1, key = -1)
 
 rl_command_func_t *
 rl_named_function(name)
-	char *name
+	CONST char *name
 	PROTOTYPE: $
 
 const char *
@@ -1366,7 +1446,7 @@ rl_get_function_name(function)
 
 void
 rl_function_of_keyseq(keyseq, map = rl_get_keymap())
-	char *keyseq
+	CONST char *keyseq
 	Keymap map
 	PROTOTYPE: $;$
 	PPCODE:
@@ -1431,6 +1511,19 @@ _rl_invoking_keyseqs(function, map = rl_get_keymap())
 
 void
 rl_function_dumper(readable = 0)
+	int readable
+	PROTOTYPE: ;$
+
+# rl_macro_dumper and rl_variable_dumper are documented by Readline 4.2,
+# but have been implemented for 2.2.1.
+
+void
+rl_macro_dumper(readable = 0)
+	int readable
+	PROTOTYPE: ;$
+
+void
+rl_variable_dumper(readable = 0)
 	int readable
 	PROTOTYPE: ;$
 
@@ -1513,7 +1606,7 @@ rl_add_undo(what, start, end, text)
 	int what
 	int start
 	int end
-	char *text
+	const char *text
 	PROTOTYPE: $$$$
 	CODE:
 	{
@@ -1562,7 +1655,7 @@ rl_reset_line_state()
 
 int
 _rl_message(text)
-	char *text
+	const char *text
 	PROTOTYPE: $
 	CODE:
 	{
@@ -1579,6 +1672,13 @@ int
 rl_clear_message()
 	PROTOTYPE:
 
+# rl_show_char is not useful for Perl.
+
+int
+rl_show_char(i)
+	int i
+	PROTOTYPE: $
+
 void
 rl_save_prompt()
 	PROTOTYPE:
@@ -1590,20 +1690,21 @@ rl_restore_prompt()
 int
 rl_expand_prompt(prompt)
 	char *prompt
-	PROTOTYPE: $
-	CODE:
-	{
-	  RETVAL = rl_expand_prompt(prompt);
-	}
-	OUTPUT:
-	RETVAL
+
+#if (RLMAJORVER > 4 || RLMAJORVER == 4 && RLMINORVER >= 2)
+
+int
+rl_set_prompt(prompt)
+	const char *prompt
+
+#endif /* (RLMAJORVER > 4 || RLMAJORVER == 4 && RLMINORVER >= 2) */
 
 #
 #	2.4.7 Modifying Text
 #
 int
 rl_insert_text(text)
-	char *text
+	CONST char *text
 	PROTOTYPE: $
 
 int
@@ -1685,7 +1786,7 @@ _rl_tty_set_default_bindings(kmap = rl_get_keymap())
 
 int
 rl_reset_terminal(terminal_name = NULL)
-	char *terminal_name
+	CONST char *terminal_name
 	PROTOTYPE: ;$
 
 #
@@ -1760,7 +1861,7 @@ rl_display_match_list(pmatches, plen = -1, pmax = -1)
 #
 void
 rl_callback_handler_install(prompt, lhandler)
-	char *prompt
+	const char *prompt
 	SV *lhandler
 	PROTOTYPE: $$
 	CODE:
@@ -1845,7 +1946,7 @@ rl_complete_internal(what_to_do = TAB)
 
 void
 rl_completion_matches(text, fn = NULL)
-	char *text
+	const char *text
 	SV *fn
 	PROTOTYPE: $;$
 	PPCODE:
@@ -1958,7 +2059,7 @@ using_history()
 #
 void
 add_history(string)
-	char *string
+	CONST char *string
 	PROTOTYPE: $
 
 void
@@ -1983,7 +2084,7 @@ remove_history(which)
 void
 replace_history_entry(which, line)
 	int which
-	char *line
+	CONST char *line
 	PROTOTYPE: $$
 	CODE:
 	{
@@ -2109,19 +2210,19 @@ next_history()
 #
 int
 history_search(string, direction = -1)
-	char *string
+	CONST char *string
 	int direction
 	PROTOTYPE: $;$
 
 int
 history_search_prefix(string, direction = -1)
-	char *string
+	CONST char *string
 	int direction
 	PROTOTYPE: $;$
 
 int
 history_search_pos(string, direction = -1, pos = where_history())
-	char *string
+	CONST char *string
 	int direction
 	int pos
 	PROTOTYPE: $;$$
@@ -2131,25 +2232,25 @@ history_search_pos(string, direction = -1, pos = where_history())
 #
 int
 read_history_range(filename = NULL, from = 0, to = -1)
-	char *filename
+	CONST char *filename
 	int from
 	int to
 	PROTOTYPE: ;$$$
 
 int
 write_history(filename = NULL)
-	char *filename
+	CONST char *filename
 	PROTOTYPE: ;$
 
 int
 append_history(nelements, filename = NULL)
 	int nelements
-	char *filename
+	CONST char *filename
 	PROTOTYPE: $;$
 
 int
 history_truncate_file(filename = NULL, nlines = 0)
-	char *filename
+	CONST char *filename
 	int nlines
 	PROTOTYPE: ;$$
 
@@ -2176,7 +2277,7 @@ history_expand(line)
 
 char *
 _history_arg_extract(line, first = 0 , last = DALLAR)
-	char *line
+	CONST char *line
 	int first
 	int last
 	PROTOTYPE: $;$$
@@ -2189,7 +2290,7 @@ _history_arg_extract(line, first = 0 , last = DALLAR)
 
 void
 _get_history_event(string, cindex, qchar = 0)
-	char *string
+	CONST char *string
 	int cindex
 	int qchar
 	PROTOTYPE: $$;$
@@ -2209,7 +2310,7 @@ _get_history_event(string, cindex, qchar = 0)
 
 void
 history_tokenize(text)
-	char *text
+	CONST char *text
 	PROTOTYPE: $
 	PPCODE:
 	{
@@ -2537,5 +2638,6 @@ tgetstr(id)
 /*
  * Local Variables:
  * c-default-style: "gnu"
+ * c-indentation-style: "gnu"
  * End:
  */
