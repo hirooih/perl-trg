@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	callback.t - Test script for Term::ReadLine:GNU callback function
 #
-#	$Id: callback.t,v 1.3 2000-12-03 16:44:31 hayashi Exp $
+#	$Id: callback.t,v 1.4 2001-10-25 05:13:29 hayashi Exp $
 #
 #	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
 #
@@ -31,17 +31,7 @@ print defined $term ? "ok $n\n" : "not ok $n\n"; $n++;
 my $attribs = $term->Attribs;
 print defined $attribs ? "ok $n\n" : "not ok $n\n"; $n++;
 
-my ($IN, $OUT);
-if ($verbose) {
-    $IN = $attribs->{instream};
-    $OUT = $attribs->{outstream};
-} else {
-    open(IN, 't/button.pl') or die "cannot open 't/button.pl': $!\n";
-    $IN = \*IN;
-    # $IN = \*DATA;		# does not work.  Why?
-    open(NULL, '>/dev/null') or die "cannot open \`/dev/null\': $!\n";
-    $attribs->{outstream} = $OUT = \*NULL;
-}
+my ($version) = $attribs->{library_version} =~ /(\d+\.\d+)/;
 
 ########################################################################
 # check Tk is installed
@@ -57,6 +47,25 @@ if (eval "use Tk; 1") {
     exit 0;
 }
 $^W = 1; 
+
+########################################################################
+my ($IN, $OUT);
+if ($verbose) {
+    # wait for Perl Tk script from tty
+    $IN = $attribs->{instream};
+    $OUT = $attribs->{outstream};
+} else {
+    # test automatically
+    # to surpress warning on GRL 4.2a (and above?).
+    $attribs->{prep_term_function} = sub {} if ($version > 4.1);
+
+#    open(IN, 't/button.pl') or die "cannot open 't/button.pl': $!\n";
+#    $IN = \*IN;
+#    old Perl did not work with the next line...
+    $IN = \*DATA;		# does not work.  Why?
+    open(NULL, '>/dev/null') or die "cannot open \`/dev/null\': $!\n";
+    $attribs->{outstream} = $OUT = \*NULL;
+}
 
 ########################################################################
 my $mw;
