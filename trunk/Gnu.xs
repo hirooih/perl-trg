@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.25 1997-01-04 18:00:06 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.26 1997-01-06 16:28:36 hayashi Exp $
  *
  *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
  *
@@ -101,14 +101,6 @@ dupstr (s)			/* duplicate string */
   return (r);
 }
      
-static char *preput_str = NULL;
-static int
-rl_insert_preput ()
-{
-  if (preput_str)
-    rl_insert_text(preput_str);
-  return 0;
-}
 
 /*
  *	custom function support routines
@@ -370,38 +362,32 @@ static int startup_hook_lapper(void);
 static int event_hook_lapper(void);
 static int getc_function_lapper(FILE *);
 static void redisplay_function_lapper(void);
-static void callback_handler_lapper(char *);
 static char *completion_entry_function_lapper(char *, int);
 static char **attempted_completion_function_lapper(char *, int, int);
 
 enum void_arg_func_type { STARTUP_HOOK, EVENT_HOOK, GETC_FN, REDISPLAY_FN,
-			  CALLBACK, CMP_ENT, ATMPT_COMP };
+			  CMP_ENT, ATMPT_COMP };
 
 static struct fn_vars {
   Function **rlfuncp;		/* Readline Library variable */
   Function *lapper;		/* lapper function */
   SV *callback;			/* Perl function */
 } fn_tbl[] = {
-  { &rl_startup_hook,		startup_hook_lapper,		NULL },
-  { &rl_event_hook,		event_hook_lapper,		NULL },
-  { &rl_getc_function,		getc_function_lapper,		NULL },
+  { &rl_startup_hook,		startup_hook_lapper,	NULL },	/* 0 */
+  { &rl_event_hook,		event_hook_lapper,	NULL },	/* 1 */
+  { &rl_getc_function,		getc_function_lapper,	NULL },	/* 2 */
   {								
-    (Function **)&rl_redisplay_function,
+    (Function **)&rl_redisplay_function,			/* 3 */
     (Function *)redisplay_function_lapper,
     NULL
   },
   {
-    NULL,
-    (Function *)callback_handler_lapper,
-    NULL
-  },
-  {
-    (Function **)&rl_completion_entry_function,
+    (Function **)&rl_completion_entry_function,			/* 4 */
     (Function *)completion_entry_function_lapper,		
     NULL
   },
   {
-    (Function **)&rl_attempted_completion_function,
+    (Function **)&rl_attempted_completion_function,		 /* 5 */
     (Function *)attempted_completion_function_lapper,
     NULL
   }
@@ -436,26 +422,9 @@ void_arg_func_lapper(int type)
   return ret;
 }
 
-
-static void
-callback_handler_lapper(char *line)
-{
-  dSP;
-  int count;
-  int ret;
-
-  PUSHMARK(sp);
-  XPUSHs(sv_2mortal(newSVpv(line, 0)));
-  PUTBACK;
-
-  perl_call_sv(fn_tbl[CALLBACK].callback, G_DISCARD);
-}
-
 /*
  * call a perl function as rl_completion_entry_function
  */
-static SV * completion_entry_function = NULL;
-
 static char *
 completion_entry_function_lapper(char *text, int state)
 {
@@ -472,7 +441,7 @@ completion_entry_function_lapper(char *text, int state)
   XPUSHs(sv_2mortal(newSViv(state)));
   PUTBACK;
 
-  count = perl_call_sv(completion_entry_function, G_SCALAR);
+  count = perl_call_sv(fn_tbl[CMP_ENT].callback, G_SCALAR);
 
   SPAGAIN;
 
@@ -491,8 +460,6 @@ completion_entry_function_lapper(char *text, int state)
 /*
  * call a perl function as rl_attempted_completion_function
  */
-static SV * attempted_completion_function = NULL;
-
 static char **
 attempted_completion_function_lapper(char *text, int start, int end)
 {
@@ -510,7 +477,7 @@ attempted_completion_function_lapper(char *text, int start, int end)
   XPUSHs(sv_2mortal(newSViv(end)));
   PUTBACK;
 
-  count = perl_call_sv(attempted_completion_function, G_ARRAY);
+  count = perl_call_sv(fn_tbl[ATMPT_COMP].callback, G_ARRAY);
 
   SPAGAIN;
 
@@ -540,6 +507,22 @@ attempted_completion_function_lapper(char *text, int start, int end)
 
   return matches;
 }
+
+static SV* callback_handler_callback = NULL;
+
+static void
+callback_handler_lapper(char *line)
+{
+  dSP;
+  int count;
+  int ret;
+
+  PUSHMARK(sp);
+  XPUSHs(sv_2mortal(newSVpv(line, 0)));
+  PUTBACK;
+
+  perl_call_sv(callback_handler_callback, G_DISCARD);
+}
 
 MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu
 
@@ -551,25 +534,17 @@ MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu
 #
 #	2.1 Basic Behavior
 #
+
+#
+# The function name "readline()" is reserved for a method name.
+#
 void
-_rl_readline(prompt = NULL, preput = NULL)
+rl_readline(prompt = NULL)
 	char *prompt
-	char *preput
-	PROTOTYPE: ;$$
+	PROTOTYPE: ;$
 	CODE:
 	{
-	  char *line_read;
-
-	  /*
-	   * set default input string using readline() hook
-	   */
-	  preput_str = preput;
-	  rl_startup_hook = rl_insert_preput;
-
-	  /*
-	   * call readline()
-	   */
-	  line_read = readline(prompt);
+	  char *line_read = readline(prompt);
 
 	  ST(0) = sv_newmortal(); /* default return value is 'undef' */
 	  if (line_read) {
@@ -606,15 +581,6 @@ rl_add_defun(name, fn, key = -1)
 	      bind_myfun(key, fn, rl_get_keymap());
 	  }
 	}
-
-## int
-## rl_discard_defun(name)
-## 	char * name
-## 	PROTOTYPE: $
-## 	CODE:
-## 	{
-## 	  discard_myfun(name);
-## 	}
 
 #	2.4.2 Selection a Keymap
 
@@ -957,6 +923,17 @@ rl_callback_handler_install(prompt, lhandler)
 	PROTOTYPE: $$
 	CODE:
 	{
+	  /*
+	   * Don't remove braces. The definition of SvSetSV() of
+	   * Perl 5.003 has a problem.
+	   */
+	  if (callback_handler_callback) {
+	    SvSetSV(callback_handler_callback, lhandler);
+	  } else {
+	    callback_handler_callback = newSVsv(lhandler);
+	  }
+
+	  rl_callback_handler_install(prompt, callback_handler_lapper);
 	}
 
 void
@@ -970,55 +947,6 @@ rl_callback_handler_remove()
 #
 #	2.5 Custom Completers
 #
-void
-_rl_store_completion_entry_function(fn)
-	SV *	fn
-	PROTOTYPE: $
-	CODE:
-	{
-	  if (! SvTRUE(fn)
-	      || (SvPOK(fn) && (strcmp("filename", SvPV(fn, na)) == 0))) {
-	    rl_completion_entry_function
-	      = (Function *)filename_completion_function;
-	  } else if (SvPOK(fn) && (strcmp("username", SvPV(fn, na)) == 0)) {
-	    rl_completion_entry_function
-	      = (Function *)username_completion_function;
-	  } else {
-	    /*
-	     * Don't remove braces. The definition of SvSetSV() of
-	     * Perl 5.003 has a problem.
-	     */
-	    if (completion_entry_function) {
-	      SvSetSV(completion_entry_function, fn);
-	    } else {
-	      completion_entry_function = newSVsv(fn);
-	    }
-
-	    rl_completion_entry_function
-	      = (Function *)completion_entry_function_lapper;
-	  }
-	}
-
-void
-_rl_store_attempted_completion_function(fn)
-	SV *	fn
-	PROTOTYPE: $
-	CODE:
-	{
-	  if (! SvTRUE(fn)) {
-	    rl_attempted_completion_function = NULL;
-	  } else {
-	    /* Don't remove braces. */
-	    if (attempted_completion_function) {
-	      SvSetSV(attempted_completion_function, fn);
-	    } else {
-	      attempted_completion_function = newSVsv(fn);
-	    }
-
-	    rl_attempted_completion_function
-	      = (CPPFunction *)attempted_completion_function_lapper;
-	  }
-	}
 
 int
 rl_complete_internal(what_to_do)
@@ -1033,22 +961,22 @@ completion_matches(text, fn)
 	PPCODE:
 	{
 	  char **matches;
-	  if (! SvTRUE(fn)
-	      || (SvPOK(fn) && (strcmp("filename", SvPV(fn, na)) == 0))) {
-	    matches = completion_matches(text, filename_completion_function);
-	  } else if (SvPOK(fn) && (strcmp("username", SvPV(fn, na)) == 0)) {
-	    matches = completion_matches(text, username_completion_function);
-	  } else {
+
+	  if (SvTRUE(fn)) {
 	    /* use completion_entry_function temporarily */
-	    SV * save = completion_entry_function;
-	    if (save)
-	      SvSetSV(completion_entry_function, fn);
-	    else
-	      completion_entry_function = newSVsv(fn);
+	    Function *rlfunc_save = *(fn_tbl[CMP_ENT].rlfuncp);
+	    SV *callback_save = fn_tbl[CMP_ENT].callback;
+	    fn_tbl[CMP_ENT].callback = newSVsv(fn);
+
 	    matches = completion_matches(text,
 					 completion_entry_function_lapper);
-	    completion_entry_function = save;
-	  }
+
+	    SvREFCNT_dec(fn_tbl[CMP_ENT].callback);
+	    fn_tbl[CMP_ENT].callback = callback_save;
+	    *(fn_tbl[CMP_ENT].rlfuncp) = rlfunc_save;
+	  } else
+	    matches = completion_matches(text, NULL);
+
 	  if (matches) {
 	    int i, count;
 
@@ -1102,7 +1030,7 @@ username_completion_function(text, state)
 #	Gnu History Library
 #
 ########################################################################
-#
+
 #	2.3.1 Initializing History and State Management
 #
 void
@@ -1113,14 +1041,9 @@ using_history()
 #	2.3.2 History List Management
 #
 void
-add_history(...)
-	PROTOTYPE: @
-	CODE:
-	{
-	  register int i;
-	  for (i = 0; i < items; i++)
-	    add_history((char *)SvPV(ST(i), na));
-	}
+add_history(string)
+	char *string
+	PROTOTYPE: $
 
 void
 remove_history(which)
@@ -1181,21 +1104,6 @@ int
 history_is_stifled()
 	PROTOTYPE:
 
-void
-_rl_SetHistory(...)
-	PROTOTYPE: @
-	CODE:
-	{
-	  register int i;
-
-	  clear_history();
-	  for (i = 0; i < items; i++)
-	    add_history((char *)SvPV(ST(i), na));
-	}
-
-#
-#	2.3.3 Information About the History List
-#
 int
 where_history()
 	PROTOTYPE:
@@ -1230,22 +1138,6 @@ history_get(offset)
 int
 history_total_bytes()
 	PROTOTYPE:
-
-void
-_rl_GetHistory()
-	PROTOTYPE:
-	PPCODE:
-	{
-	  register HIST_ENTRY **the_list;
-	  register int i;
-     
-	  the_list = history_list ();
-	  if (the_list) {
-	    EXTEND(sp, history_length);
-	    for (i = 0; i < history_length; i++)
-	      PUSHs(sv_2mortal(newSVpv(the_list[i]->line,0)));
-	  }
-	}
 
 #
 #	2.3.4 Moving Around the History List
@@ -1457,21 +1349,26 @@ _rl_store_function(fn, id)
 	PROTOTYPE: $$
 	CODE:
 	{
-	  if (! SvTRUE(fn)) {
-	    *(fn_tbl[id].rlfuncp) = NULL;
-	  } else {
-	    /*
-	     * Don't remove braces. The definition of SvSetSV() of
-	     * Perl 5.003 has a problem.
-	     */
-	    if (fn_tbl[id].callback) {
-	      SvSetSV(fn_tbl[id].callback, fn);
-	    } else {
-	      fn_tbl[id].callback = newSVsv(fn);
-	    }
-
-	    *(fn_tbl[id].rlfuncp) = fn_tbl[id].lapper;
+	  ST(0) = sv_newmortal();
+	  if (id < 0 || id >= sizeof(fn_tbl)/sizeof(struct fn_vars)) {
+	    warn("Gnu.xs:_rl_store_function: Illegal `id' value: `%d'", id);
+	    return;		/* return undef */
 	  }
+	  
+	  /*
+	   * Don't remove braces. The definition of SvSetSV() of
+	   * Perl 5.003 has a problem.
+	   */
+	  if (fn_tbl[id].callback) {
+	    SvSetSV(fn_tbl[id].callback, fn);
+	  } else {
+	    fn_tbl[id].callback = newSVsv(fn);
+	  }
+
+	  *(fn_tbl[id].rlfuncp) = SvTRUE(fn) ? fn_tbl[id].lapper : NULL;
+
+	  /* return variable value */
+	  sv_setsv(ST(0), fn);
 	}
 
 void
@@ -1481,8 +1378,13 @@ _rl_fetch_function(id)
 	CODE:
 	{
 	  ST(0) = sv_newmortal();
-	  if (fn_tbl[id].callback)
-	    sv_setsv(ST(0), fn_tbl[id].callback);
+	  if (id < 0 || id >= sizeof(fn_tbl)/sizeof(struct fn_vars)) {
+	    warn("Gnu.xs:_rl_fetch_function: Illegal `id' value: `%d'", id);
+	    /* return undef */
+	  } else {
+	    if (fn_tbl[id].callback)
+	      sv_setsv(ST(0), fn_tbl[id].callback);
+	  }
 	}
 
 void
