@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.86 2001-03-09 15:58:03 hayashi Exp $
+#	$Id: Gnu.pm,v 1.87 2001-03-12 15:34:03 hayashi Exp $
 #
 #	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
 #
@@ -967,9 +967,9 @@ detail see 'GNU Readline Library Manual'.
 
 	int	rl_clear_pending_input()	# GRL 4.2
 
-=item C<set_keyboard_input_timeout(uSEC)>	# GRL 4.2
+=item C<set_keyboard_input_timeout(uSEC)>
 
-	int	rl_set_keyboard_input_timeout(int usec)
+	int	rl_set_keyboard_input_timeout(int usec)	# GRL 4.2
 
 =back
 
@@ -1040,6 +1040,10 @@ When C<MAX> is ommited, the max length of an item in @matches is used.
 =item C<variable_dumper(READABLE)>
 
 	int	rl_variable_dumper(int readline)
+
+=item C<set_paren_blink_timeout(uSEC)>
+
+	int	rl_set_paren_blink_timeout(usec)	# GRL 4.2
 
 =over 4
 
