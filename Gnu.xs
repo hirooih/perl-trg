@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.9 1996-12-03 16:28:54 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.10 1996-12-05 14:05:27 hayashi Exp $
  *
  *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
  *
@@ -75,10 +75,11 @@ static struct int_vars {
 
   &history_base, 0,					/* 12 */
   &history_length, 0,					/* 13 */
-  (int *)&history_expansion_char, 1,			/* 14 */
-  (int *)&history_subst_char, 1,			/* 15 */
-  (int *)&history_comment_char, 1,			/* 16 */
-  &history_quotes_inhibit_expansion, 0			/* 17 */
+  &history_offset, 0,					/* 14 */
+  (int *)&history_expansion_char, 1,			/* 15 */
+  (int *)&history_subst_char, 1,			/* 16 */
+  (int *)&history_comment_char, 1,			/* 17 */
+  &history_quotes_inhibit_expansion, 0			/* 18 */
 };
 
 /* from GNU Readline:xmalloc.c */
