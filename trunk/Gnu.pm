@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- GNU Readline wrapper module
 #
-#	$Id: Gnu.pm,v 1.2 1996-11-09 15:02:44 hayashi Exp $
+#	$Id: Gnu.pm,v 1.3 1996-11-15 15:55:23 hayashi Exp $
 #
 #	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
 #
@@ -32,7 +32,7 @@ This is an implementation of Term::ReadLine using GNU readline library.
 =cut
 
 use strict;
-use vars qw($VERSION @ISA @EXPORT @EXPORT_OK
+use vars qw($VERSION @ISA
 	    $rl_basic_word_break_characters);
 use Carp;
 
@@ -40,20 +40,13 @@ require Exporter;
 require DynaLoader;
 
 @ISA = qw(Term::ReadLine::Stub Exporter DynaLoader);
-# Items to export into callers namespace by default. Note: do not export
-# names by default without a very good reason. Use EXPORT_OK instead.
-# Do not simply export all your public functions/methods/constants.
-@EXPORT = qw(
-);
-$VERSION = '0.10';
+$VERSION = '0.01';
 
 bootstrap Term::ReadLine::Gnu $VERSION;
 
 # Preloaded methods go here.
 
 # Autoload methods go after =cut, and are processed by the autosplit program.
-
-my ($term, $minlength, $rl_readline_name, $rl_instream, $rl_outstream);
 
 =over 4
 
@@ -64,9 +57,9 @@ installed this package,  possible value is C<Term::ReadLine::Gnu>.
 
 =cut
 
-sub ReadLine () {'Term::ReadLine::Gnu'}
+sub ReadLine () { 'Term::ReadLine::Gnu'; }
 
-=item C<new([IN[,OUT]]>
+=item C<new(NAME,[IN[,OUT]]>
 
 returns the handle for subsequent calls to following functions.
 Argument is the name of the application.  Optionally can be followed
@@ -75,69 +68,74 @@ should be globs.
 
 =cut
 
-# This function is from Term::ReadLine::Perl.pm by Ilya Zakharevich.
+# The origin of this function is Term::ReadLine::Perl.pm by Ilya Zakharevich.
 sub new ($;$$$) {
-    warn "Cannot create second readline interface.\n" if defined $term;
-    shift;			# Package
-    if (@_) {
-	if ($term) {
-	    warn "Ignoring name of second readline interface.\n"
-		if defined $term;
-	    shift;
-	} else {
-	    _rl_set_readline_name(shift); # Name
-	}
-    }
+    my $this = shift;		# Package
+    my $class = ref($this) || $this;
+
+    my $name;
+    _rl_set_readline_name($name = shift) if (@_); # Name
+
+    my ($instream, $outstream);
     if (!@_) {
-	if (!defined $term) {
-	    my ($IN,$OUT) = Term::ReadLine->findConsole();
-	    open(IN,"<$IN") || croak "Cannot open $IN for read";
-	    open(OUT,">$OUT") || croak "Cannot open $OUT for write";
-	    _rl_set_instream(fileno($rl_instream = \*IN));
-	    _rl_set_outstream(fileno($rl_outstream = \*OUT));
-	}
+	my ($IN,$OUT) = Term::ReadLine::Stub::findConsole();
+	open(IN,"<$IN")   || croak "Cannot open $IN for read";
+	open(OUT,">$OUT") || croak "Cannot open $OUT for write";
+	_rl_set_instream (fileno($instream  = \*IN));
+	_rl_set_outstream(fileno($outstream = \*OUT));
     } else {
-	if (defined $term and ($term->IN ne $_[0] or $term->OUT ne $_[1]) ) {
-	    croak "Request for a second readline interface with different terminal";
-	}
-	_rl_set_instream(fileno($rl_instream = shift));
-	_rl_set_outstream(fileno($rl_outstream = shift));
+	_rl_set_instream (fileno($instream  = shift));
+	_rl_set_outstream(fileno($outstream = shift));
     }
     # The following is here since it is mostly used for perl input:
 #    $rl_basic_word_break_characters .= '-:+/*,[])}';
-    $term = bless [$rl_instream, $rl_outstream];
+
+    my $self = {
+		IN		=> $instream,
+		OUT		=> $outstream,
+		AppName		=> $name,
+		MinLength	=> 1,
+		DoExpand	=> 0,
+		MaxHist		=> undef,
+	       };
+    bless $self, $class;
 }
 
-=item C<readline(PROMPT[,PREPUT[,DO_EXPAND]])>
+=item C<readline(PROMPT[,PREPUT])>
 
 gets an input line, I<possibly> with actual C<readline> support.
 Trailing newline is removed.  Returns C<undef> on C<EOF>.  C<PREPUT>
 is an optional argument meaning the initial value of input.
-C<DO_EXPAND> is also an optional argument. If this value is true, then
-history expansion is done.  The optional argument C<PREPUT> is granted
-only if the value C<preput> is in C<Features>.  And C<DO_EXPAND> is
-granted only if the value C<do_expand> is in C<Features>.
+
+The optional argument C<PREPUT> is granted only if the value C<preput>
+is in C<Features>.
 
 =cut
 
-sub readline ($;$$$) {
-    shift;
-    my $do_expand = ($#_ == 2) and pop @_;
+sub readline ($;$$) {
+    my $self = shift;
+
+    # call readline()
     my $line = _rl_readline(@_);
     return undef unless defined $line;
 
-    if ($do_expand) {		# do history expansion
+    # history expansion
+    if ($self->{DoExpand}) {
 	my $result;
 	($result, $line) = history_expand($line);
-	print $rl_outstream "$line\n" if ($result);
+	my $outstream = $self->{OUT};
+	print $outstream "$line\n" if ($result);
      
+	# return without adding line into history
 	if ($result < 0 || $result == 2) {
 	    return '';		# don't return `undef' which means EOF.
 	}
     }
 
-    rl_add_history($line)
-	if (defined $minlength and (length($line) >= $minlength));
+    # add to history buffer
+    $self->addhistory($line)
+	if (length($line) >= $self->{MinLength});
+
     return $line;
 }
 
@@ -150,18 +148,19 @@ the actual C<readline> is present.
 
 sub addhistory ($@) {		# Why not AddHistory ?
     shift;
-    rl_add_history(@_);
+    _rl_add_history(@_);
 }
 
 =item C<StifleHistory(MAX)>
 
 stifles the history list, remembering only the last C<MAX> entries.
+If MAX is undef,  remembers all entries.
 
 =cut
 
-sub StifleHistory ($$) {
-    shift;
-    stifle_history(@_);		# internal function
+sub StifleHistory ($;$) {
+    my $self = shift;
+    _stifle_history($self->{MaxHist} = shift);
 }
 
 =item C<SetHistory(LINE1, LINE2, ...)>
@@ -223,27 +222,26 @@ anything into history. Returns the old value.
 
 =cut
 
-$minlength = 1;
-
 sub MinLine ($$) {
-    my $old_minlength = $minlength;
-    $minlength = $_[1];
+    my $self = shift;
+    my $old_minlength = $self->{MinLength};
+    $self->{MinLength} = shift;
     $old_minlength;
 }
 
 =item C<$rl_completion_entry_function>
 
-holds reference refers to the generator function for
+This variable holds reference refers to a generator function for
 C<completion_matches()>.
 
-The generator function is called repeatedly from C<completion_matches
-()>, returning a string each time.  The arguments to the generator
-function are TEXT and STATE.  TEXT is the partial word to be
-completed.  STATE is zero the first time the function is called,
-allowing the generator to perform any necessary initialization, and a
-positive non-zero integer for each subsequent call.  When the
-generator function returns C<undef> this signals C<completion_matches
-()> that there are no more possibilities left.
+A generator function is called repeatedly from
+C<completion_matches()>, returning a string each time.  The arguments
+to the generator function are TEXT and STATE.  TEXT is the partial
+word to be completed.  STATE is zero the first time the function is
+called, allowing the generator to perform any necessary
+initialization, and a positive non-zero integer for each subsequent
+call.  When the generator function returns C<undef> this signals
+C<completion_matches()> that there are no more possibilities left.
 
 If the value is false or equals C<'filename'>, built-in
 C<filename_completion_function> is used.  If the value equals
@@ -259,6 +257,8 @@ in Gnu.pm.  You can use it as follows;
      @completion_word_list = qw(list of words which you want to use for completion);
      $rl_completion_entry_function = \&list_completion_function;
      $term->readline("custom completion>");
+
+See also C<completion_matches>.
 
 =cut
 
@@ -292,6 +292,86 @@ sub STORE ($$) {
 
 #	End of Term::ReadLine::Gnu::CEF
 
+=item C<$rl_attempted_completion_function>
+
+A pointer to an alternative function to create matches.
+
+The function is called with TEXT, LINE_BUFFER, START, and END.
+LINE_BUFFER is a current input buffer string.  START and END are
+indices in LINE_BUFFER saying what the boundaries of TEXT are.
+
+If this function exists and returns null list or C<undef>, or if this
+variable is set to C<undef>, then an internal function
+C<rl_complete()> will call the value of
+C<$rl_completion_entry_function> to generate matches, otherwise the
+array of strings returned will be used.
+
+The default value of this variable is C<undef>.
+
+=cut
+
+#
+#	access methods for $rl_attempted_completion_function
+#
+package Term::ReadLine::Gnu::ACF;
+use Carp;
+use strict;
+
+sub TIESCALAR ($) {
+    my $class = shift;
+    my $self = shift;
+    Term::ReadLine::Gnu::_rl_store_attempted_completion_function($self);
+    return bless \$self, $class;
+}
+
+sub FETCH ($) {
+    my $self = shift;
+    confess "wrong type" unless ref $self;
+    return $$self;
+}
+
+sub STORE ($$) {
+    my $self = shift;
+    confess "wrong type" unless ref $self;
+    $$self = shift;
+    Term::ReadLine::Gnu::_rl_store_attempted_completion_function($$self);
+    return $$self;
+}
+
+#	End of Term::ReadLine::Gnu::ACF
+
+=item C<completion_matches(TEXT, ENTRY_FUNC)>
+
+Returns an array of strings which is a list of completions for TEXT.
+If there are no completions, returns C<undef>.  The first entry
+in the returned array is the substitution for TEXT.  The remaining
+entries are the possible completions.
+
+ENTRY_FUNC is a generator function which has two args, and returns a
+string.  The first argument is TEXT.  The second is a state argument;
+it is zero on the first call, and non-zero on subsequent calls.
+ENTRY_FUNC returns a C<undef> to the caller when there are no more
+matches.
+
+If the value of ENTRY_FUNC is false or equals C<'filename'>, built-in
+C<filename_completion_function> is used.  If the value equals
+C<'username'>, build-in C<username_completion_function> is used.
+
+C<completion_matches> is a perl lapper function of an internal
+function C<completion_matches()>.  See also
+C<$rl_completion_entry_function>.
+
+=cut
+
+=item C<$rl_basic_word_break_characters>
+
+The basic list of characters that signal a break between words for the
+completer routine.  The default value of this variable is the
+characters which break words for completion in Bash, i.e.,
+C<" \t\n\"\\'`\@\$><=;|&{(">.
+
+=cut
+
 #
 #	access methods for $rl_basic_word_break_characters
 #
@@ -324,13 +404,20 @@ sub STORE ($$) {
 
 package Term::ReadLine;
 
-use vars qw($rl_basic_word_break_characters $rl_completion_entry_function
-	    @completion_word_list @EXPORT_OK);
-@EXPORT_OK = qw($rl_basic_word_break_characters $rl_completion_entry_function
-		@completion_word_list list_completion_function
-);
+use vars qw($rl_completion_entry_function $rl_attempted_completion_function
+	    @completion_word_list $rl_basic_word_break_characters
+	    %EXPORT_TAGS @EXPORT_OK);
+
+%EXPORT_TAGS = (custom_completion => [qw($rl_completion_entry_function
+					 $rl_attempted_completion_function
+					 completion_matches
+					 @completion_word_list
+					 list_completion_function
+					 $rl_basic_word_break_characters)]);
+Exporter::export_ok_tags('custom_completion');
 
 tie $rl_completion_entry_function, 'Term::ReadLine::Gnu::CEF', undef;
+tie $rl_attempted_completion_function, 'Term::ReadLine::Gnu::ACF', undef;
 tie $rl_basic_word_break_characters, 'Term::ReadLine::Gnu::BWBC',
     " \t\n\"\\'`\@\$><=;|&{(";	# default value of GNU readline
 
@@ -352,23 +439,17 @@ BEGIN {
 
 package Term::ReadLine::Gnu;
 
-my %features = (appname => 1, minline => 1, autohistory => 1,
-		preput => 1, do_expand => 1, stifleHistory => 1,
-		getHistory => 1, setHistory => 1, addHistory => 1,
-		readHistory => 1, writeHistory => 1,
-		tkRunning => 0);
-
-sub Features () { \%features; }
-
-1;
-__END__
-
 # The following functions are defined in ReadLine.pm.
 
 =item C<IN>, C<OUT>
 
 return the filehandles for input and output or C<undef> if C<readline>
 input and output cannot be used for Perl.
+
+=cut
+
+sub IN  ($) { shift->{IN}; }
+sub OUT ($) { shift->{OUT}; }
 
 =item C<findConsole>
 
@@ -388,6 +469,19 @@ C<preput> means the second argument to C<readline> method is processed.
 C<getHistory> and C<setHistory> denote that the corresponding methods are 
 present. C<tkRunning> denotes that a Tk application may run while ReadLine
 is getting input B<(undocumented feature)>.
+
+=cut
+
+my %Features = (appname => 1, minline => 1, autohistory => 1,
+		preput => 1, do_expand => 1, stifleHistory => 1,
+		getHistory => 1, setHistory => 1, addHistory => 1,
+		readHistory => 1, writeHistory => 1,
+		tkRunning => 0);
+
+sub Features () { \%Features; }
+
+1;
+__END__
 
 =back
 
@@ -409,12 +503,10 @@ perl(1).
 
 =head1 TODO
 
-README, INSTALL manual (libreadline.a)
+Perlsh: variable name completion support, POD document
 
-rl_attempted_completion support.
+keybind function
 
-Perlsh
-
-Make test.pl clean.
+document
 
 =cut
