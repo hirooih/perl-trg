@@ -1,5 +1,5 @@
 	-*- Indented-text -*-
-$Id: README,v 1.22 2002-03-31 05:40:46 hiroo Exp $
+$Id: README,v 1.23 2002-07-28 04:49:24 hiroo Exp $
 
 Term::ReadLine::Gnu --- GNU Readline Library Wrapper Module
 
@@ -61,6 +61,18 @@ Author:
 
 
 Revision History:
+
+1.13  2002-07-27
+	- readline-4.2 support
+	    new variables
+		rl_completion_suppress_append
+		rl_completion_mark_symlink_dirs
+	    new functions
+		rl_replace_line()
+		rl_completion_mode()
+	- tgetstr() calls tput() to apply padding information.  No
+	  more "$<2>" on prompt.
+	- shadow_redisplay() with ornament works on xterm.
 
 1.12  2002-03-30
 	- add '-static' flag to 'LDDFLAGS' on Cygwin 1.3.
