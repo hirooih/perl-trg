@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.23 1998-05-05 14:14:38 hayashi Exp $
+#	$Id: readline.t,v 1.24 1998-09-27 16:11:13 hayashi Exp $
 #
 #	Copyright (c) 1996,1997,1998 Hiroo Hayashi.  All rights reserved.
 #
@@ -64,8 +64,10 @@ print defined $a ? "ok 5\n" : "not ok 5\n";
 ########################################################################
 # test tied variable
 
+my ($version) = $a->{library_version} =~ /(\d+\.\d+)/;
+
 # Version 2.0 is NOT supported.
-print $a->{library_version} > 2.0 ? "ok 6\n" : "not ok 6\n";
+print $version > 2.0 ? "ok 6\n" : "not ok 6\n";
 
 ########################################################################
 # test key binding functions
@@ -166,7 +168,7 @@ $t->bind_key(ord "f", 'dump-functions', $helpmap);
 $t->generic_bind(ISKMAP, "\e?", $helpmap);
 $t->bind_key(ord "v", 'dump-variables', $helpmap);
 # 'dump-macros' is documented but not defined by GNU Readline 2.1
-$t->generic_bind(ISFUNC, "\e?m", 'dump-macros') if $a->{library_version} > 2.1;
+$t->generic_bind(ISFUNC, "\e?m", 'dump-macros') if $version > 2.1;
 
 # bind macro
 $t->generic_bind(ISMACR, "\e?i", "\ca[insert text from beginning of line]");
