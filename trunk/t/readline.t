@@ -1,12 +1,17 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.19 1997-04-13 15:38:06 hayashi Exp $
+#	$Id: readline.t,v 1.20 1998-03-26 14:00:10 hayashi Exp $
 #
+#	Copyright (c) 1996,1997,1998 Hiroo Hayashi.  All rights reserved.
+#
+#	This program is free software; you can redistribute it and/or
+#	modify it under the same terms as Perl itself.
+
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl t/readline.t'
 
-BEGIN {print "1..14\n";}
+BEGIN {print "1..13\n";}
 END {print "not ok 1\n" unless $loaded;}
 
 $^W = 1;			# perl -w
@@ -18,18 +23,6 @@ use Term::ReadLine::Gnu qw(ISKMAP ISMACR ISFUNC);
 
 $loaded = 1;
 print "ok 1\n";
-
-########################################################################
-sub cmp_list {
-    ($a, $b) = @_;
-    my @a = @$a;
-    my @b = @$b;
-    return undef if $#a ne $#b;
-    for (0..$#a) {
-	return undef if $a[$_] ne $b[$_];
-    }
-    return 1;
-}
 
 ########################################################################
 # test new method
@@ -86,8 +79,6 @@ sub reverse_line {
 sub display_readline_version {
     my($count, $key) = @_;	# ignored in this sample function
     print $OUT "GNU Readline Library version: $attribs->{library_version}\n";
-# rl_message() does not work.
-#    $term->message("GNU Readline Library version: $attribs->{library_version}\n");
     $term->on_new_line();
 }
 
@@ -163,9 +154,9 @@ foreach ("\co", "\ct", "\cx",
 	 "\cx\ct", "\cxt", "\cx\cv", "\cxv", "\ec",
 	 "\e?f", "\e?v", "\e?i") {
     my ($p, $type) = $term->function_of_keyseq($_);
-    print $OUT (toprint($_));
+    printf $OUT "%-9s: ", toprint($_);
     (print "\n", next) unless defined $type;
-    print $OUT ": $TYPE{$type},\t";
+    printf $OUT "%-8s : ", $TYPE{$type};
     if    ($type == ISFUNC) { print $OUT ($term->get_function_name($p)); }
     elsif ($type == ISKMAP) { print $OUT ($term->get_keymap_name($p)); }
     elsif ($type == ISMACR) { print $OUT (toprint($p)); }
@@ -244,16 +235,30 @@ $attribs->{attempted_completion_function} = undef;
 print "ok 10\n";
 
 ########################################################################
-# test rl_getc_function and rl_getc()
-sub uppercase {
-    my $FILE = $attribs->{instream};
-    return ord uc chr $term->getc($FILE);
-#    return ord uc chr $term->getc($attribs->{instream}); # Why does this cause error?
+# test ornaments
+#short_cut:
+{
+    local $^W = 0;		# Term::ReadLine is not waring flag free
+    print $OUT "# ornaments test:\n";
+    # Kterm seems to have a bug with 'ue' (End underlining) does not work\n";
+    $term->ornaments(1);	# equivalent to 'us,ue,md,me'
+    $term->readline("default ornaments (underline)>");
+    # cf. man termcap(5)
+    $term->ornaments('so,me,,');
+    $term->readline("standout>");
+    $term->ornaments('us,me,,');
+    $term->readline("underlining>");
+    $term->ornaments('mb,me,,');
+    $term->readline("blinking>");
+    $term->ornaments('md,me,,');
+    $term->readline("bold>");
+    $term->ornaments('mr,me,,');
+    $term->readline("reverse>");
+    $term->ornaments('vb,,,');
+    $term->readline("visible bell>");
+    $term->ornaments(0);
+    print $OUT "# end of ornaments test\n";
 }
-
-$attribs->{getc_function} = \&uppercase;
-$term->readline("convert to uppercase>");
-$attribs->{getc_function} = undef;
 
 print "ok 11\n";
 
@@ -268,22 +273,19 @@ $attribs->{startup_hook} = undef;
 print "ok 12\n";
 
 ########################################################################
-# test WriteHistory(), ReadHistory()
-#short_cut:
-my @list_write = $term->GetHistory();
-$term->WriteHistory(".history_test") || warn "error at write_history: $!\n";
-$term->SetHistory();
-$term->ReadHistory(".history_test") || warn "error at read_history: $!\n";
-my @list_read = $term->GetHistory();
-print cmp_list(\@list_write, \@list_read) ? "ok 13\n" : "not ok 13\n";
+# test rl_getc_function and rl_getc()
 
-########################################################################
-# test SetHistory(), GetHistory()
+sub uppercase {
+    my $FILE = $attribs->{instream};
+    return ord uc chr $term->getc($FILE);
+#    return ord uc chr $term->getc($attribs->{instream}); # Why does this cause error?
+}
 
-my @list_set = qw(one two three);
-$term->SetHistory(@list_set);
-my @list_get = $term->GetHistory();
-print cmp_list(\@list_set, \@list_get) ? "ok 14\n" : "not ok 14\n";
+$attribs->{getc_function} = \&uppercase;
+$term->readline("convert to uppercase>");
+$attribs->{getc_function} = undef;
+
+print "ok 13\n";
 
 end_of_test:
 
