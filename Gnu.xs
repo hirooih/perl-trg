@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.41 1997-01-20 16:55:50 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.42 1997-01-21 16:51:55 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -35,7 +35,7 @@ extern char *xfree (char *);
 static char *dupstr (char *);	/* duplicate string */
 
 /*
- * should be defined readline/bind.c ? */
+ * should be defined readline/bind.c ?
  */
 static char *
 rl_get_function_name (Function *function)
@@ -525,36 +525,40 @@ _rl_unbind_key(key, map = rl_get_keymap())
 	RETVAL
 
 int
-rl_generic_bind(type, keyseq, data, map = rl_get_keymap())
-	int type
+_rl_generic_bind_function(keyseq, function, map = rl_get_keymap())
 	char *keyseq
-	char *data
+	Function *function
 	Keymap map
-	PROTOTYPE: $$$;$
+	PROTOTYPE: $$;$
 	CODE:
 	{
-	  void *p;
+	  RETVAL = rl_generic_bind(ISFUNC, keyseq, (char *)function, map);
+	}
+	OUTPUT:
+	RETVAL
 
-	  switch (type) {
-	  case ISFUNC:
-	    p = rl_named_function(data); /* function name */
-	    break;
+int
+_rl_generic_bind_keymap(keyseq, keymap, map = rl_get_keymap())
+	char *keyseq
+	Keymap keymap
+	Keymap map
+	PROTOTYPE: $$;$
+	CODE:
+	{
+	  RETVAL = rl_generic_bind(ISKMAP, keyseq, (char *)keymap, map);
+	}
+	OUTPUT:
+	RETVAL
 
-	  case ISKMAP:
-	    p = rl_get_keymap_by_name(data); /* keymap name */
-	    break;
-
-	  case ISMACR:
-	    p = dupstr(data);	/* Who will free this memory? */
-	    break;
-
-	  defaults:
-	    warn("Gnu.xs:rl_generic_bind: illegal type `%d'\n", type);
-	    RETVAL = -1;
-	    XSRETURN(1);
-	  }
-
-	  RETVAL = rl_generic_bind(type, keyseq, p, map);
+int
+_rl_generic_bind_macro(keyseq, macro, map = rl_get_keymap())
+	char *keyseq
+	char *macro
+	Keymap map
+	PROTOTYPE: $$;$
+	CODE:
+	{
+	  RETVAL = rl_generic_bind(ISMACR, keyseq, macro, map);
 	}
 	OUTPUT:
 	RETVAL
@@ -603,30 +607,29 @@ rl_function_of_keyseq(keyseq, map = rl_get_keymap())
 	PPCODE:
 	{
 	  int type;
-	  Function *fn = rl_function_of_keyseq(keyseq, map, &type);
+	  Function *p = rl_function_of_keyseq(keyseq, map, &type);
 	  char *data;
+	  SV *sv;
 
-	  if (fn) {
+	  if (p) {
+	    sv = sv_newmortal();
 	    switch (type) {
 	    case ISFUNC:
-	      data = rl_get_function_name(fn);
+	      sv_setref_pv(sv, "FunctionPtr", (void*)p);
 	      break;
 	    case ISKMAP:
-	      data = rl_get_keymap_name((Keymap)fn);
+	      sv_setref_pv(sv, "Keymap", (void*)p);
 	      break;
 	    case ISMACR:
-	      data = (char *)fn;
+	      sv_setpv(sv, (char *)p);
 	      break;
 	    defaults:
 	      warn("Gnu.xs:rl_function_of_keyseq: illegal type `%d'\n", type);
 	      XSRETURN_EMPTY;	/* return NULL list */
 	    }
-	    if (data) {
-	      EXTEND(sp, 2);
-	      PUSHs(sv_2mortal(newSVpv(data, 0)));
-	      PUSHs(sv_2mortal(newSViv(type)));
-	    } else
-	      ;			/* return NULL list */
+	    EXTEND(sp, 2);
+	    PUSHs(sv);
+	    PUSHs(sv_2mortal(newSViv(type)));
 	  } else
 	    ;			/* return NULL list */
 	}
@@ -1264,7 +1267,29 @@ _rl_fetch_iostream(id)
 	    RETVAL = rl_outstream;
 	    break;
 	  default:
-	    warn("Gnu.xs:_rl_store_iostream: Illegal `id' value: `%d'", id);
+	    warn("Gnu.xs:_rl_fetch_iostream: Illegal `id' value: `%d'", id);
+	    XSRETURN_UNDEF;
+	    break;
+	  }
+	}
+	OUTPUT:
+	RETVAL
+
+Keymap
+_rl_fetch_keymap(id)
+	int id
+	PROTOTYPE: $
+	CODE:
+	{
+	  switch (id) {
+	  case 0:
+	    RETVAL = rl_executing_keymap;
+	    break;
+	  case 1:
+	    RETVAL = rl_binding_keymap;
+	    break;
+	  default:
+	    warn("Gnu.xs:_rl_fetch_keymap: Illegal `id' value: `%d'", id);
 	    XSRETURN_UNDEF;
 	    break;
 	  }
