@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.35 1999-05-10 17:33:33 hayashi Exp $
+#	$Id: readline.t,v 1.36 1999-05-19 15:32:19 hayashi Exp $
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -742,7 +742,10 @@ print "ok $n\n"; $n++;
 ########################################################################
 # end of non-interactive test
 unless ($verbose) {
-    print STDERR "ok\tTry \`perl -Mblib t/readline.t verbose\', if you will.\n" if $ok;
+    # $^X : `perl' for dynamically linked perl, `./perl' for
+    #        statically linked perl.
+    print STDERR "ok\tTry \`$^X -Mblib t/readline.t verbose\', if you will.\n"
+	if $ok;
     exit 0;
 }
 ########################################################################
