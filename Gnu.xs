@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.43 1997-01-22 14:59:33 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.44 1997-01-24 15:00:48 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -740,7 +740,7 @@ rl_clear_message()
 	PROTOTYPE:
 
 #
-#	2.4.7 Modifying Tex
+#	2.4.7 Modifying Text
 #
 int
 rl_insert_text(text)
@@ -1014,13 +1014,11 @@ history_get(offset)
 	PROTOTYPE: $
 	CODE:
 	{
-	  HIST_ENTRY *hist;
-
-	  ST(0) = sv_newmortal(); /* default return value is 'undef' */
-
-	  hist = history_get(offset);
-	  if (hist && hist->line)
-	    sv_setpv(ST(0), hist->line);
+	  HIST_ENTRY *entry;
+	  entry = history_get(offset);
+	  ST(0) = sv_newmortal();
+	  if (entry && entry->line)
+	    sv_setpv(ST(0), entry->line);
 	}
 
 int
