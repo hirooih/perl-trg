@@ -2,7 +2,7 @@
 #
 #	XS.pm : perl function definition for Term::ReadLine::Gnu
 #
-#	$Id: XS.pm,v 1.13 2000-12-05 15:30:47 hayashi Exp $
+#	$Id: XS.pm,v 1.14 2001-02-11 05:58:55 hayashi Exp $
 #
 #	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
 #
@@ -271,7 +271,15 @@ sub ornaments {
 	if $rl_term_set eq '1';
     my @ts = split /,/, $rl_term_set, 4;
     my @rl_term_set
-	= map {$_ ? tgetstr($_) || '' : ''} @ts;
+	= map {
+	    # non-printing characters must be informed to readline
+	    my $t;
+	    ($_ and $t = tgetstr($_))
+		? (Term::ReadLine::Gnu::RL_PROMPT_START_IGNORE
+		   . $t
+		   . Term::ReadLine::Gnu::RL_PROMPT_END_IGNORE)
+		    : '';
+	} @ts;
     $Attribs{term_set} = \@rl_term_set;
     return $rl_term_set;
 }
