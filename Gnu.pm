@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.69 1999-03-27 14:36:38 hayashi Exp $
+#	$Id: Gnu.pm,v 1.70 1999-04-03 17:04:11 hayashi Exp $
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -1370,6 +1370,10 @@ function.
 
 =over 4
 
+=item C<rl_get_all_function_names>
+
+Returns a list of all function names.
+
 =item C<shadow_redisplay>
 
 A redisplay function for password input.  You can use it as follows;
@@ -1487,16 +1491,7 @@ C<http://www.perl.org/CPAN/authors/Hiroo_HAYASHI/>
 
 =head1 TODO
 
-Test routines for following variable and functions are required.
-
-	rl_read_key()
-	rl_stuff_char()
-
-	rl_callback_handler_install()
-	rl_callback_read_char()
-	rl_callback_handler_remove()
-
-	rl_complete_internal()
+GTK+ support in addition to Tk.
 
 =head1 BUGS
 
