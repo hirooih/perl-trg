@@ -1,6 +1,6 @@
 #! /usr/local/bin/perl
 #
-#	$Id: perlsh,v 1.4 1996-11-19 16:14:09 hayashi Exp $	
+#	$Id: perlsh,v 1.5 1996-12-01 15:48:53 hayashi Exp $	
 #
 #	Copyright (c) 1996 Hiroo Hayashi. All Rights Reserved.
 #
@@ -9,7 +9,8 @@
 
 =head1 NAME
 
-perlsh - one line perl evaluator with line editing function
+perlsh - one-line perl evaluator with line editing function and
+	 variable name completion function
 
 =head1 SYNOPSIS
 
@@ -60,10 +61,10 @@ sub toplevel {
 	$term->ReadHistory($HISTFILE)
 	    or warn "perlsh: cannot read history file: $!\n";
     }
-    $rl_completion_entry_function = \&symbol_completion_function;
+    $term->StoreVar('rl_completion_entry_function',
+		    \&perl_symbol_completion_function);
 
-    # remove `$' & `@' from the default value
-    $rl_basic_word_break_characters = " \t\n\"\\'`><=;|&{(";
+    $term->StoreVar('rl_special_prefixes', '$@');
 
     $SIG{'INT'} = \&quit;
 
@@ -113,7 +114,7 @@ BEGIN {
     my $i;
     use vars qw(@symbol_list);
 
-    sub symbol_completion_function ($$) {
+    sub perl_symbol_completion_function ($$) {
 	my($text, $state) = @_;
 
 	if ($state) {
@@ -253,5 +254,9 @@ GNU Readline Library Texinfo Manual
 =head1 AUTHOR
 
 Hiroo Hayashi, hayashi@pdcd.ilab.toshiba.co.jp
+
+=head1 BUGS
+
+Variable name whose value is 'undef' cannot be completed.
 
 =cut
