@@ -1,7 +1,7 @@
 #
 #	Makefile.PL for Term::ReadLine::Gnu
 #
-#	$Id: Makefile.PL,v 1.25 2002-12-26 19:17:09 hiroo Exp $
+#	$Id: Makefile.PL,v 1.26 2003-03-16 19:03:04 hiroo Exp $
 #
 #	Copyright (c) 2002 Hiroo Hayashi.  All rights reserved.
 #		<hiroo.hayashi@computer.org>
@@ -44,7 +44,7 @@ $TERMCAP_LIB = (! $PREFER_CURSES && &search_lib('-ltermcap'))
     || &search_lib('-lncurses')
     || &search_lib('-lcurses');
 
-die "Could not find neither libtermcap.a, libncureses.a, or libcurses.\n"
+die "Could not find neither libtermcap.a, libncurses.a, or libcurses.\n"
     unless $TERMCAP_LIB;
 
 # Ignore outside of OS/2. Set to 1 if linking with readline.dll under
@@ -52,7 +52,9 @@ die "Could not find neither libtermcap.a, libncureses.a, or libcurses.\n"
 # Check ftp://ftp.math.ohio-state.edu/pub/users/ilya/os2/
 if ($Config{osname} ne 'os2') {
     $libs = "-lreadline $TERMCAP_LIB";
-    $ldflags = '-static' if ($Config{osname} =~ /cygwin/i);
+    $lddflags = '-static' if ($Config{osname} =~ /cygwin/i);
+    # Latest Perl in FreeBSD does not need this hack. (Dec.2002)
+    $libs .= ' -lcrypt' if ($Config{osname} =~ /freebsd/i);
 } else {
     $libs = '-lreadline_import';
     $defs .= ' -DOS2_USEDLL';
@@ -79,7 +81,7 @@ EOF
 close(F);
 
 # compile it
-$comp_cmd = "$Config{cc} $RLINC $Config{ccflags} $defs $frlver -o rlver $RLLIB $ldflags $Config{ldflags} $libs";
+$comp_cmd = "$Config{cc} $RLINC $Config{ccflags} $defs $frlver -o rlver $RLLIB $lddflags $Config{ldflags} $libs";
 print $comp_cmd, "\n";
 system($comp_cmd);
 if ($?) {
@@ -117,20 +119,22 @@ if ($rl_readline_version <= 0x0402) {
 }
 
 # generate a Makefile
-WriteMakefile(
-    'NAME'	=> 'Term::ReadLine::Gnu',
-    'VERSION_FROM' => 'Gnu.pm',
-    'LIBS'	=> [ "$RLLIB $libs" ],
-    'LDFLAGS'	=> "$RLLIB $Config{ldflags}",
-    'LDDLFLAGS'	=> "$RLLIB $ldflags $Config{lddlflags}",
-    'DEFINE'	=> $defs,
-    ($Config{osname} eq 'os2' ?
-	(
-	IMPORTS	=> { xfree => 'emxlibcm.401' },	# Yuck!
-	) : () ),
-    'INC'	=> $RLINC,
-    'dist'	=> { COMPRESS => 'gzip -9f', SUFFIX => 'gz' },
-    'clean'	=> { FILES => "rlver.c rlver$Config{_exe}" },
+WriteMakefile
+    (
+     NAME	  => 'Term::ReadLine::Gnu',
+     VERSION_FROM => 'Gnu.pm',
+     LIBS	  => [ "$RLLIB $libs" ],
+     #LDFLAGS	  => "$RLLIB $Config{ldflags}",
+     #LDDLFLAGS	  => "$RLLIB $lddflags $Config{lddlflags}",
+     dynamic_lib  => { OTHERLDFLAGS => $lddflags },
+     DEFINE	  => $defs,
+     ($Config{osname} eq 'os2' ?
+      (
+       IMPORTS	=> { xfree => 'emxlibcm.401' },	# Yuck!
+      ) : () ),
+     INC	  => $RLINC,
+     dist	  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz' },
+     clean	  => { FILES => "rlver.c rlver$Config{_exe}" },
 );
 
 exit(0);
@@ -150,13 +154,12 @@ sub search_lib {
     my $libbase = 'lib' . substr($lib, 2) . $Config{lib_ext};
     my $libbase_so = 'lib' . substr($lib, 2) . "." . $Config{so};
     foreach (split(' ', $Config{libpth})) {
-#	print "$_/$libbase\n";
 	if (-f $_ . '/' . $libbase) {
+#	    print "$_/$libbase\n";
 	    print "Found \`$_/$libbase\'.\n";
 	    return $lib;
-	}
-#	print "$_/$libbase_so\n";
-	if (-f $_ . '/' . $libbase_so) {
+	} elsif (-f $_ . '/' . $libbase_so) {
+#	    print "$_/$libbase_so\n";
 	    print "Found \`$_/$libbase_so\'.\n";
 	    return $lib;
 	}
