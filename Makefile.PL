@@ -1,9 +1,9 @@
 #
 #	Makefile.PL for Term::ReadLine::Gnu
 #
-#	$Id: Makefile.PL,v 1.16 1999-05-26 17:05:58 hayashi Exp $
+#	$Id: Makefile.PL,v 1.17 1999-06-23 12:50:28 hayashi Exp $
 #
-#	Copyright (c) 1996,1997,1998 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 1999 Hiroo Hayashi.  All rights reserved.
 #		<hiroo.hayashi@computer.org>
 #
 #	This program is free software; you can redistribute it and/or
@@ -22,7 +22,7 @@ use ExtUtils::MakeMaker;
 use Config;
 
 if ($Config{usesfio} eq 'true') {
-    warn("** Perl is configured with \'usesfio\' equals true. **\n");
+    warn("** Your Perl is configured as \'usesfio\' equals true. **\n");
     warn("** The GNU Readline Library may not work with perl with sfio. **\n");
 }
 
@@ -31,7 +31,8 @@ $defs = ($Config{strings} =~ m|/string.h$|) ? '-DHAVE_STRING_H' : '';
 # Search libtermcap, libncurses, or libcurses in this order.
 # I emulate the behavior of configure script for bash, and don't know
 # why AIX prefers curses.
-$PREFER_CURSES = $Config{osname} eq 'aix' || $Config{osname} eq 'hpux';
+# libtermcap.a on HPUX cannot be used for dynamically linked binary.
+$PREFER_CURSES = $Config{osname} eq 'aix' or $Config{osname} eq 'hpux';
 $TERMCAP_LIB = (! $PREFER_CURSES && &search_lib('-ltermcap'))
     || &search_lib('-lncurses')
     || &search_lib('-lcurses');
@@ -124,12 +125,12 @@ sub search_lib {
     foreach (split(' ', $Config{libpth})) {
 #	print "$_/$libbase\n";
 	if (-f $_ . '/' . $libbase) {
-	    print "Find \`$_/$libbase\'.\n";
+	    print "Found \`$_/$libbase\'.\n";
 	    return $lib;
 	}
 #	print "$_/$libbase_so\n";
 	if (-f $_ . '/' . $libbase_so) {
-	    print "Find \`$_/$libbase_so\'.\n";
+	    print "Found \`$_/$libbase_so\'.\n";
 	    return $lib;
 	}
     }
