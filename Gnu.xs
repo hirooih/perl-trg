@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.67 1999-03-08 16:40:02 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.68 1999-03-10 15:12:23 hayashi Exp $
  *
  *	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
  *
@@ -128,6 +128,16 @@ rl_quote_filename (s, rtype, qcp)
  */
 void rl_save_prompt() { _rl_save_prompt(); }
 void rl_restore_prompt() { _rl_restore_prompt(); }
+
+/*
+ * Dummy functions
+ */
+void rl_cleanup_after_signal(){};
+void rl_free_line_state(){};
+void rl_reset_after_signal(){};
+void rl_resize_terminal(){};
+int rl_set_signals(){ 0; };
+int rl_clear_signals(){ 0; };
 #endif /* (RLMAJORVER < 4) */
 
 
@@ -163,6 +173,13 @@ static struct str_vars {
  *	integer variable table for _rl_store_int(), _rl_fetch_int()
  */
 
+#if (RLMAJORVER < 4)
+/* define dummy variable */
+static int rl_erase_empty_line;
+static int rl_catch_signals;
+static int rl_catch_sigwinch;
+#endif /* (RLMAJORVER < 4) */
+
 static struct int_vars {
   int *var;
   int charp;
@@ -187,14 +204,10 @@ static struct int_vars {
   { (int *)&history_expansion_char,		1, 0 },	/* 14 */
   { (int *)&history_subst_char,			1, 0 },	/* 15 */
   { (int *)&history_comment_char,		1, 0 },	/* 16 */
-  { &history_quotes_inhibit_expansion,		0, 0 }	/* 17 */
-#if (RLMAJORVER >= 4)
-  ,
   { &history_quotes_inhibit_expansion,		0, 0 },	/* 17 */
   { &rl_erase_empty_line,			0, 0 },	/* 18 */
   { &rl_catch_signals,				0, 0 },	/* 19 */
   { &rl_catch_sigwinch,				0, 0 }	/* 20 */
-#endif /* (RLMAJORVER < 4) */
 };
 
 /*
@@ -216,20 +229,22 @@ static int char_is_quoted_p_wrapper __P((char *text, int index));
 static void ignore_some_completions_function_wrapper __P((char **matches));
 static int directory_completion_hook_wrapper __P((char **textp));
 static int history_inhibit_expansion_function_wrapper __P((char *str, int i));
-#if (RLMAJORVER >= 4)
 static int pre_input_hook_wrapper __P((void));
 static void completion_display_matches_hook_wrapper __P((char **matches,
 							 int len, int max));
-#endif /* (RLMAJORVER < 4) */
 
 enum void_arg_func_type { STARTUP_HOOK, EVENT_HOOK, GETC_FN, REDISPLAY_FN,
 			  CMP_ENT, ATMPT_COMP,
 			  FN_QUOTE, FN_DEQUOTE, CHAR_IS_QUOTEDP,
-			  IGNORE_COMP, DIR_COMP, HIST_INHIBIT_EXP
-#if (RLMAJORVER >= 4)
-			  , PRE_INPUT_HOOK, COMP_DISP_HOOK
-#endif /* (RLMAJORVER < 4) */
+			  IGNORE_COMP, DIR_COMP, HIST_INHIBIT_EXP,
+			  PRE_INPUT_HOOK, COMP_DISP_HOOK
 			};
+
+#if (RLMAJORVER < 4)
+/* define dummy variable */
+static Function *rl_pre_input_hook;
+static VFunction *rl_completion_display_matches_hook;
+#endif /* (RLMAJORVER < 4) */
 
 static struct fn_vars {
   Function **rlfuncp;		/* GNU Readline Library variable */
@@ -293,9 +308,7 @@ static struct fn_vars {
     NULL,
     (Function *)history_inhibit_expansion_function_wrapper,
     NULL
-  }
-#if (RLMAJORVER >= 4)
-  ,
+  },
   { &rl_pre_input_hook,	NULL,	pre_input_hook_wrapper,	NULL },	/* 12 */
   {
     (Function **)&rl_completion_display_matches_hook,		/* 13 */
@@ -303,7 +316,6 @@ static struct fn_vars {
     (Function *)completion_display_matches_hook_wrapper,
     NULL
   }
-#endif /* (RLMAJORVER < 4) */
 };
 
 /*
@@ -331,10 +343,8 @@ getc_function_wrapper(fp)
 static void
 redisplay_function_wrapper()	{ void_arg_func_wrapper(REDISPLAY_FN); }
 
-#if (RLMAJORVER >= 4)
 static int
 pre_input_hook_wrapper() { return void_arg_func_wrapper(PRE_INPUT_HOOK); }
-#endif /* (RLMAJORVER < 4) */
 
 static int
 void_arg_func_wrapper(type)
@@ -758,6 +768,15 @@ completion_display_matches_hook_wrapper(matches, len, max)
   PUTBACK;
 
   perl_call_sv(fn_tbl[COMP_DISP_HOOK].callback, G_DISCARD);
+}
+#else /* (RLMAJORVER < 4) */
+static void
+completion_display_matches_hook_wrapper(matches, len, max)
+     char **matches;
+     int len;
+     int max;
+{
+  /* dummy */
 }
 #endif /* (RLMAJORVER < 4) */
 
@@ -1425,13 +1444,6 @@ rl_callback_handler_remove()
 #	2.5 Readline Signal Handling
 #
 
-#if (RLMAJORVER >= 4)
-
-# rl_cleanup_after_signal(), rl_free_line_state(), rl_reset_after_signal(), 
-# rl_resize_terminal(), rl_set_signals(), and rl_clear_signals() 
-# are introduced by readline-4.0.
-
-
 void
 rl_cleanup_after_signal()
 	PROTOTYPE:
@@ -1455,8 +1467,6 @@ rl_set_signals()
 int
 rl_clear_signals()
 	PROTOTYPE:
-
-#endif /* (RLMAJORVER >=4) */
 
 #
 #	2.6 Custom Completers
