@@ -1,9 +1,9 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.102 2002-03-29 06:01:31 hiroo Exp $
+ *	$Id: Gnu.xs,v 1.103 2002-07-28 04:13:58 hiroo Exp $
  *
- *	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
+ *	Copyright (c) 2002 Hiroo Hayashi.  All rights reserved.
  *
  *	This program is free software; you can redistribute it and/or
  *	modify it under the same terms as Perl itself.
@@ -161,10 +161,14 @@ rl_filename_completion_function (s, i)
 #define CONST const
 #endif /* (RL_READLINE_VERSION >= 0x0402) */
 
-/* features introduced by GNU Readline 4.2a */
 #if (RL_READLINE_VERSION < 0x0403)
+/* features introduced by GNU Readline 4.2a */
 static int rl_readline_version = RL_READLINE_VERSION;
 extern char *rl_get_termcap PARAMS((const char *));
+
+/* features introduced by GNU Readline 4.3 */
+static int rl_completion_suppress_append;
+static int rl_completion_mark_symlink_dirs;
 #endif /* (RL_READLINE_VERSION < 0x0403) */
 
 /*
@@ -208,6 +212,17 @@ dupstr(s)			/* duplicate string */
   char *d = xmalloc(len);
   Copy(s, d, len, char);	/* Is Copy() better than strcpy() in XS? */
   return d;
+}
+
+/*
+ * for tputs XS routine
+ */
+static char *tputs_ptr;
+static int
+tputs_char(c)
+     int c;
+{
+  *tputs_ptr++ = c;
 }
 
 /*
@@ -329,7 +344,9 @@ static struct int_vars {
   { &rl_editing_mode,				0, 0 },	/* 28 */
   { &rl_attempted_completion_over,		0, 0 },	/* 29 */
   { &rl_completion_type,			0, 0 },	/* 30 */
-  { &rl_readline_version,			0, 1 }	/* 31 */
+  { &rl_readline_version,			0, 1 },	/* 31 */
+  { &rl_completion_suppress_append,		0, 0 },	/* 32 */
+  { &rl_completion_mark_symlink_dirs,		0, 0 }	/* 33 */
 };
 
 /*
@@ -1733,6 +1750,15 @@ rl_reset_terminal(terminal_name = NULL)
  #
  #	2.4.10 Utility Functions
  #
+#if (RL_READLINE_VERSION >= 0x0403)
+void
+rl_replace_line(text, clear_undo = 0)
+	const char *text
+	int clear_undo
+    PROTOTYPE: $$
+
+#endif /* (RL_READLINE_VERSION >= 0x0403) */
+
 int
 rl_initialize()
     PROTOTYPE:
@@ -1959,6 +1985,18 @@ int
 rl_complete_internal(what_to_do = TAB)
 	int what_to_do
     PROTOTYPE: ;$
+
+#if (RL_READLINE_VERSION >= 0x0403)
+int
+_rl_completion_mode(function)
+	rl_command_func_t *	function
+    PROTOTYPE: $
+    CODE:
+	RETVAL = rl_completion_mode(function);
+    OUTPUT:
+	RETVAL
+
+#endif /* (RL_READLINE_VERSION >= 0x0403) */
 
 void
 rl_completion_matches(text, fn = NULL)
@@ -2573,23 +2611,28 @@ _rl_fetch_last_func()
 
 MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu::XS
 
-char *
+SV *
 tgetstr(id)
 	const char *	id
     PROTOTYPE: $
     CODE:
-	/*
-	 * The magic number `2032' is derived from bash
-	 * terminal.c:_rl_init_terminal_io().
-	 */
-	char buffer[2032];
-	char *bp = buffer;
-
 	ST(0) = sv_newmortal();
 	if (id) {
-	  RETVAL = tgetstr(id, &bp); /* don't free returned string */
-	  if (RETVAL) {
-	    sv_setpv(ST(0), RETVAL);
+	  /*
+	   * The magic number `2032' is derived from bash
+	   * terminal.c:_rl_init_terminal_io().
+	   */
+	  char buffer[2032];
+	  char *bp = buffer;
+	  char *t;
+	  t = tgetstr(id, &bp); /* don't free returned string */
+	  if (t) {
+	    char buf[2032];
+	    /* call tputs() to apply padding information */
+	    tputs_ptr = buf;
+	    tputs(t, 1, tputs_char);
+	    *tputs_ptr = '\0';
+	    sv_setpv(ST(0), buf);
 	  }
 	}
 
