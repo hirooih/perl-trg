@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.21 1997-01-02 14:48:37 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.22 1997-01-03 14:41:34 hayashi Exp $
  *
  *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
  *
@@ -113,21 +113,80 @@ rl_insert_preput ()
 /*
  *	custom function support routines
  */
-struct fnode {			/* table entry */
-  struct fnode *next;
-  int key;
+
+struct fnnode {			/* perl function name table entry */
+  struct fnnode *next;
+  char *name;
   SV *fn;
 };
 
-static struct fnode *flist = NULL;
+static struct fnnode *fnlist = NULL;
 
-struct fnode *
-lookup_defun(int key)
+static struct fnnode *
+lookup_myfun(char *name)
 {
-  struct fnode *np;
+  struct fnnode *np;
 
-  for (np = flist; np; np = np->next)
-    if (np->key == key) {
+  for (np = fnlist; np; np = np->next)
+    if (strcmp(np->name, name) == 0)
+      return np;
+
+  return NULL;
+}
+
+static int
+register_myfun(char *name, SV *fn)
+{
+  struct fnnode *np;
+
+  if ((np = lookup_myfun(name)) != NULL) {
+    np->name = name;
+    sv_setsv(np->fn, fn);
+    return 0;
+  } else {
+    New(0, np, 1, struct fnnode);
+    np->next = fnlist;
+    np->name = name;
+    np->fn = newSVsv(fn);
+    fnlist = np;
+    return 1;
+  }
+}
+
+#if 0
+static int
+discard_myfun(char *name)
+{
+  struct fnnode *np, **lp;
+
+  for (lp = &fnlist, np = fnlist; np; lp = &(np->next), np = np->next)
+    if (strcmp(np->name, name) == 0) {
+      *lp = np->next;
+      SvREFCNT_dec(np->fn);
+      Safefree(np);
+      return 0;
+    }
+
+  return 1;
+}
+#endif
+
+struct fbnode {			/* perl function keybind table entry */
+  struct fbnode *next;
+  int key;
+  Keymap map;
+  SV *fn;
+};
+
+static struct fbnode *fblist = NULL;
+
+static struct fbnode *
+lookup_bind_myfun(int key, Keymap map)
+{
+  struct fbnode *np;
+
+  for (np = fblist; np; np = np->next)
+    if (np->key == key && np->map == map) {
       /*warn("lookup:[%d,%p]\n", np->key, np->fn);*/
       return np;
     }
@@ -136,32 +195,34 @@ lookup_defun(int key)
 }
 
 static int
-register_defun(int key, SV *fn)
+bind_myfun(int key, SV *fn, Keymap map)
 {
-  struct fnode *np;
+  struct fbnode *np;
 
   /*warn("register:[%d,%p]\n", key, fn);*/
-  if ((np = lookup_defun(key)) != NULL) {
+  if ((np = lookup_bind_myfun(key, map)) != NULL) {
     np->key = key;
-    np->fn = newSVsv(fn);
+    np->map = map;
+    sv_setsv(np->fn, fn);
     return 0;
   } else {
-    New(0, np, 1, struct fnode);
-    np->next = flist;
+    New(0, np, 1, struct fbnode);
+    np->next = fblist;
     np->key = key;
+    np->map = map;
     np->fn = newSVsv(fn);
-    flist = np;
+    fblist = np;
     return 1;
   }
 }
 
 static int
-dismiss_defun(int key)
+unbind_myfun(int key, Keymap map)
 {
-  struct fnode *np, **lp;
+  struct fbnode *np, **lp;
 
-  for (lp = &flist, np = flist; np; lp = &(np->next), np = np->next)
-    if (np->key == key) {
+  for (lp = &fblist, np = fblist; np; lp = &(np->next), np = np->next)
+    if (np->key == key && np->map == map) {
       *lp = np->next;
       SvREFCNT_dec(np->fn);
       Safefree(np);
@@ -171,6 +232,7 @@ dismiss_defun(int key)
   return 1;
 }
 
+#if 0
 static int
 rl_debug(int count, int key)
 {
@@ -180,29 +242,23 @@ rl_debug(int count, int key)
   warn("rl_binding_keymap:%s\n", rl_get_keymap_name(rl_binding_keymap));
   return 0;
 }
+#endif
 
 static int
 custom_function_lapper(int count, int key)
 {
   dSP;
-  struct fnode *np;
+  struct fbnode *np;
 
-  if ((np = lookup_defun(key)) == NULL)
-    croak("Gnu.xs:custom_function_lapper: Internal error (lookup_defun)");
-
-  warn("count:%d,key:%d\n", count, key);
-  warn("rl_get_keymap():%s\n", rl_get_keymap_name(rl_get_keymap()));
-  warn("rl_executing_keymap:%s\n", rl_get_keymap_name(rl_executing_keymap));
-  warn("rl_binding_keymap:%s\n", rl_get_keymap_name(rl_binding_keymap));
+  if ((np = lookup_bind_myfun(key, rl_executing_keymap)) == NULL)
+    croak("Gnu.xs:custom_function_lapper: Internal error (lookup_bind_myfun)");
 
   PUSHMARK(sp);
   XPUSHs(sv_2mortal(newSViv(count)));
   XPUSHs(sv_2mortal(newSViv(key)));
   PUTBACK;
 
-  /*warn("lapper:[%d,%p]\n", key, np-fn);*/
   perl_call_sv(np->fn, G_DISCARD);
-  /*warn("[return from perl_call_sv]\n");*/
 
   return;
 }
@@ -346,23 +402,31 @@ rl_add_defun(name, fn, key = -1)
 	PROTOTYPE: $$;$
 	CODE:
 	{
-	  if (strcmp(name, "debug") == 0) {
-	    rl_add_defun(name, rl_debug, -1);
-	    RETVAL = 0;
+	  if (rl_named_function(name)) {
+	    warn("Gnu.xs:rl_add_defun: function name '%s' is already defined.\n",
+		 name);
+	    RETVAL = -1;
 	    return;
 	  }
+	  rl_add_defun(name, custom_function_lapper, -1); /* always return 0 */
+	  register_myfun(name, fn); /* register custom function name */
+	  RETVAL = 0;
 
-	  /*warn("add_defun:[%d,%p]\n", key, fn);*/
-	  register_defun(key, fn);
-
-	  if (name[0] == '\0')
-	    RETVAL = rl_bind_key(custom_function_lapper, key);
-	  else
-	    RETVAL = rl_add_defun(name, custom_function_lapper, key);
-
-	  if (RETVAL)
-	    dismiss_defun(key);
+	  if (key != -1) {
+	    RETVAL = rl_bind_key(key, custom_function_lapper);
+	    if (RETVAL == 0)
+	      bind_myfun(key, fn, rl_get_keymap());
+	  }
 	}
+
+## int
+## rl_discard_defun(name)
+## 	char * name
+## 	PROTOTYPE: $
+## 	CODE:
+## 	{
+## 	  discard_myfun(name);
+## 	}
 
 #	2.4.2 Selection a Keymap
 
@@ -403,8 +467,12 @@ rl_bind_key(key, function, map = NULL)
 	  /* add code for custom function !!! */
 	  Function *fn = rl_named_function(function);
 	  Keymap keymap = map ? rl_get_keymap_by_name(map) : rl_get_keymap();
+	  struct fnnode *np;
 
-	  rl_bind_key_in_map(key, fn, keymap);
+	  RETVAL = rl_bind_key_in_map(key, fn, keymap);
+
+	  if (RETVAL == 0 && (np = lookup_myfun(function)) != NULL)
+	    bind_myfun(key, np->fn, keymap); /* perl function */
 	}
 
 int
@@ -415,10 +483,11 @@ rl_unbind_key(key, map = NULL)
 	CODE:
 	{
 	  Keymap keymap = map ? rl_get_keymap_by_name(map) : rl_get_keymap();
-	  dismiss_defun(key);	/* do nothing if key is bind to C function */
-	  rl_unbind_key_in_map(key, map);
+	  rl_unbind_key_in_map(key, keymap);
+	  unbind_myfun(key, keymap); /* do nothing for C function */
 	}
 
+# add code for perl function !!!
 int
 rl_generic_bind(type, keyseq, data, map = NULL)
 	int type
@@ -433,7 +502,11 @@ rl_generic_bind(type, keyseq, data, map = NULL)
 
 	  switch (type) {
 	  case ISFUNC:
-	    /* add code for custom function !!! */
+	    if (lookup_myfun(data)) {
+	      warn("Gnu.xs:rl_generic_bind: does not support Perl function yet\n");
+	      RETVAL = -1;
+	      return;
+	    }
 	    p = rl_named_function(data);
 	    break;
 
@@ -454,6 +527,7 @@ rl_generic_bind(type, keyseq, data, map = NULL)
 	  rl_generic_bind(type, keyseq, p, keymap);
 	}
 
+# add code for perl function !!!
 void
 rl_parse_and_bind(line)
 	char *line
