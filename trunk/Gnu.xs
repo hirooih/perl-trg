@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.51 1997-03-10 16:09:43 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.52 1997-03-16 17:20:21 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -470,7 +470,11 @@ callback_handler_wrapper(line)
   perl_call_sv(callback_handler_callback, G_DISCARD);
 }
 
-MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu
+/*
+ * make separate name space for low level XS functions and there methods
+ */
+
+MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu::XS
 
 ########################################################################
 #
@@ -1203,7 +1207,7 @@ int
 append_history(nelements, filename = NULL)
 	int nelements
 	char *filename
-	PROTOTYPE: ;$
+	PROTOTYPE: $;$
 
 int
 history_truncate_file(filename = NULL, nlines = 0)
