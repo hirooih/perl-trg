@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.14 1997-02-05 17:51:24 hayashi Exp $
+#	$Id: readline.t,v 1.15 1997-02-27 15:38:31 hayashi Exp $
 #
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl t/readline.t'
@@ -145,7 +145,7 @@ $term->MinLine(1);
 $term->StifleHistory(5);
 $term->{DoExpand} = 1;
 my ($nline, $line);
-for ($nline = 0;
+for ($nline = 1;
      defined($line = $term->readline("$nline>"));
      $nline++) {
     print $OUT "<<$line>>\n";
