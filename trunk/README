@@ -1,4 +1,4 @@
-$Id: README,v 1.17 1999-07-19 13:43:40 hayashi Exp $
+$Id: README,v 1.18 1999-12-30 05:14:10 hayashi Exp $
 
 Term::ReadLine::Gnu --- GNU Readline Library Wrapper Module
 
@@ -56,6 +56,12 @@ Author:
 
 
 Revision History:
+
+1.08  1999-12-30
+	- fix Makefile.PL to search libreadline.* correctly even if it
+	  is not included in the paths specified with the configuration
+	  variable `libpth'.
+	- add dummy assignment to %ENV before $self->initialize()
 
 1.07  1999-07-19
 	- search path for the GNU Readline Library is specified by
