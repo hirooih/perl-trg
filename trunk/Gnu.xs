@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.7 1996-11-24 13:56:03 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.8 1996-12-01 15:46:19 hayashi Exp $
  *
  *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
  *
@@ -23,9 +23,77 @@ extern "C" {
 #include <readline/readline.h>
 #include <readline/history.h>
 
+/*
+ *	string variable table for _rl_store_int(), _rl_fetch_int()
+ */
+static struct str_vars {
+  char *buf;
+  char **var;
+  int readonly;
+} str_tbl[] = {
+  /* When you change length of rl_line_buffer, change
+     rl_line_buffer_len also. */
+  (char *)NULL,	&rl_line_buffer, 0,			/* 0 */
+  (char *)NULL,	&rl_library_version, 1,			/* 1 */
+  (char *)NULL,	&rl_readline_name, 0,			/* 2 */
+
+  (char *)NULL,	&rl_basic_word_break_characters, 0,	/* 3 */
+  (char *)NULL, &rl_basic_quote_characters, 0,		/* 4 */
+  (char *)NULL,	&rl_completer_word_break_characters, 0,	/* 5 */
+  (char *)NULL,	&rl_completer_quote_characters, 0,	/* 6 */
+  (char *)NULL,	&rl_filename_quote_characters, 0,	/* 7 */
+  (char *)NULL,	&rl_special_prefixes, 0,		/* 8 */
+
+  (char *)NULL,	&history_no_expand_chars, 0,		/* 9 */
+  (char *)NULL,	&history_search_delimiter_chars, 0	/* 10 */
+};
+
+/*
+ *	integer variable table for _rl_store_int(), _rl_fetch_int()
+ */
+extern int rl_completion_query_items;
+extern int rl_ignore_completion_duplicates;
+extern int rl_line_buffer_len;
+
+static struct int_vars {
+  int *var;
+  int charp;
+} int_tbl[] = {
+  &rl_line_buffer_len, 0,				/* 0 */
+  &rl_point, 0,						/* 1 */
+  &rl_end, 0,						/* 2 */
+  &rl_mark, 0,						/* 3 */
+  &rl_done, 0,						/* 4 */
+  &rl_pending_input, 0,					/* 5 */
+
+  &rl_completion_query_items, 0,			/* 6 */
+  &rl_completion_append_character, 0,			/* 7 : int */
+  &rl_ignore_completion_duplicates, 0,			/* 8 */
+  &rl_filename_completion_desired, 0,			/* 9 */
+  &rl_filename_quoting_desired, 0,			/* 10 */
+  &rl_inhibit_completion, 0,				/* 11 */
+
+  &history_base, 0,					/* 12 */
+  &history_length, 0,					/* 13 */
+  (int *)&history_expansion_char, 1,			/* 14 */
+  (int *)&history_subst_char, 1,			/* 15 */
+  (int *)&history_comment_char, 1,			/* 16 */
+  &history_quotes_inhibit_expansion, 0			/* 17 */
+};
+
 /* from GNU Readline:xmalloc.c */
 extern char *xmalloc (int);
+#ifdef HAVE_READLINE_2_1
 extern char *xfree (char *);
+#else
+void
+xfree (string)
+     char *string;
+{
+  if (string)
+    free (string);
+}
+#endif
 
 static char *
 dupstr (s)			/* duplicate string */
@@ -273,39 +341,6 @@ _rl_SetHistory(...)
 	}
 
 void
-_rl_set_readline_name(name)
-	const char *	name
-	PROTOTYPE: $
-	CODE:
-	{
-	  static char *readline_name = (char *)NULL;
-
-	  _rl_set_internal_variable(name, readline_name, rl_readline_name);
-	}
-
-void
-_rl_store_basic_word_break_characters(str)
-	const char *	str
-	PROTOTYPE: $
-	CODE:
-	{
-	  static char *bwbc = (char *)NULL;
-
-	  _rl_set_internal_variable(str, bwbc, rl_basic_word_break_characters);
-	}
-
-void
-_rl_store_completer_word_break_characters(str)
-	const char *	str
-	PROTOTYPE: $
-	CODE:
-	{
-	  static char *cwbc = (char *)NULL;
-
-	  _rl_set_internal_variable(str, cwbc, rl_completer_word_break_characters);
-	}
-
-void
 _rl_set_instream(fildes)
 	int	fildes
 	PROTOTYPE: $
@@ -313,7 +348,7 @@ _rl_set_instream(fildes)
 	{
 	  register FILE *fd;
 	  if ((fd = fdopen(fildes, "r")) == NULL)
-	    perror("Gnu.xs:rl_set_instream: cannot fdopen");
+	    warn("Gnu.xs:rl_set_instream: cannot fdopen");
 	  else
 	    rl_instream = fd;
 	}
@@ -326,7 +361,7 @@ _rl_set_outstream(fildes)
 	{
 	  register FILE *fd;
 	  if ((fd = fdopen(fildes, "w")) == NULL)
-	    perror("Gnu.xs:rl_set_outstream: cannot fdopen");
+	    warn("Gnu.xs:rl_set_outstream: cannot fdopen");
 	  else
 	    rl_outstream = fd;
 	}
@@ -441,5 +476,101 @@ completion_matches(text, fn)
 	    xfree((char *)matches);
 	  } else {
 	    /* return null list */
+	  }
+	}
+
+MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu::Str
+
+void
+_rl_store_str(pstr, id)
+	const char *	pstr
+	int id
+	PROTOTYPE: $$
+	CODE:
+	{
+	  size_t len;
+
+	  ST(0) = sv_newmortal();
+	  if (id < 0 || id >= sizeof(str_tbl)/sizeof(struct str_vars)) {
+	    warn("Gnu.xs:_rl_store_str: Illegal `id' value: `%d'", id);
+	    return;		/* return undef */
+	  }
+
+	  if (str_tbl[id].readonly) {
+	    warn("Gnu.xs:_rl_store_str: store to read only variable");
+	    return;
+	  }
+
+	  /* save mortal perl variable value */
+	  if (str_tbl[id].buf != NULL) {
+	    Safefree(str_tbl[id].buf);
+	    str_tbl[id].buf = (char *)NULL;
+	  }
+	  len =  strlen(pstr)+1;
+	  New(0, str_tbl[id].buf, len, char);
+	  Copy(pstr, str_tbl[id].buf, len, char);
+
+	  /* set C variable */
+	  *(str_tbl[id].var) = str_tbl[id].buf;
+
+	  /* return variable value */
+	  sv_setpv(ST(0), str_tbl[id].buf);
+	}
+
+void
+_rl_fetch_str(id)
+	int id
+	PROTOTYPE: $
+	CODE:
+	{
+	  ST(0) = sv_newmortal();
+	  if (id < 0 || id >= sizeof(str_tbl)/sizeof(struct str_vars)) {
+	    warn("Gnu.xs:_rl_fetch_str: Illegal `id' value: `%d'", id);
+	  } else {
+	    sv_setpv(ST(0), *(str_tbl[id].var));
+	  }
+	}
+
+MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu::Int
+
+void
+_rl_store_int(pint, id)
+	int pint
+	int id
+	PROTOTYPE: $$
+	CODE:
+	{
+	  size_t len;
+
+	  ST(0) = sv_newmortal();
+	  if (id < 0 || id >= sizeof(int_tbl)/sizeof(struct int_vars)) {
+	    warn("Gnu.xs:_rl_store_int: Illegal `id' value: `%d'", id);
+	    return;		/* return undef */
+	  }
+
+	  /* set C variable */
+	  if (int_tbl[id].charp)
+	    *((char *)(int_tbl[id].var)) = (char)pint;
+	  else
+	    *(int_tbl[id].var) = pint;
+
+	  /* return variable value */
+	  sv_setiv(ST(0), pint);
+	}
+
+void
+_rl_fetch_int(id)
+	int id
+	PROTOTYPE: $
+	CODE:
+	{
+	  ST(0) = sv_newmortal();
+	  if (id < 0 || id >= sizeof(int_tbl)/sizeof(struct int_vars)) {
+	    warn("Gnu.xs:_rl_fetch_int: Illegal `id' value: `%d'", id);
+	    /* return undef */
+	  } else {
+	    sv_setiv(ST(0),
+		     int_tbl[id].charp ? (int)*((char *)(int_tbl[id].var))
+		     : *(int_tbl[id].var));
 	  }
 	}
