@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.68 1999-03-27 01:31:18 hayashi Exp $
+#	$Id: Gnu.pm,v 1.69 1999-03-27 14:36:38 hayashi Exp $
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -33,16 +33,21 @@ This is an implementation of Term::ReadLine using the GNU
 Readline/History Library.
 
 For basic functions object oriented interface is provided. These are
-described in the section B<Methods>.
+described in the section L<"Methods"|"Methods">.
 
 This package also has the interface with the almost all variables and
 functions which are documented in the GNU Readline/History Library
 Manual.  These variables and functions are documented in the section
-B<Variables> and B<Functions> briefly.  For more detail of the GNU
+L<"Variables"|"Variables"> and L<"Functions"|"Functions"> briefly.
+For more detail of the GNU
 Readline/History Library, see 'GNU Readline Library Manual' and 'GNU
 History Library Manual'.
 
-=head2 Minimal Set of Methods defined by B<Readline.pm>
+The sample programs under C<eg/> directory and test programs under
+C<t/> directory in the C<Term::ReadLine::Gnu> distribution include
+many example of this module.
+
+=head2 Minimal Set of Methods defined by B<Term::ReadLine>
 
 =cut
 
@@ -939,7 +944,7 @@ When C<MAX> is ommited, the max length of an item in @matches is used.
 
 	str	username_completion_function(str text, int state)
 
-=item C<listname_completion_function(TEXT, STATE)>
+=item C<list_completion_function(TEXT, STATE)>
 
 	str	list_completion_function(str text, int state)
 
@@ -1181,8 +1186,8 @@ Examples:
 
 =item Signal Handling Variables
 
-	int_rl_catch_signals (GRL 4.0)
-	int_rl_catch_sigwinch (GRL 4.0)
+	int rl_catch_signals (GRL 4.0)
+	int rl_catch_sigwinch (GRL 4.0)
 
 =item Completion Variables
 
@@ -1229,12 +1234,8 @@ Examples:
 	filename_completion_function
 	username_completion_function
 	list_completion_function
-
-=item C<Term::ReadLine::Gnu> Specific Variables
-
-	do_expand		# if true history expansion is enabled
-	completion_word		# for list_completion_function
-	completion_function	# for compatibility to Term::ReadLine::Perl
+	shadow_redisplay
+	Tk_getc
 
 =back
 
@@ -1337,11 +1338,97 @@ C<completion_matches> is a Perl wrapper function of an internal
 function C<completion_matches()>.  See also
 C<$rl_completion_entry_function>.
 
+=item C<completion_function>
+
+A variable whose content is a reference to a function which returns a
+list of candidates to complete.
+
+This variable is compatible with C<Term::ReadLine::Perl> and very easy
+to use.
+
+    use Term::ReadLine;
+    ...
+    my $term = new Term::ReadLine 'sample';
+    my $attribs = $term->Attribs;
+    ...
+    $attribs->{completion_function} = sub {
+	my ($text, $line, $start) = @_;
+	return qw(a list of candidates to complete);
+    }
+
 =item C<list_completion_function(TEXT, STATE)>
 
-A sample generator function defined by Term::ReadLine::Gnu.pm.
+A sample generator function defined by C<Term::ReadLine::Gnu>.
 Example code at C<rl_completion_entry_function> shows how to use this
 function.
+
+=back
+
+=head1 C<Term::ReadLine::Gnu> Specific Features
+
+=head2 Functions
+
+=over 4
+
+=item C<shadow_redisplay>
+
+A redisplay function for password input.  You can use it as follows;
+
+	$attribs->{redisplay_function} = $attribs->{shadow_redisplay};
+	$line = $term->readline("password> ");
+
+=item C<rl_filename_list>
+
+Returns candidates of filename to complete.  This function can be used
+with C<completion_function> and is implemented for the compatibility
+with C<Term::ReadLine::Perl>.
+
+=item C<list_completion_function>
+
+See the description of section L<"Custom Completion"|"Custom Completion">.
+
+=back
+
+=head2 Variables
+
+=over 4
+
+=item C<do_expand>
+
+When true, the history expansion is enabled.  By default false.
+
+=item C<completion_function>
+
+See the description of section L<"Custom Completion"|"Custom Completion">.
+
+=item C<completion_word>
+
+A reference to a list of candidates to complete for
+C<list_completion_function>.
+
+=back
+
+=head2 Commands
+
+=over 4
+
+=item C<operate-and-get-next>
+
+The equivalent of the Korn shell C<C-o>
+C<operate-and-get-next-history-line> editing command and the Bash
+C<operate-and-get-next>.
+
+This command is bound to C<\C-o> by default for the compatibility with
+the Bash and C<Term::ReadLine::Perl>.
+
+=item C<display-readline-version>
+
+Shows the version of C<Term::ReadLine::Gnu> and the one of the GNU
+Readline Library.
+
+=item C<change-ornaments>
+
+Change ornaments interactively.
 
 =back
 
@@ -1388,15 +1475,15 @@ GNU Readline Library Manual
 
 GNU History Library Manual
 
-Term::ReadLine
+C<Term::ReadLine>
 
-Term::ReadLine::Perl (Term-ReadLine-Perl-xx.tar.gz)
+C<Term::ReadLine::Perl> (Term-ReadLine-Perl-xx.tar.gz)
 
 =head1 AUTHOR
 
-Hiroo Hayashi <hiroo.hayashi@computer.org>
+Hiroo Hayashi C<E<lt>hiroo.hayashi@computer.orgE<gt>>
 
-http://www.perl.org/CPAN/authors/Hiroo_HAYASHI/
+C<http://www.perl.org/CPAN/authors/Hiroo_HAYASHI/>
 
 =head1 TODO
 
@@ -1413,12 +1500,12 @@ Test routines for following variable and functions are required.
 
 =head1 BUGS
 
-rl_add_defun() can define up to 16 functions.
+C<rl_add_defun()> can define up to 16 functions.
 
 Ornament feature works only on prompt strings.  It requires very hard
-hacking of display.c:rl_redisplay() in GNU Readline library to
+hacking of C<display.c:rl_redisplay()> in GNU Readline library to
 ornament input line.
 
-newTTY() is not tested yet.
+C<newTTY()> is not tested yet.
 
 =cut
