@@ -1,7 +1,7 @@
 #
 #	Makefile.PL for Term::ReadLine::Gnu
 #
-#	$Id: Makefile.PL,v 1.24 2002-03-28 03:46:18 hiroo Exp $
+#	$Id: Makefile.PL,v 1.25 2002-12-26 19:17:09 hiroo Exp $
 #
 #	Copyright (c) 2002 Hiroo Hayashi.  All rights reserved.
 #		<hiroo.hayashi@computer.org>
@@ -39,7 +39,7 @@ $RLINC = defined $includedir ? "-I$includedir" : '';
 # I emulate the behavior of configure script for bash, and don't know
 # why AIX prefers curses.
 # libtermcap.a on HPUX cannot be used for dynamically linked binary.
-$PREFER_CURSES = $Config{osname} eq 'aix' or $Config{osname} eq 'hpux';
+$PREFER_CURSES = $Config{osname} eq 'aix' || $Config{osname} eq 'hpux';
 $TERMCAP_LIB = (! $PREFER_CURSES && &search_lib('-ltermcap'))
     || &search_lib('-lncurses')
     || &search_lib('-lcurses');
