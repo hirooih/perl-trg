@@ -1,4 +1,4 @@
-$Id: README,v 1.9 1998-03-26 15:42:35 hayashi Exp $
+$Id: README,v 1.10 1998-05-12 16:24:10 hayashi Exp $
 
 Term::ReadLine::Gnu --- GNU Readline Library Wrapper Module
 
@@ -35,14 +35,11 @@ Description:
 	fixing his module.
 
 Prerequisites:
-	You must have GNU Readline Library Version 2.1.  See
+	You must have GNU Readline Library Version 2.1 or later.  See
 	INSTALL for more detail.
 
 How to build/install:
 	See INSTALL.
-
-Recent changes in this release:
-	See Changes.
 
 Bugs:
 	If you use Solaris 2.5 and dynamic loading, "make test" causes
@@ -50,10 +47,127 @@ Bugs:
 	statically.  See INSTALL for more details.
 
 	The GNU Readline Library is very stable.  But this is my first
-	XS programming, my first module programming and, my first
+	XS programming, my first Perl module programming, and my first
 	object oriented programming, and...  There must be many bugs
 	in both programs and documents (especially in English
 	grammar).  Comments and bug reports are very welcome.
 
 Author:
 	Hiroo Hayashi <hiroo.hayashi@computer.org>
+
+
+Revision History:
+
+1.00  1998-04-15
+	- the 1st major release
+
+	- ornaments feature is now on by default as recent
+	  Term::ReadLine and Term::ReadLine::Perl
+
+	- document fix
+		remove description related to mymalloc
+
+	- add ornaments-change function to t/readline.t which
+	  demonstrates rl_message().
+
+0.10  1998-03-31
+	- new functions/variables
+		ornaments support
+		newTTY() (not tested)
+		max_input_history
+		read_history() (an aliase of read_history_range())
+		unstifle_history()
+		history_search_pos()
+		history_list()
+		history_tokenize() (Thank you, Tim Thomas)
+		history_arg_extract()
+		get_history_event()
+	- new sample/test programs
+		eg/fileman
+		t/history.t
+	- bug fix
+		dynamic loading works on Solaris2.x (define xfree() locally)
+		readline() calls add_history() only when MinLength > 0
+		Feature `addhistory' is renamed to `addHistory' since
+		Term/ReadLine.pm is fixed.
+		add NULL check for all sv_setpv()
+		remove arguments 'pos' from history_search()
+	- misc
+		change my E-mail address
+
+0.09  Mon Aug 25 00:33:29 1997
+	- add documentation about readline-2.1.tar.gz
+	- add documentation about Solaris 2.5 with dynamic loading
+	- bug fix
+		fix for Digital Unix C compiler
+	- add two sample programs
+		eg/pftp		An ftp client with the GNU Readline support
+		eg/ptksh+	Simple perl/Tk shell which demonstrates
+				the callback functions
+
+0.08  Sun Apr 13 23:24:52 1997
+
+	- bug fix: AddHistory() accepts list again.
+	- move perlsh into eg/.
+	- add eg/ptksh+ which demonstrates the callback functions.
+	  Thank you Achim.
+	- add eg/pftp: an ftp client which has much the GNU Readline support.
+	- Author's Email address is changed.
+	- internal functions, fetch_var() and store_var(), are removed.
+
+0.07  Wed Mar 19 02:26:06 1997
+
+	- interface to internal function and variables are changed.
+	  New interface is compatible with new Term::ReadLine.pm which
+	  is distributed with Perl 5.003_92 and later.  But it is not
+	  compatible with previous release.
+
+		- add method interface to all internal function
+		- add Attribs method to access internal variables
+		- EXPORT_OK contains only some constant definitions
+
+	- tkRunning support (new ReadLine.pm is required)
+	- add document
+	- bug fixes
+		- XS bugs correspond to callback interface
+		- fix _rl_store_function() and _rl_fetch_function()
+		- fix prototype of append_history
+		- use new _rl_store_rl_line_buffer() instead of
+		  reallocate rl_line_buffer.
+		- etc.
+
+0.06  Wed Feb  5 01:26:27 1997
+	- the first revision on CPAN
+	- support for non ANSI C compiler
+	- rename addhistory to AddHistory
+	- checked by gcc -Wall
+	- fix void_arg_func_wrapper()
+	- add hook for rl_startup_hook in readline()
+	- update documents
+
+0.05  Sat Jan 25 00:06:56 1997
+	- Fix for Perl 5.002 and 5.003
+		escape from an strange Exporter's behavior 
+		remove white spaces in prototype
+		add argument explicitly
+
+0.04  Thu Jan 23 00:25:45 1997
+	- This revision supports readline-2.1 or later.  readline-2.0
+	  is not supported.
+	- implement almost all GNU Readline/History Library variables
+	  and functions
+	- use filehandle directly to access rl_instream and rl_outstream
+	- define operate_and_get_next and bind to "\C-o" by default
+
+0.03  Sun Nov 24 23:34:27 1996
+	- OS/2 support by Ilya Zakharevich <ilya@math.ohio-state.edu>
+	- implement $rl_completer_word_break_characters
+	- define HAVE_STRING_H by checking $Config{strings}
+	- remove verbose prototypes on methods
+
+0.02  Thu Nov 21 00:22:11 1996
+	- fix to install on
+		SunOS 4.1.3, Solaris 2.3, AIX 4.1.3
+
+0.01  Wed Nov 20 01:14:09 1996
+	- The 1st alpha release revision (tested on Linux 1.2.13)
