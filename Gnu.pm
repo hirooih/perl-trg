@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.11 1996-12-05 14:05:20 hayashi Exp $
+#	$Id: Gnu.pm,v 1.12 1996-12-25 15:13:32 hayashi Exp $
 #
 #	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
 #
@@ -83,8 +83,7 @@ sub new {
     my $this = shift;		# Package
     my $class = ref($this) || $this;
 
-    my $name;
-    $this->StoreVar('rl_readline_name', ($name = shift)) if (@_); # Name
+    my $name = shift;
 
     my ($instream, $outstream);
     if (!@_) {
@@ -110,6 +109,8 @@ sub new {
 		CompletionWordList	=> \@Completion_Word_List,
 	       };
     bless $self, $class;
+    $self->StoreVar('rl_readline_name', $name);
+    $self;
 }
 
 =item C<readline(PROMPT[,PREPUT])>
@@ -209,7 +210,7 @@ successful, or false if not.
 
 sub ReadHistory {
     shift;
-    _rl_read_history(@_);
+    ! read_history_range(@_);
 }
 
 =item C<WriteHistory(FILENAME)>
@@ -222,7 +223,7 @@ F<~/.history>.  Returns true if successful, or false if not.
 
 sub WriteHistory {
     shift;
-    _rl_write_history($_[0]);
+    ! write_history($_[0]);
 }
 
 =item C<MinLine([MAX])>
@@ -253,6 +254,35 @@ sub ParseAndBind {
     rl_parse_and_bind(shift);
 }
 
+=item C<BindKey(FUNC, KEY, NAME)>
+
+Binds KEY to perl function FUNC.  Optional argument NAME is a name of
+the function.  Returns non-zero in the case of an invalid KEY.
+
+  Example:
+	# bind function reverse_line() to "\C-t"
+	$term->BindKey(\&reverse_line, "\ct", 'reverse-line');
+
+=cut
+
+sub BindKey {
+    my $self = shift;
+    my ($func, $key, $name) = @_;
+    rl_add_defun($func, ord $key, $name);
+}
+
+=item C<UnbindKey(KEY)>
+
+Bind KEY to the null function.  Returns non-zero in case of error.
+
+=cut
+
+sub UnbindKey {
+    my $self = shift;
+    my ($key) = @_;
+    rl_unbind_key(ord $key);
+}
+
 =item C<FetchVar(VARIABLE_NAME), StoreVar(VARIABLE_NAME)>
 
 Fetch and store a value of a GNU Readline Library variable.  See
@@ -274,7 +304,7 @@ my %_rl_vars
        history_no_expand_chars			=> ['S', 9],
        history_search_delimiter_chars		=> ['S', 10],
        
-       rl_buffer_len				=> ['I', 0],
+       rl_line_buffer_len			=> ['I', 0],
        rl_point					=> ['I', 1],
        rl_end					=> ['I', 2],
        rl_mark					=> ['I', 3],
@@ -302,7 +332,8 @@ sub FetchVar {
     my $self = shift;
     my $name = shift;
     if (! defined $_rl_vars{$name}) {
-	carp "unknown variable name `$name'\n";
+	my $myname = ref $self;
+	carp "${myname}::FetchVar: Unknown variable name `$name'\n";
 	return undef ;
     }
     
@@ -317,7 +348,8 @@ sub FetchVar {
 	my $func = $id;
 	return $func;		# return value which saved in perl variable
     } else {
-	carp "Illegal type `$type'\n";
+	my $myname = ref $self;
+	carp "${myname}::FetchVar: Illegal type `$type'\n";
 	return undef;
     }
 }
@@ -326,7 +358,8 @@ sub StoreVar {
     my $self = shift;
     my $name = shift;
     if (! defined $_rl_vars{$name}) {
-	carp "unknown variable name `$name'\n";
+	my $myname = ref $self;
+	carp "${myname}::StoreVar: Unknown variable name `$name'\n";
 	return undef ;
     }
     
@@ -354,7 +387,8 @@ sub StoreVar {
 	    return undef;
 	}
     } else {
-	carp "Illegal type `$type'\n";
+	my $myname = ref $self;
+	carp "${myname}::StoreVar: Illegal type `$type'\n";
 	return undef;
     }
 }
