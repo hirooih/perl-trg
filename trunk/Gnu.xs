@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.19 1996-12-30 16:54:22 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.20 1996-12-31 13:58:03 hayashi Exp $
  *
  *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
  *
@@ -574,7 +574,13 @@ completion_matches(text, fn)
 #
 ########################################################################
 #
-#	History List Management
+#	2.3.1 Initializing History and State Management
+#
+void
+using_history()
+
+#
+#	2.3.2 History List Management
 #
 void
 add_history(...)
@@ -586,22 +592,37 @@ add_history(...)
 	    add_history((char *)SvPV(ST(i), na));
 	}
 
-#!!!
-# void
-# remove_history(which)
-# 	int which
-# 	CODE:
-# 	{
-# 	}
+void
+remove_history(which)
+	int which
+	CODE:
+	{
+	  HIST_ENTRY *entry;
+	  entry = remove_history(which);
+	  ST(0) = sv_newmortal();
+	  if (entry && entry->line)
+	    sv_setpv(ST(0), entry->line);
+	  xfree(entry->line);
+	  xfree(entry->data);
+	  xfree((char *)entry);
+	}
 
-#!!!
-# void
-# replace_history_entry(which, line)
-# 	int which
-# 	char *line
-# 	CODE:
-# 	{
-# 	}
+void
+replace_history_entry(which, line, data = NULL)
+	int which
+	char *line
+	char *data
+	CODE:
+	{
+	  HIST_ENTRY *entry;
+	  entry = replace_history_entry(which, line, data);
+	  ST(0) = sv_newmortal();
+	  if (entry && entry->line)
+	    sv_setpv(ST(0), entry->line);
+	  xfree(entry->line);
+	  xfree(entry->data);
+	  xfree((char *)entry);
+	}
 
 void
 clear_history()
@@ -639,14 +660,21 @@ _rl_SetHistory(...)
 	}
 
 #
-#	Information About the History List
+#	2.3.3 Information About the History List
 #
 int
 where_history()
 
-#!!
-# void
-# current_history()
+void
+current_history()
+	CODE:
+	{
+	  HIST_ENTRY *entry;
+	  entry = current_history();
+	  ST(0) = sv_newmortal();
+	  if (entry && entry->line)
+	    sv_setpv(ST(0), entry->line);
+	}
 
 void
 history_get(offset)
@@ -682,22 +710,36 @@ _rl_GetHistory()
 	}
 
 #
-#	Moving Around the History List
+#	2.3.4 Moving Around the History List
 #
 int
 history_set_pos(pos)
 	int pos
 
-#!!
-# void
-# previous_history()
+void
+previous_history()
+	CODE:
+	{
+	  HIST_ENTRY *entry;
+	  entry = previous_history();
+	  ST(0) = sv_newmortal();
+	  if (entry && entry->line)
+	    sv_setpv(ST(0), entry->line);
+	}
 
-#!!
-# void
-# next_history()
+void
+next_history()
+	CODE:
+	{
+	  HIST_ENTRY *entry;
+	  entry = next_history();
+	  ST(0) = sv_newmortal();
+	  if (entry && entry->line)
+	    sv_setpv(ST(0), entry->line);
+	}
 
 #
-#	Searching the History List
+#	2.3.5 Searching the History List
 #
 int
 history_search(string, direction)
@@ -716,7 +758,7 @@ history_search_pos(string, direction, pos)
 	int pos
 
 #
-#	Managing the History File
+#	2.3.6 Managing the History File
 #
 int
 read_history_range(filename = NULL, from = 0, to = -1)
@@ -743,7 +785,7 @@ history_truncate_file(filename = NULL, nlines = 0)
 	PROTOTYPE: ;$$
 
 #
-#	History Expansion
+#	2.3.7 History Expansion
 #
 void
 history_expand(line)
