@@ -1,7 +1,7 @@
 #
 #	Makefile.PL for Term::ReadLine::Gnu
 #
-#	$Id: Makefile.PL,v 1.8 1998-04-11 16:33:09 hayashi Exp $
+#	$Id: Makefile.PL,v 1.9 1998-05-08 17:37:26 hayashi Exp $
 #
 #	Copyright (c) 1996,1997,1998 Hiroo Hayashi.  All rights reserved.
 #		<hiroo.hayashi@computer.org>
@@ -12,6 +12,12 @@
 #	OS/2 support is contributed by Ilya Zakharevich.
 #		<ilya@math.ohio-state.edu>
 
+########################################################################
+# Modify these variables if you need.
+$libreadlinedir = '/usr/local/gnu/lib';	# for -L option
+$increadlinedir = '/usr/local/gnu/inc';	# for -I option
+
+########################################################################
 use ExtUtils::MakeMaker;
 use Config;
 
@@ -28,16 +34,54 @@ if ($os2_usedll == 0) {
     $defs .= ' -DOS2_USEDLL';
 }
 
-# Modify 'LIBS' and/or 'INC' if you need.
+#
+# Check libreadline.a version
+#
+$frlver = 'rlver.c';
+
+# make temp file
+open(F, ">$frlver") || die "Cannot open $frlver:$!\n";
+print F <<'EOF';
+/* used by Makefile.pl to check the version of the GNU Readline Library */
+#include <stdio.h>
+#include <readline/readline.h>
+main() { puts(rl_library_version); }
+EOF
+close(F);
+
+# compile it
+system("$Config{cc} -I$increadlinedir $Config{ccflags} $defs $frlver -o rlver -L$libreadlinedir -lreadline -ltermcap $Config{ldflags}");
+if ($?) {
+    die <<EOM;
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Cannot compile $frlver.
+
+Check variables, \$increadlinedir and \$libreadlinedir, in Makefile.PL.
+
+Note that GNU Readline Library version 2.0 and earlier cause error here,
+Read INSTALL for more details.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+EOM
+}
+
+# execute it and get version
+chomp($rlver = `./rlver`);
+print "It seems that you have the GNU Readline Library version $rlver.\n";
+($rlmajorver, $rlminorver) = split('\.', $rlver);
+$defs .= " -DRLMAJORVER=$rlmajorver -DRLMINORVER=$rlminorver";
+
 WriteMakefile(
     'NAME'	=> 'Term::ReadLine::Gnu',
     'VERSION_FROM' => 'Gnu.pm',
-    'LIBS'	=> [ "-L/usr/local/gnu/lib $libs" ],
+    'LIBS'	=> [ "-L$libreadlinedir $libs" ],
     'DEFINE'	=> $defs,
     ($os2_usedll ? 
 	(
 	IMPORTS	=> { xfree => 'emxlibcm.401' },	# Yuck!
 	) : () ),
-    'INC'	=> '-I/usr/local/gnu/include',
+    'INC'	=> '-I$increadlinedir',
     'dist'	=> { COMPRESS => 'gzip -9f', SUFFIX => 'gz' },
+    'clean'	=> { FILES => 'rlver.c rlver' },
 );
+
+# End of Makefile.PL
