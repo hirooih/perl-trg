@@ -1,4 +1,3 @@
-Changes		Differences from previous version
 Gnu.pm		The GNU Readline extension Perl module
 Gnu.xs		The GNU Readline extension external subroutines
 INSTALL		Installtion instructions
