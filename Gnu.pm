@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.47 1997-08-24 14:58:55 hayashi Exp $
+#	$Id: Gnu.pm,v 1.48 1998-02-27 14:03:00 hayashi Exp $
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
 #
@@ -50,7 +50,7 @@ use strict;
 use vars qw($VERSION @ISA @EXPORT_OK %Attribs %Features);
 use Carp;
 
-$VERSION = '0.09';
+$VERSION = '0.10';
 
 require Exporter;
 require DynaLoader;
@@ -66,14 +66,18 @@ my $Next_Operate_Index;
 	    );
 %Features = (
 	     appname => 1, minline => 1, autohistory => 1,
-	     getHistory => 1, setHistory => 1, addhistory => 1,
+	     getHistory => 1, setHistory => 1, addHistory => 1,
 	     readHistory => 1, writeHistory => 1,
-	     preput => 1, tkRunning => 1, attribs => 1,
+	     preput => 1, attribs => 1, newTTY => 1,
+	     tkRunning => Term::ReadLine::Stub->Features->{'tkRunning'},
+	     ornaments => Term::ReadLine::Stub->Features->{'ornaments'},
 	     stiflehistory => 1,
 	    );
 
 sub Attribs { \%Attribs; }
 sub Features { \%Features; }
+
+sub DESTROY {}
 
 #
 #	Variable lists to be Export_OK
@@ -180,6 +184,11 @@ sub readline {			# should be ReadLine
     my $self = shift;
     my ($prompt, $preput) = @_;
 
+    # ornament support (now prompt only)
+    $prompt = $Term::ReadLine::Stub::rl_term_set[0]
+	. $prompt . $Term::ReadLine::Stub::rl_term_set[1]
+	    . $Term::ReadLine::Stub::rl_term_set[2];
+
     # TkRunning support
     if (not $Term::ReadLine::registered and $Term::ReadLine::toloop
 	and defined &Tk::DoOneEvent) {
@@ -227,7 +236,8 @@ sub readline {			# should be ReadLine
     }
 
     # add to history buffer
-    $self->add_history($line) if (length($line) >= $self->{MinLength});
+    $self->add_history($line) 
+       if ($self->{MinLength} > 0 && length($line) >= $self->{MinLength});
 
     return $line;
 }
@@ -279,7 +289,7 @@ sub MinLine {
     $self->{MinLength} = shift;
     $old_minlength;
 }
-
+    
 # findConsole is defined in ReadLine.pm.
 
 =item C<findConsole>
@@ -303,7 +313,7 @@ minimal interface: C<appname> should be present if the first argument
 to C<new> is recognized, and C<minline> should be present if
 C<MinLine> method is not dummy.  C<autohistory> should be present if
 lines are put into history automatically (maybe subject to
-C<MinLine>), and C<addhistory> if C<AddHistory> method is not dummy. 
+C<MinLine>), and C<addHistory> if C<AddHistory> method is not dummy. 
 C<preput> means the second argument to C<readline> method is processed.
 C<getHistory> and C<setHistory> denote that the corresponding methods are 
 present. C<tkRunning> denotes that a Tk application may run while ReadLine
@@ -312,6 +322,38 @@ is getting input B<(undocumented feature)>.
 =back
 
 =cut
+
+sub ornaments {
+    my $self = shift;
+    my $ornaments = $self->Term::ReadLine::TermCap::ornaments(@_);
+    $Attribs{redisplay_function} = sub {
+	# The variable rl_prompt is readonly.  The ornaments of a prompt
+	# string is handled in the readline().
+#	my $line_buffer = $Attribs{line_buffer};
+#	local *rl_term_set = \@Term::ReadLine::TermCap::rl_term_set;
+#	$Attribs{line_buffer} = rl_term_set[2] . $line_buffer . rl_term_set[3];
+#	$Attribs{line_buffer} = $Term::ReadLine::TermCap::rl_term_set[2]
+#	    . $line_buffer . $Term::ReadLine::TermCap::rl_term_set[3];
+	
+	$self->rl_redisplay();
+
+	print { $Attribs{outstream} } $Term::ReadLine::TermCap::rl_term_set[3];
+
+#	$Attribs{line_buffer} = $line_buffer;
+	1;			# an integer return value is required.
+    };
+    return $ornaments;
+}
+
+# Not tested yet.  How do I use this?
+sub newTTY {
+    my ($self, $in, $out) = @_;
+    $Attribs{instream}  = $in;
+    $Attribs{outstream} = $out;
+    my $sel = select($out);
+    $| = 1;			# for DB::OUT
+    select($sel);
+}
 
 
 #
@@ -1386,7 +1428,9 @@ Term::ReadLine::Perl (Term-ReadLine-xx.tar.gz)
 
 =head1 AUTHOR
 
-Hiroo Hayashi <hiroo.hayashi@toshiba.co.jp>
+Hiroo Hayashi <hiroo.hayashi@computer.org>
+
+http://www.perl.org/CPAN/authors/Hiroo_HAYASHI/
 
 =head1 TODO
 
@@ -1408,7 +1452,10 @@ Test routines for following variable and functions are required.
 
 rl_add_defun() can define up to 16 functions.
 
-rl_message() does not work.  See display_readline_version() in
-t/readline.t.
+Ornament feature works only on prompt strings.  It requires very hard
+hacking of display.c:rl_redisplay() in GNU Readline library to
+ornament input line.
+
+newTTY() is not tested yet.
 
 =cut
