@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.33 1999-04-04 11:20:48 hayashi Exp $
+#	$Id: readline.t,v 1.34 1999-04-24 02:11:35 hayashi Exp $
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -11,7 +11,7 @@
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl t/readline.t'
 
-BEGIN {print "1..87\n"; $n = 1;}
+BEGIN {print "1..89\n"; $n = 1;}
 END {print "not ok 1\tfail to loading\n" unless $loaded;}
 
 my $verbose = defined @ARGV && ($ARGV[0] eq 'verbose');
@@ -533,6 +533,19 @@ $res = $line eq 't/comptest/0123'; ok('filename completion', $line);
 undef $a->{completion_entry_function};
 
 # attempted_completion_function
+
+$a->{attempted_completion_function} = sub { undef; };
+$a->{completion_entry_function} = sub {};
+$INSTR = "t/comp\cI\cM";
+$line = $t->readline("null completion 1>");
+$res = $line eq 't/comp'; ok('null completion 1', $line);
+
+$a->{attempted_completion_function} = sub { (undef, undef); };
+undef $a->{completion_entry_function};
+$INSTR = "t/comp\cI\cM";
+$line = $t->readline("null completion 2>");
+$res = $line eq 't/comptest/'; ok('null completion 2', $line);
+
 sub sample_completion {
     my ($text, $line, $start, $end) = @_;
     # If first word then username completion, else filename completion
