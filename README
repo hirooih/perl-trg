@@ -1,9 +1,9 @@
 	-*- Indented-text -*-
-$Id: README,v 1.19 2000-04-03 17:56:07 hayashi Exp $
+$Id: README,v 1.20 2001-04-22 14:08:45 hayashi Exp $
 
 Term::ReadLine::Gnu --- GNU Readline Library Wrapper Module
 
-	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
+	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
 
 	This program is free software; you can redistribute it and/or
 	modify it under the same terms as Perl itself.
@@ -62,6 +62,58 @@ Author:
 
 Revision History:
 
+1.10  2001-04-22
+	- readline-4.2 support
+	    new variables
+		rl_attemped_completion_over
+		rl_completion_type
+		rl_deprep_term_function
+		rl_directory_rewrite_hook
+		rl_dispatching
+		rl_editing_mode
+		rl_executing_macro
+		rl_explicit_arg
+		rl_gnu_readline_p
+		rl_num_char_to_read
+		rl_numeric_arg
+		rl_prep_term_function
+		rl_readline_state
+		history_word_delimiters
+	    new functions
+		rl_add_funmap_entry
+		rl_alphabetic
+		rl_clear_pending_input
+		rl_crlf
+		rl_deprep_terminal
+		rl_execute_next
+		rl_expand_prompt
+		rl_get_screen_size
+		rl_macro_bind
+		rl_macro_dumper
+		rl_prep_terminal
+		rl_push_macro_input
+		rl_set_keyboard_input_timeout
+		rl_set_paren_blink_timeout(usec)
+		rl_set_prompt
+		rl_set_screen_size
+		rl_setkey
+		rl_show_char
+		rl_tty_set_default_bindings
+		rl_tty_set_default_bindings
+		rl_variable_bind
+		rl_variable_dumper
+	    rename functions
+		free_undo_list()		-> rl_free_undo_list()
+		ding()				-> rl_ding()
+		completion_matches()		-> rl_completion_matches()
+		filename_completion_function	-> rl_filename_completion_function()
+		username_completion_function	-> rl_username_completion_function()
+		max_input_history		-> history_max_entries
+
+	- fix bug when ornament string does not use any control characters.
+	- add Gnu/euc_jp.pm which is still experimental.
+	- typemap: redefine FILE * to support perl 5.7.
+
 1.09  2000-04-04
 	- Perl-5.6 now does not warn without `POLLUTE=1' during `perl
           Makefile.PL'.  (Thanks to PPPort.)
@@ -69,7 +121,7 @@ Revision History:
           underline.
 	- support rl_already_prompted and rl_on_new_line_with_prompt()
 	  which are introduced by readline-4.1-beta.
-	- support rl_fumap_names() and rl_last_func.
+	- support rl_funmap_names() and rl_last_func.
 	- update documentation.
 
 1.08  1999-12-30
