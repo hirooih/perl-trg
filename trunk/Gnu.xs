@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.62 1999-02-22 16:15:12 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.63 1999-02-27 07:36:31 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -23,21 +23,30 @@ extern "C" {
 #include <readline/readline.h>
 #include <readline/history.h>
 
+/*
+ * Perl 5.005 requires an ANSI C Compiler.  Good news.
+ * But I should still support legacy C compilers now.
+ */
+/* Adapted from BSD /usr/include/sys/cdefs.h. */
+#if defined (__STDC__)
+#  if !defined (__P)
+#    define __P(protos) protos
+#  endif
+#else /* !__STDC__ */
+#  if !defined (__P)
+#    define __P(protos) ()
+#  endif
+#endif /* !__STDC__ */
+
 /* following variables should be defined in readline.h */
 extern char *rl_prompt;
 extern int rl_completion_query_items;
 extern int rl_ignore_completion_duplicates;
 
-#ifdef __STDC__
 /* from GNU Readline:xmalloc.c */
-extern char *xmalloc (int);
-void rl_extend_line_buffer (int);
-extern char *tgetstr(const char *, char **);
-#else
-extern char *xmalloc ();
-void rl_extend_line_buffer ();
-extern char *tgetstr();
-#endif /* __STDC__ */
+extern char *xmalloc __P((int));
+void rl_extend_line_buffer __P((int));
+extern char *tgetstr __P((const char *, char **));
 
 /*
  * Using xfree() in GNU Readline Library causes problem with Solaris
@@ -47,12 +56,8 @@ extern char *tgetstr();
  * usemymalloc=n is required.
  */
 #ifdef OS2_USEDLL
-#ifdef __STDC__
 /* from GNU Readline:xmalloc.c */
-extern char *xfree (char *);
-#else
-extern char *xfree ();
-#endif /* __STDC__ */
+extern char *xfree __P((char *));
 
 #else /* !OS2_USEDLL */
 static void
@@ -162,7 +167,14 @@ static struct int_vars {
   { (int *)&history_expansion_char,		1, 0 },	/* 14 */
   { (int *)&history_subst_char,			1, 0 },	/* 15 */
   { (int *)&history_comment_char,		1, 0 },	/* 16 */
+#if (RLMAJORVER < 4)
   { &history_quotes_inhibit_expansion,		0, 0 }	/* 17 */
+#else
+  { &history_quotes_inhibit_expansion,		0, 0 },	/* 17 */
+  { &rl_erase_empty_line,			0, 0 },	/* 18 */
+  { &rl_catch_signals,				0, 0 },	/* 19 */
+  { &rl_catch_sigwinch,				0, 0 }	/* 20 */
+#endif /* (RLMAJORVER < 4) */
 };
 
 /*
@@ -170,24 +182,18 @@ static struct int_vars {
  *	_rl_fetch_funtion()
  */
 
-#ifdef __STDC__
-static int startup_hook_wrapper(void);
-static int event_hook_wrapper(void);
-static int getc_function_wrapper(FILE *);
-static void redisplay_function_wrapper(void);
-static char *completion_entry_function_wrapper(char *, int);
-static char **attempted_completion_function_wrapper(char *, int, int);
-#else
-static int startup_hook_wrapper();
-static int event_hook_wrapper();
-static int getc_function_wrapper();
-static void redisplay_function_wrapper();
-static char *completion_entry_function_wrapper();
-static char **attempted_completion_function_wrapper();
-#endif /* __STDC__ */
+static int startup_hook_wrapper __P((void));
+static int event_hook_wrapper __P((void));
+static int getc_function_wrapper __P((FILE *));
+static void redisplay_function_wrapper __P((void));
+static char *completion_entry_function_wrapper __P((char *, int));
+static char **attempted_completion_function_wrapper __P((char *, int, int));
+#if (RLMAJORVER >= 4)
+static int pre_input_hook_wrapper __P((void));
+#endif /* (RLMAJORVER < 4) */
 
 enum void_arg_func_type { STARTUP_HOOK, EVENT_HOOK, GETC_FN, REDISPLAY_FN,
-			  CMP_ENT, ATMPT_COMP };
+			  CMP_ENT, ATMPT_COMP, PRE_INPUT_HOOK };
 
 static struct fn_vars {
   Function **rlfuncp;		/* GNU Readline Library variable */
@@ -211,22 +217,22 @@ static struct fn_vars {
     NULL
   },
   {
-    (Function **)&rl_attempted_completion_function,		 /* 5 */
+    (Function **)&rl_attempted_completion_function,		/* 5 */
     NULL,
     (Function *)attempted_completion_function_wrapper,
     NULL
   }
+#if (RLMAJORVER >= 4)
+  ,
+  { &rl_pre_input_hook,	NULL,	pre_input_hook_wrapper,	NULL }	/* 6 */
+#endif /* (RLMAJORVER < 4) */
 };
 
 /*
  * Perl function wrappers
  */
 
-#ifdef __STDC__
-static int void_arg_func_wrapper(int);
-#else
-static int void_arg_func_wrapper();
-#endif
+static int void_arg_func_wrapper __P((int));
 
 static int
 startup_hook_wrapper()		{ return void_arg_func_wrapper(STARTUP_HOOK); }
@@ -373,101 +379,55 @@ attempted_completion_function_wrapper(text, start, end)
   return matches;
 }
 
+#if (RLMAJORVER >= 4)
+static int
+pre_input_hook_wrapper() { return void_arg_func_wrapper(PRE_INPUT_HOOK); }
+#endif /* (RLMAJORVER < 4) */
+
 /*
  *	If you need more custom functions, define more funntion_wrapper_xx()
  *	and add entry on fntbl[].
  */
 
-#ifdef __STDC__
-static int function_wrapper(int count, int key, int id);
-static int
-function_wrapper_00(int c, int k) { return function_wrapper(c, k,  0); }
-static int
-function_wrapper_01(int c, int k) { return function_wrapper(c, k,  1); }
-static int
-function_wrapper_02(int c, int k) { return function_wrapper(c, k,  2); }
-static int
-function_wrapper_03(int c, int k) { return function_wrapper(c, k,  3); }
-static int
-function_wrapper_04(int c, int k) { return function_wrapper(c, k,  4); }
-static int
-function_wrapper_05(int c, int k) { return function_wrapper(c, k,  5); }
-static int
-function_wrapper_06(int c, int k) { return function_wrapper(c, k,  6); }
-static int
-function_wrapper_07(int c, int k) { return function_wrapper(c, k,  7); }
-static int
-function_wrapper_08(int c, int k) { return function_wrapper(c, k,  8); }
-static int
-function_wrapper_09(int c, int k) { return function_wrapper(c, k,  9); }
-static int
-function_wrapper_10(int c, int k) { return function_wrapper(c, k, 10); }
-static int
-function_wrapper_11(int c, int k) { return function_wrapper(c, k, 11); }
-static int
-function_wrapper_12(int c, int k) { return function_wrapper(c, k, 12); }
-static int
-function_wrapper_13(int c, int k) { return function_wrapper(c, k, 13); }
-static int
-function_wrapper_14(int c, int k) { return function_wrapper(c, k, 14); }
-static int
-function_wrapper_15(int c, int k) { return function_wrapper(c, k, 15); }
-#else
-static int function_wrapper();
-static int
-function_wrapper_00(c, k) int c; int k; { return function_wrapper(c, k,  0); }
-static int
-function_wrapper_01(c, k) int c; int k; { return function_wrapper(c, k,  1); }
-static int
-function_wrapper_02(c, k) int c; int k; { return function_wrapper(c, k,  2); }
-static int
-function_wrapper_03(c, k) int c; int k; { return function_wrapper(c, k,  3); }
-static int
-function_wrapper_04(c, k) int c; int k; { return function_wrapper(c, k,  4); }
-static int
-function_wrapper_05(c, k) int c; int k; { return function_wrapper(c, k,  5); }
-static int
-function_wrapper_06(c, k) int c; int k; { return function_wrapper(c, k,  6); }
-static int
-function_wrapper_07(c, k) int c; int k; { return function_wrapper(c, k,  7); }
-static int
-function_wrapper_08(c, k) int c; int k; { return function_wrapper(c, k,  8); }
-static int
-function_wrapper_09(c, k) int c; int k; { return function_wrapper(c, k,  9); }
-static int
-function_wrapper_10(c, k) int c; int k; { return function_wrapper(c, k, 10); }
-static int
-function_wrapper_11(c, k) int c; int k; { return function_wrapper(c, k, 11); }
-static int
-function_wrapper_12(c, k) int c; int k; { return function_wrapper(c, k, 12); }
-static int
-function_wrapper_13(c, k) int c; int k; { return function_wrapper(c, k, 13); }
-static int
-function_wrapper_14(c, k) int c; int k; { return function_wrapper(c, k, 14); }
-static int
-function_wrapper_15(c, k) int c; int k; { return function_wrapper(c, k, 15); }
-#endif /* __STDC__ */
+static int function_wrapper __P((int count, int key, int id));
+
+static int fw_00(c, k) int c; int k; { return function_wrapper(c, k,  0); }
+static int fw_01(c, k) int c; int k; { return function_wrapper(c, k,  1); }
+static int fw_02(c, k) int c; int k; { return function_wrapper(c, k,  2); }
+static int fw_03(c, k) int c; int k; { return function_wrapper(c, k,  3); }
+static int fw_04(c, k) int c; int k; { return function_wrapper(c, k,  4); }
+static int fw_05(c, k) int c; int k; { return function_wrapper(c, k,  5); }
+static int fw_06(c, k) int c; int k; { return function_wrapper(c, k,  6); }
+static int fw_07(c, k) int c; int k; { return function_wrapper(c, k,  7); }
+static int fw_08(c, k) int c; int k; { return function_wrapper(c, k,  8); }
+static int fw_09(c, k) int c; int k; { return function_wrapper(c, k,  9); }
+static int fw_10(c, k) int c; int k; { return function_wrapper(c, k, 10); }
+static int fw_11(c, k) int c; int k; { return function_wrapper(c, k, 11); }
+static int fw_12(c, k) int c; int k; { return function_wrapper(c, k, 12); }
+static int fw_13(c, k) int c; int k; { return function_wrapper(c, k, 13); }
+static int fw_14(c, k) int c; int k; { return function_wrapper(c, k, 14); }
+static int fw_15(c, k) int c; int k; { return function_wrapper(c, k, 15); }
 
 static struct fnnode {
   Function *wrapper;		/* C wrapper function */
   SV *pfn;			/* Perl function */
 } fntbl[] = {
-  { function_wrapper_00,	NULL },
-  { function_wrapper_01,	NULL },
-  { function_wrapper_02,	NULL },
-  { function_wrapper_03,	NULL },
-  { function_wrapper_04,	NULL },
-  { function_wrapper_05,	NULL },
-  { function_wrapper_06,	NULL },
-  { function_wrapper_07,	NULL },
-  { function_wrapper_08,	NULL },
-  { function_wrapper_09,	NULL },
-  { function_wrapper_10,	NULL },
-  { function_wrapper_11,	NULL },
-  { function_wrapper_12,	NULL },
-  { function_wrapper_13,	NULL },
-  { function_wrapper_14,	NULL },
-  { function_wrapper_15,	NULL }
+  { fw_00,	NULL },
+  { fw_01,	NULL },
+  { fw_02,	NULL },
+  { fw_03,	NULL },
+  { fw_04,	NULL },
+  { fw_05,	NULL },
+  { fw_06,	NULL },
+  { fw_07,	NULL },
+  { fw_08,	NULL },
+  { fw_09,	NULL },
+  { fw_10,	NULL },
+  { fw_11,	NULL },
+  { fw_12,	NULL },
+  { fw_13,	NULL },
+  { fw_14,	NULL },
+  { fw_15,	NULL }
 };
 
 static int
@@ -978,6 +938,67 @@ int
 ding()
 	PROTOTYPE:
 
+#if (RLMAJORVER >= 4)
+
+void
+_rl_display_match_list(...)
+	PROTOTYPE: @
+	CODE:
+	{
+	  int n, len, max, l, i;
+	  char **matches;
+	  AV* av_matches;
+	  SV* pv;
+
+	  if (items == 0)
+	    return;
+	  else if (SvROK(ST(0))) {
+	    /*
+	     * If the first argument is a reference of an array, use it as
+	     * matches.  Ignore rest arguments, if there are.
+	     */
+	    if (SvTYPE(SvRV(ST(0))) != SVt_PVAV) {
+	      warn("Gnu.xs:_rl_display_match_list: arguments must be an array or a reference of an array\n");
+	      return;
+	    }
+	    av_matches = (AV *)SvRV(ST(0));
+	    if ((n = av_len(av_matches) + 1) == 0)
+	      return;
+	    matches = (char **)xmalloc (sizeof(char *) * n);
+	    max = 0; len = 0;
+	    for (i = 0; i < n; i++) {
+	      pv = av_pop(av_matches);
+	      if (SvPOKp(pv)) {
+		matches[len++] = dupstr(SvPV(pv, l));
+		if (l > max)
+		  max = l;
+	      }
+	    }
+	  } else {
+	    /*
+	     * Assume arguments are array of strings.
+	     */
+	    n = items;
+	    matches = (char **)xmalloc (sizeof(char *) * n);
+	    max = 0; len = 0;
+	    for (i = 0; i < n; i++) {
+	      pv = ST(i);
+	      if (SvPOKp(pv)) {
+		matches[len++] = dupstr(SvPV(pv, l));
+		if (l > max)
+		  max = l;
+	      }
+	    }
+	  }
+	  rl_display_match_list(matches, len, max);
+
+	  for (i = 0; i < len; i++)
+	    xfree(matches[i]);
+	  xfree(matches);
+	}
+
+#endif /* (RLMAJORVER < 4) */
+
 #
 #	2.4.9 Alternate Interface
 #
@@ -1020,7 +1041,44 @@ rl_callback_handler_remove()
 	PROTOTYPE:
 
 #
-#	2.5 Custom Completers
+#	2.5 Readline Signal Handling
+#
+
+#if (RLMAJORVER >= 4)
+
+# rl_cleanup_after_signal(), rl_free_line_state(), rl_reset_after_signal(), 
+# rl_resize_terminal(), rl_set_signals(), and rl_clear_signals() 
+# are introduced by readline-4.0.
+
+
+void
+rl_cleanup_after_signal()
+	PROTOTYPE:
+
+void
+rl_free_line_state()
+	PROTOTYPE:
+
+void
+rl_reset_after_signal()
+	PROTOTYPE:
+
+void
+rl_resize_terminal()
+	PROTOTYPE:
+
+int
+rl_set_signals()
+	PROTOTYPE:
+
+int
+rl_clear_signals()
+	PROTOTYPE:
+
+#endif /* (RLMAJORVER >=4) */
+
+#
+#	2.6 Custom Completers
 #
 
 int
