@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	history.t --- Term::ReadLine:GNU History Library Test Script
 #
-#	$Id: history.t,v 1.6 2002-03-30 18:10:14 hiroo Exp $
+#	$Id: history.t,v 1.7 2002-07-28 04:02:47 hiroo Exp $
 #
 #	Copyright (c) 1998 Hiroo Hayashi.  All rights reserved.
 #
@@ -372,22 +372,31 @@ print $ret == 1 && $string eq 'red yellow' ? "ok $n\n" : "not ok $n\n"; $n++;
 
 # get_history_event()
 my ($text, $cindex);
+#		     1	       2
+#	   012345678901234567890123
 $string = '!-2 !?red? "!blu" white';
 
+# !-2: 2 line before
 ($text, $cindex) = $t->get_history_event($string, 0);
-print $cindex == 3 && $text eq 'yellow blue' ? "ok $n\n" : "not ok $n\n"; $n++;
+$res = $cindex == 3 && $text eq 'yellow blue'; ok('get_history_event');
 #print "$cindex,$text\n";
 
+# non-event designator
 ($text, $cindex) = $t->get_history_event($string, 3);
-print $cindex == 3 && ! defined $text ? "ok $n\n" : "not ok $n\n"; $n++;
+$res = $cindex == 3 && ! defined $text; ok;
 #print "$cindex,$text\n";
 
+# The following 2 test may fail with readline-4.3 with some locale
+# setting. It comes from bug of the Readline Library.  I sent a patch
+# to the maintainer.  `LANG=C make test' should work.
+# !?red?: line including `red'
 ($text, $cindex) = $t->get_history_event($string, 4);
-print $cindex == 10 && $text eq 'blue red' ? "ok $n\n" : "not ok $n\n"; $n++;
+$res = $cindex == 10 && $text eq 'blue red'; ok;
 #print "$cindex,$text\n";
 
+# "!?blu": line including `blu'
 ($text, $cindex) = $t->get_history_event($string, 12, '"');
-print $cindex == 16 && $text eq 'blue red' ? "ok $n\n" : "not ok $n\n"; $n++;
+$res = $cindex == 16 && $text eq 'blue red'; ok;
 #print "$cindex,$text\n";
 
 
