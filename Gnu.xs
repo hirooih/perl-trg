@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.31 1997-01-09 16:56:53 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.32 1997-01-09 16:59:51 hayashi Exp $
  *
  *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
  *
@@ -820,35 +820,17 @@ rl_function_of_keyseq(keyseq, map = NULL)
 	}
 	  
 void
-rl_invoking_keyseqs(function, map = NULL, type = ISFUNC)
+rl_invoking_keyseqs(function, map = NULL)
 	char *function
 	char *map
-	int type
-	PROTOTYPE: $;$$
+	PROTOTYPE: $;$
 	PPCODE:
 	{
 	  char **keyseqs;
-	  Keymap keymap;
-	  Function *fn;
+	  Keymap keymap = map ? my_get_keymap_by_name(map) : rl_get_keymap();
 	  
-	  switch (type) {
-	  case ISFUNC:
-	    fn = rl_named_function(function);
-	    break;
-	  case ISKMAP:
-	    fn = (Function *)my_get_keymap_by_name(function);
-	    break;
-	  case ISMACR:
-	    fn = (Function *)function;
-	    break;
-	  defaults:
-	    warn("Gnu.xs:rl_invoking_keyseqs: illegal type `%d'\n", type);
-	    return;
-	  }
-
-	  
-	  keymap = (map&&*map) ? my_get_keymap_by_name(map) : rl_get_keymap();
-	  keyseqs = rl_invoking_keyseqs_in_map(fn, keymap);
+	  keyseqs = rl_invoking_keyseqs_in_map(rl_named_function(function),
+					       keymap);
 
 	  if (keyseqs) {
 	    int i, count;
