@@ -1,6 +1,6 @@
 #	typemap for Term::ReadLine::Gnu
 #
-#	$Id: typemap,v 1.6 2002-03-30 03:47:48 hiroo Exp $
+#	$Id: typemap,v 1.7 2003-03-16 05:11:14 hiroo Exp $
 
 const char *	T_PV
 CONST char *	T_PV
@@ -21,10 +21,12 @@ T_STDIO
 OUTPUT
 T_STDIO
 	{
-	    GV *gv = newGVgen("$Package");
+	    /* module FileHandle expects PerlIO is blessed to IO::Handle */
+	    /* This stop segmentation fault on Perl 5.8.0 w/PerlIO */
+	    GV *gv = newGVgen("IO::Handle");
 	    PerlIO *fp = PerlIO_importFILE($var,0);
 	    if ( fp && do_open(gv, "+<&", 3, FALSE, 0, 0, fp) )
-		sv_setsv($arg, sv_bless(newRV((SV*)gv), gv_stashpv("$Package",1)));
+		sv_setsv($arg, sv_bless(newRV((SV*)gv), gv_stashpv("IO::Handle",1)));
 	    else
 		$arg = &PL_sv_undef;
 	}
