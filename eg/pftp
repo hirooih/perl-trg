@@ -1,8 +1,8 @@
 #! /usr/local/bin/perl
 #
-#	$Id: pftp,v 1.8 1998-05-08 17:38:59 hayashi Exp $
+#	$Id: pftp,v 1.9 1999-03-19 17:46:02 hayashi Exp $
 #
-#	Copyright (c) 1997,1998 Hiroo Hayashi.  All Rights Reserved.
+#	Copyright (c) 1997,1998,1999 Hiroo Hayashi.  All Rights Reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -98,8 +98,11 @@ my $login = 'anonymous';
 my $password = (getpwuid($<))[0] . '@' . hostdomain;
 if ($opt_u) {
     $login = $term->readline('login name> ', $login);
-    # Use Term::ReadKey!
+
+    # mask typed characters for password
+    $attribs->{redisplay_function} = $attribs->{shadow_redisplay};
     $password = $term->readline('password> ', $password);
+    undef $attribs->{redisplay_function};
 }
 
 $ftp->login($login, $password) or die "$0: cannot login: " . $ftp->message;
@@ -116,19 +119,26 @@ print STDERR $ftp->message;
 #
 my @ftp_cmd_list = qw(cwd cd pwd ls dir get mget put mput lcd help);
 
+# completion_display_match_hook is supported by GNU Readline Library
+# 4.0 and later.  Earlier versions ignore it.
+
 $attribs->{attempted_completion_function} = sub {
     my ($text, $line, $start, $end) = @_;
     if (substr($line, 0, $start) =~ /^\s*$/) {
 	$attribs->{completion_word} = \@ftp_cmd_list;
+	undef $attribs->{completion_display_matches_hook};
 	return $term->completion_matches($text,
 					 $attribs->{'list_completion_function'});
     } elsif ($line =~ /^\s*(ls|dir|get|mget)\s/) {
+	$attribs->{completion_display_matches_hook} = \&ftp_display_match_list;
 	return $term->completion_matches($text,
 					 \&ftp_filename_completion_function);
     } elsif ($line =~ /^\s*(cd|cwd)\s/) {
+	$attribs->{completion_display_matches_hook} = \&ftp_display_match_list;
 	return $term->completion_matches($text,
 					 \&ftp_dirname_completion_function);
     } else {			# put mput lcd
+	undef $attribs->{completion_display_matches_hook};
 	return ();		# local file name completion
     }
 };
@@ -196,6 +206,13 @@ sub ftp_dirname_completion_function ( $$ ) {
 	}
 	return undef;
     }
+}
+
+sub ftp_display_match_list {
+    my($matches, $num_matches, $max_length) = @_;
+    map { $_ =~ s|.*/([^/])|\1|; }(@{$matches});
+    $term->display_match_list($matches);
+    $term->forced_update_display;
 }
 
 ########################################################################
@@ -267,6 +284,7 @@ sub cmd_ls {
 }
 
 # from bash-2.0/lib/readline/complete.c:display_matches()
+# bash-4.0 and later has rl_display_match_list. Ignore it for compativility.
 sub dump_list {
     use integer;
     my @list = sort @{$_[0]};
@@ -447,8 +465,6 @@ Hiroo Hayashi <hiroo.hayashi@computer.org>
 
 =head1 BUGS
 
-Commands which the author does not use are not supported.
-
-Key inputs for password is visible.
+Commands which the author does not know are not supported.
 
 =cut
