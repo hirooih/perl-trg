@@ -1,9 +1,9 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.92 2001-03-09 14:51:59 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.93 2001-03-09 15:51:51 hayashi Exp $
  *
- *	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
+ *	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
  *
  *	This program is free software; you can redistribute it and/or
  *	modify it under the same terms as Perl itself.
@@ -98,7 +98,7 @@ static int rl_numeric_arg = 0;
 static int rl_editing_mode = 0;
 static int rl_readline_state = 0;
 static Function *rl_directory_rewrite_hook = NULL;
-
+static char *history_word_delimiters = " \t\n()<>;&|$";
 static void
 rl_free_undo_list ()
 {
@@ -271,7 +271,8 @@ static struct str_vars {
   { &history_no_expand_chars,				0, 0 },	/* 11 */
   { &history_search_delimiter_chars,			0, 0 },	/* 12 */
 
-  { &rl_executing_macro,				0, 0 }	/* 13 */
+  { &rl_executing_macro,				0, 0 },	/* 13 */
+  { &history_word_delimiters,				0, 0 }	/* 14 */
 };
 
 /*
@@ -298,7 +299,11 @@ static struct int_vars {
 
   { &history_base,				0, 0 },	/* 11 */
   { &history_length,				0, 0 },	/* 12 */
+#if (RLMAJORVER >= 4 && RLMINORVER >= 2 || RLMAJORVER > 4)
+  { &history_max_entries,			0, 1 },	/* 13 */
+#else
   { &max_input_history,				0, 1 },	/* 13 */
+#endif /* readline-4.2 and later */
   { (int *)&history_expansion_char,		1, 0 },	/* 14 */
   { (int *)&history_subst_char,			1, 0 },	/* 15 */
   { (int *)&history_comment_char,		1, 0 },	/* 16 */
@@ -1715,6 +1720,11 @@ int
 rl_clear_pending_input()
 	PROTOTYPE:
 
+int
+rl_set_keyboard_input_timeout(usec)
+	int usec
+	PROTOTYPE: $
+
 #endif /* (RLMAJORVER > 4 || RLMAJORVER == 4 && RLMINORVER >= 2) */
 
 #
@@ -1925,6 +1935,18 @@ rl_set_screen_size(rows, cols)
 	int rows
 	int cols
 	PROTOTYPE: $$
+
+void
+rl_get_screen_size()
+	PROTOTYPE:
+	PPCODE:
+	{
+	  int rows, cols;
+	  rl_get_screen_size(&rows, &cols);
+	  EXTEND(sp, 2);
+	  PUSHs(sv_2mortal(newSViv(rows)));
+	  PUSHs(sv_2mortal(newSViv(cols)));
+	}
 
 #endif /* (RLMAJORVER > 4 || RLMAJORVER == 4 && RLMINORVER >= 2) */
 
@@ -2274,21 +2296,6 @@ history_expand(line)
 	  xfree(expansion);
 	}
 
-#define DALLAR '$'		/* define for xsubpp bug */
-
-char *
-_history_arg_extract(line, first = 0 , last = DALLAR)
-	CONST char *line
-	int first
-	int last
-	PROTOTYPE: $;$$
-	CODE:
-	{
-	  RETVAL = history_arg_extract(first, last, line);
-	}
-	OUTPUT:
-	RETVAL
-
 void
 _get_history_event(string, cindex, qchar = 0)
 	CONST char *string
@@ -2335,6 +2342,21 @@ history_tokenize(text)
 	    /* return null list */
 	  }
 	}
+
+#define DALLAR '$'		/* define for xsubpp bug */
+
+char *
+_history_arg_extract(line, first = 0 , last = DALLAR)
+	CONST char *line
+	int first
+	int last
+	PROTOTYPE: $;$$
+	CODE:
+	{
+	  RETVAL = history_arg_extract(first, last, line);
+	}
+	OUTPUT:
+	RETVAL
 
 
 #
@@ -2639,6 +2661,5 @@ tgetstr(id)
 /*
  * Local Variables:
  * c-default-style: "gnu"
- * c-indentation-style: "gnu"
  * End:
  */
