@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.12 1996-12-26 16:01:56 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.13 1996-12-28 14:58:38 hayashi Exp $
  *
  *	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
  *
@@ -315,10 +315,7 @@ _rl_readline(prompt = (char *)NULL, preput = (char *)NULL)
 	   */
 	  line_read = readline(prompt);
 
-	  /*
-	   * return undef if readline() returns NULL
-	   */
-	  ST(0) = sv_newmortal();
+	  ST(0) = sv_newmortal(); /* default return value is 'undef' */
 	  if (line_read != (char *)NULL) {
 	    sv_setpv(ST(0), line_read);
 	    xfree(line_read);
@@ -362,7 +359,7 @@ _stifle_history(i)
 	RETVAL
 
 void
-_rl_add_history(...)
+add_history(...)
 	PROTOTYPE: @
 	CODE:
 	{
@@ -370,6 +367,27 @@ _rl_add_history(...)
 	  for (i = 0; i < items; i++)
 	    add_history((char *)SvPV(ST(i), na));
 	}
+
+int
+where_history()
+
+void
+history_get(offset)
+	int offset
+	CODE:
+	{
+	  HIST_ENTRY *hist;
+
+	  ST(0) = sv_newmortal(); /* default return value is 'undef' */
+
+	  hist = history_get(offset);
+	  if (hist && hist->line)
+	    sv_setpv(ST(0), hist->line);
+	}
+
+int
+history_set_pos(pos)
+	int pos
 
 void
 _rl_GetHistory()
@@ -393,19 +411,8 @@ _rl_SetHistory(...)
 	CODE:
 	{
 	  register int i;
-	  /*
-	   * clear whole history table
-	   * clear from tail for efficiency
-	   */
-	  for (i = history_length - 1; i >= 0; i--) {
-	    HIST_ENTRY *entry = remove_history (i);
-	    if (!entry)
-	      fprintf (stderr, "ReadLine: No such entry %d\n", i);
-	    else {
-	      xfree(entry->line);
-	      xfree((char *)entry);
-	    }
-	  }
+
+	  clear_history();
 	  for (i = 0; i < items; i++)
 	    add_history((char *)SvPV(ST(i), na));
 	}
