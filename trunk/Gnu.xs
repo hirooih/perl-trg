@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.93 2001-03-09 15:51:51 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.94 2001-03-10 05:07:21 hayashi Exp $
  *
  *	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
  *
@@ -98,7 +98,7 @@ static int rl_numeric_arg = 0;
 static int rl_editing_mode = 0;
 static int rl_readline_state = 0;
 static Function *rl_directory_rewrite_hook = NULL;
-static char *history_word_delimiters = " \t\n()<>;&|$";
+static char *history_word_delimiters = " \t\n;&()|<>";
 static void
 rl_free_undo_list ()
 {
