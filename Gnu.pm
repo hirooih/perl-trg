@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.33 1997-01-24 15:06:56 hayashi Exp $
+#	$Id: Gnu.pm,v 1.34 1997-02-01 17:40:22 hayashi Exp $
 #
 #	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
 #
@@ -50,7 +50,7 @@ use strict;
 use vars qw($VERSION @ISA %EXPORT_TAGS @EXPORT_OK);
 use Carp;
 
-$VERSION = '0.05';
+$VERSION = '0.06';
 
 require Exporter;
 require DynaLoader;
@@ -148,10 +148,12 @@ my @histvar = qw($history_no_expand_chars
 		 $history_comment_char
 		 $history_quotes_inhibit_expansion );
 
-# Perl 5.002 and 5.003 cause segmentation fault if @histfn is added to
-# %EXPORT_TAGS.  But Perl 5.003_08 does not.  Do Perl 5.002 and 5.003
-# have any restrictions on the number of functions which can be
-# exported?  Or does this module have any trouble?
+# Perl 5.002 and 5.003 cause segmentation fault at end of script, if
+# @histfn is added to %EXPORT_TAGS.  But Perl 5.003_08 and later does
+# not.  Do Perl 5.002 and 5.003 have any restrictions on the number of
+# functions which can be exported?  Or does this module have any
+# trouble?
+if ($] < 5.00308) {
 %EXPORT_TAGS = (
 		 base_function		=> \@basefn,
 
@@ -160,13 +162,23 @@ my @histvar = qw($history_no_expand_chars
   		 callback_function	=> \@cbfn,
   		 completion_function	=> \@cmplfn,
   		 history_function	=> \@histvar,
-# 		 history_function	=> [ @histfn, @histvar ],
-#		 all			=> [ @basefn, @bindfn, @miscfn,
-#  					     @cbfn, @cmplfn,
-#					     @histfn, @histvar ],
 		 all			=> [ @basefn, @bindfn, @miscfn,
   					     @cbfn, @cmplfn, @histvar ],
 	       );
+} else {
+%EXPORT_TAGS = (
+		 base_function		=> \@basefn,
+
+  		 keybind_function	=> \@bindfn,
+  		 misc_function		=> \@miscfn,
+  		 callback_function	=> \@cbfn,
+  		 completion_function	=> \@cmplfn,
+ 		 history_function	=> [ @histfn, @histvar ],
+		 all			=> [ @basefn, @bindfn, @miscfn,
+  					     @cbfn, @cmplfn,
+					     @histfn, @histvar ],
+	       );
+}
 
 Exporter::export_ok_tags(qw(base_function	keybind_function
  			    misc_function	callback_function
@@ -289,20 +301,21 @@ sub readline {			# should be ReadLine
     }
 
     # add to history buffer
-    $self->addhistory($line)
-	if (length($line) >= $self->{MinLength});
+    add_history($line) if (length($line) >= $self->{MinLength});
 
     return $line;
 }
 
-=item C<addhistory(LINE1, LINE2, ...)>
+=item C<AddHistory(LINE1, LINE2, ...)>
 
 adds the lines to the history of input, from where it can be used if
 the actual C<readline> is present.
 
 =cut
 
-sub addhistory {		# Why not AddHistory ?
+*addhistory = \&AddHistory;	# for backward compatibility
+
+sub AddHistory {
     shift;
     local($_);
     foreach (@_) {
@@ -502,7 +515,7 @@ minimal interface: C<appname> should be present if the first argument
 to C<new> is recognized, and C<minline> should be present if
 C<MinLine> method is not dummy.  C<autohistory> should be present if
 lines are put into history automatically (maybe subject to
-C<MinLine>), and C<addhistory> if C<addhistory> method is not dummy. 
+C<MinLine>), and C<addHistory> if C<AddHistory> method is not dummy. 
 C<preput> means the second argument to C<readline> method is processed.
 C<getHistory> and C<setHistory> denote that the corresponding methods are 
 present. C<tkRunning> denotes that a Tk application may run while ReadLine
