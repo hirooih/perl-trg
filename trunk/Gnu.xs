@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.50 1997-03-07 15:15:00 hayashi Exp $
+ *	$Id: Gnu.xs,v 1.51 1997-03-10 16:09:43 hayashi Exp $
  *
  *	Copyright (c) 1996,1997 Hiroo Hayashi.  All rights reserved.
  *
@@ -1428,6 +1428,10 @@ _rl_store_function(fn, id)
 	PROTOTYPE: $$
 	CODE:
 	{
+	  /*
+	   * If "fn" is undef, default value of the GNU Readline
+	   * Library is set.
+	   */
 	  ST(0) = sv_newmortal();
 	  if (id < 0 || id >= sizeof(fn_tbl)/sizeof(struct fn_vars)) {
 	    warn("Gnu.xs:_rl_store_function: Illegal `id' value: `%d'", id);
@@ -1445,8 +1449,12 @@ _rl_store_function(fn, id)
 	      fn_tbl[id].callback = newSVsv(fn);
 	    }
 	    *(fn_tbl[id].rlfuncp) = fn_tbl[id].wrapper;
-	  } else
+	  } else {
+	    if (fn_tbl[id].callback) {
+	      SvSetSV(fn_tbl[id].callback, &sv_undef);
+	    }
 	    *(fn_tbl[id].rlfuncp) = fn_tbl[id].defaultfn;
+	  }
 
 	  /* return variable value */
 	  sv_setsv(ST(0), fn);
@@ -1462,6 +1470,6 @@ _rl_fetch_function(id)
 	  if (id < 0 || id >= sizeof(fn_tbl)/sizeof(struct fn_vars)) {
 	    warn("Gnu.xs:_rl_fetch_function: Illegal `id' value: `%d'", id);
 	    /* return undef */
-	  } else if (fn_tbl[id].rlfuncp)
+	  } else if (fn_tbl[id].callback && SvTRUE(fn_tbl[id].callback))
 	    sv_setsv(ST(0), fn_tbl[id].callback);
 	}
