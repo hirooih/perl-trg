@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.42 2001-10-28 04:10:14 hayashi Exp $
+#	$Id: readline.t,v 1.43 2002-03-30 18:13:16 hiroo Exp $
 #
 #	Copyright (c) 2001 Hiroo Hayashi.  All rights reserved.
 #
@@ -13,6 +13,10 @@
 
 BEGIN {print "1..104\n"; $n = 1;}
 END {print "not ok 1\tfail to loading\n" unless $loaded;}
+if ($ENV{PERL_RL}) {
+    warn "You must unset the environment variable \`PERL_RL\'.\n";
+    exit 1;
+}
 
 my $verbose = defined @ARGV && ($ARGV[0] eq 'verbose');
 
@@ -453,7 +457,9 @@ if ($version >= 0x0402) {
     my ($rowsav, $colsav) =  $t->get_screen_size;
     $t->set_screen_size(60, 132);
     my ($row, $col) =  $t->get_screen_size;
-    $res = ($row == 60 && $col == 132); ok('set/get_screen_size');
+    # col=131 on a terminal which does not support auto-wrap function
+    $res = ($row == 60 && ($col == 132 || $col == 131));
+    ok('set/get_screen_size');
     $t->set_screen_size($rowsav, $colsav);
 } else {
     print "ok $n # skipped because GNU Readline Library is older than 4.2.\n";
@@ -631,12 +637,13 @@ $line = $t->readline("filename completion (default)>");
 $res = $line eq 't/comptest/README '; ok('default completion', $line);
 
 $a->{completion_entry_function} = $a->{'username_completion_function'};
-$INSTR = "root\cI\cM";
+my $user = getlogin || 'root';
+$INSTR = "${user}\cI\cM";
 $line = $t->readline("username completion>");
-if ($line eq 'root ') {
+if ($line eq "${user} ") {
     print "ok $n\tusername completion\n"; $n++;
-} elsif ($line eq 'root') {
-    print "ok $n\t# skipped.  It seems that there is a user whose name starts with 'root'\n"; $n++;
+} elsif ($line eq ${user}) {
+    print "ok $n\t# skipped.  It seems that there is no user whose name is '${user}' or there is a user whose name starts with '${user}'\n"; $n++;
 } else {
     print "not ok $n\tusername completion\n"; $n++;
     $ok = 0;
@@ -875,6 +882,8 @@ unless ($verbose) {
 	if $ok;
     exit 0;
 }
+undef $a->{getc_function};
+
 ########################################################################
 # interactive test
 
