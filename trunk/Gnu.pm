@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.19 1997-01-06 15:58:43 hayashi Exp $
+#	$Id: Gnu.pm,v 1.20 1997-01-07 17:28:09 hayashi Exp $
 #
 #	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
 #
@@ -36,8 +36,7 @@ Readline Library Manual' and 'GNU History Library Manual'.
 =cut
 
 use strict;
-#use vars qw($VERSION @ISA %EXPORT_TAGS @EXPORT_OK);
-use vars qw($VERSION @ISA);
+use vars qw($VERSION @ISA %EXPORT_TAGS @EXPORT_OK);
 use Carp;
 
 require Exporter;
@@ -46,9 +45,63 @@ require DynaLoader;
 @ISA = qw(Exporter DynaLoader);
 $VERSION = '0.04';
 
-#%EXPORT_TAGS = (custom_completion => [qw(completion_matches
-#					 list_completion_functon)]);
-#Exporter::export_ok_tags('custom_completion');
+my @basefn = qw( rl_fetch_var		rl_store_var
+		 rl_readline		add_history	history_expand );
+
+my @bindfn = qw( rl_add_defun		rl_make_bare_keymap	rl_copy_keymap
+		 rl_make_keymap		rl_discard_keymap	rl_get_keymap
+		 rl_set_keymap		rl_bind_key
+		 rl_generic_bind	rl_parse_and_bind
+		 rl_read_init_file	rl_do_named_function
+		 rl_function_of_keyseq	rl_invoking_keyseqs
+		 rl_function_dumper	rl_list_funmap_names );
+
+my @miscfn = qw( rl_begin_undo_group	rl_end_undo_group	rl_add_undo
+		 free_undo_list		rl_do_undo		rl_modifying
+
+		 rl_redisplay		rl_forced_update_display
+		 rl_on_new_line		rl_reset_line_state	rl_message
+		 rl_clear_message	rl_insert_text		rl_delete_text
+		 rl_copy_text		rl_key_text 
+
+		 rl_read_key		rl_stuff_char		rl_initialize
+		 rl_reset_terminal	ding );
+
+my @cbfn   = qw( rl_callback_handler_install
+		 rl_callback_read_char
+		 rl_callback_handler_remove );
+
+my @cmplfn = qw( rl_complete_internal	completion_matches
+		 filename_completion_function
+		 username_completion_function
+		 list_completion_function );
+
+my @histfn = qw( using_history		remove_history
+		 replace_history_entry	clear_history		stifle_history
+		 history_is_stifled	where_history		current_history
+		 history_get		history_total_bytes
+
+		 history_set_pos	previous_history	next_history
+
+		 history_search		history_search_prefix
+
+		 read_history_range	write_history		append_history
+		 history_trancate_file );
+
+%EXPORT_TAGS = (
+		base_function		=> \@basefn,
+		keybind_function	=> \@bindfn,
+		misc_function		=> \@miscfn,
+		callback_function	=> \@cbfn,
+		completion_function	=> \@cmplfn,
+		history_function	=> \@histfn,
+		all			=> [ @basefn, @bindfn, @miscfn, @cbfn,
+					     @cmplfn, @histfn ]
+	       );
+
+Exporter::export_ok_tags(qw(base_function	keybind_function
+			    misc_function	callback_function
+			    completion_function	history_function));
 
 bootstrap Term::ReadLine::Gnu $VERSION;
 
@@ -90,7 +143,7 @@ sub new {
 
     my ($instream, $outstream);
     if (!@_) {
-	my ($IN,$OUT) = Term::ReadLine::Stub::findConsole(); # !!!
+	my ($IN,$OUT) = Term::ReadLine::Stub::findConsole();
 	open(IN,"<$IN")   || croak "Cannot open $IN for read";
 	open(OUT,">$OUT") || croak "Cannot open $OUT for write";
 	_rl_set_instream (fileno($instream  = \*IN));
@@ -100,6 +153,7 @@ sub new {
 	_rl_set_outstream(fileno($outstream = shift));
     }
     $Operate_Index = $Next_Operate_Index = undef; # for F_OperateAndGetNext()
+
     # The following is here since it is mostly used for perl input:
 #    $rl_basic_word_break_characters .= '-:+/*,[])}';
 
@@ -322,7 +376,7 @@ sub UnbindKey {
 
 #
 #	a sample custom function
-#	defined in this module for compatibility with Term::ReadLine::Perl
+#	defined in this module for the compatibility with Term::ReadLine::Perl
 #
 sub operate_and_get_next {
     ## Operate - accept the current line and fetch from the
@@ -337,6 +391,9 @@ sub operate_and_get_next {
 
     $Operate_Index = rl_fetch_var('history_base') + where_history();
 }
+
+rl_add_defun('operate-and-get-next', \&operate_and_get_next);
+rl_bind_key(ord "\co", 'operate-and-get-next');
 
 =item C<FetchVar(VARIABLE_NAME), StoreVar(VARIABLE_NAME)>
 
