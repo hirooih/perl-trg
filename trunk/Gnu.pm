@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.61 1999-03-08 16:39:29 hayashi Exp $
+#	$Id: Gnu.pm,v 1.62 1999-03-10 15:47:17 hayashi Exp $
 #
 #	Copyright (c) 1996-1999 Hiroo Hayashi.  All rights reserved.
 #
@@ -1092,14 +1092,15 @@ detail see 'GNU Readline Library Manual'.
 
 	int	ding()
 
-=item C<display_match_list(MATCHES)>
+=item C<display_match_list(MATCHES [,LEN [,MAX]])>
 
-	void	rl_display_match_list(@str)	# GRL 4.0
-	void	rl_display_match_list(\@str)	# GRL 4.0
+	void	rl_display_match_list(\@matches, len = $#maches, max) # GRL 4.0
 
-Since the first element of an array @str as treated as a possible
+Since the first element of an array @matches as treated as a possible
 completion, it is not displayed.  See the descriptions of
 C<completion_matches()>.
+
+When C<MAX> is ommited, the max length of an item in @matches is used.
 
 =back
 
