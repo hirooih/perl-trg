@@ -1,9 +1,9 @@
 #
 #	Makefile.PL for Term::ReadLine::Gnu
 #
-#	$Id: Makefile.PL,v 1.27 2003-03-17 01:26:25 hiroo Exp $
+#	$Id: Makefile.PL,v 1.28 2005-10-01 15:44:06 hiroo Exp $
 #
-#	Copyright (c) 2003 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 2005 Hiroo Hayashi.  All rights reserved.
 #		<hiroo.hayashi@computer.org>
 #
 #	This program is free software; you can redistribute it and/or
@@ -48,7 +48,9 @@ if ($Config{osname} eq 'os2') {
     # I emulate the behavior of the configure script for bash, and don't
     # know why AIX prefers curses.
     # libtermcap.a on HPUX cannot be used for dynamically linked binary.
-    my $PREFER_CURSES = $Config{osname} eq 'aix' || $Config{osname} eq 'hpux';
+    # Old Cygwin may require setting false (0).
+    my $PREFER_CURSES = $Config{osname} eq 'aix' || $Config{osname} eq 'hpux'
+			|| $Config{osname} eq 'cygwin';
     my $TERMCAP_LIB = (! $PREFER_CURSES && &search_lib('-ltermcap'))
 	|| &search_lib('-lncurses')
 	    || &search_lib('-lcurses');
@@ -58,7 +60,8 @@ if ($Config{osname} eq 'os2') {
     $libs = "-lreadline $TERMCAP_LIB";
     # Latest Perl in FreeBSD does not need this hack. (Dec.2002)
     $libs .= ' -lcrypt' if ($Config{osname} =~ /freebsd/i);
-    $lddflags = ($Config{osname} =~ /cygwin/i) ? '-static' : '';
+    # If you are using old Cygwin, enable the following line.
+    #$lddflags = ($Config{osname} =~ /cygwin/i) ? '-static' : '';
 }
 
 # Check version of  GNU Readline Library (for version 4.2 and before)
