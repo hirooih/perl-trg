@@ -1,9 +1,9 @@
 	-*- Indented-text -*-
-$Id: README,v 1.25 2004-10-17 19:54:11 hiroo Exp $
+$Id: README,v 1.26 2006-04-01 17:18:19 hiroo Exp $
 
 Term::ReadLine::Gnu --- GNU Readline Library Wrapper Module
 
-	Copyright (c) 2004 Hiroo Hayashi.  All rights reserved.
+	Copyright (c) 2006 Hiroo Hayashi.  All rights reserved.
 
 	This program is free software; you can redistribute it and/or
 	modify it under the same terms as Perl itself.
@@ -42,10 +42,14 @@ Description:
 	of fixing his module.
 
 Prerequisites:
+	You must have Perl 5.7 or later.  If you have to use old Perl
+	for some reason, use Term::ReadLine::Gnu 1.09.  (I recommend
+	you to use newer Perl.)
+
 	You must have GNU Readline Library Version 2.1 or later.  See
 	INSTALL for more detail.
 
-	By a report GNU Readline Library may not work with perl with
+	A report said GNU Readline Library might not work with perl with
 	sfio.  Since I do not have sfio library, I am not sure.
 
 How to build/install:
@@ -61,6 +65,16 @@ Author:
 
 
 Revision History:
+
+1.16  2006-04-02
+	- fix Makefile.PL to work with the latest Cygwin.
+         (Use 1.15 for old Cygwin.)
+	- readline-5.1 support
+	    new function
+		variable_value
+		reset_screen_size
+	    new variable
+		prefer_env_winsize
 
 1.15  2004-10-17
 	- readline-5.0 support
@@ -87,7 +101,7 @@ Revision History:
           fix typo, etc.)
 
 1.13  2002-07-27
-	- readline-4.2 support
+	- readline-4.3 support
 	    new variables
 		rl_completion_suppress_append
 		rl_completion_mark_symlink_dirs
