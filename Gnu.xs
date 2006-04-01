@@ -1,9 +1,9 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.108 2004-10-17 17:37:53 hiroo Exp $
+ *	$Id: Gnu.xs,v 1.109 2006-04-01 15:03:59 hiroo Exp $
  *
- *	Copyright (c) 2004 Hiroo Hayashi.  All rights reserved.
+ *	Copyright (c) 2006 Hiroo Hayashi.  All rights reserved.
  *
  *	This program is free software; you can redistribute it and/or
  *	modify it under the same terms as Perl itself.
@@ -43,7 +43,7 @@ extern "C" {
 #  endif
 #endif /* !__STDC__ */
 
-typedef char * t_xstr;		/* string which must be xfreeed */
+typedef char *	t_xstr;		/* string which must be xfreed */
 
 /*
  * compatibility definitions
@@ -57,6 +57,7 @@ extern Function *rl_last_func;
 extern void rl_extend_line_buffer PARAMS((int));
 extern char **rl_funmap_names PARAMS((void));
 
+/* dummy variable/function definition */
 static int rl_erase_empty_line = 0;
 static int rl_catch_signals = 1;
 static int rl_catch_sigwinch = 1;
@@ -90,8 +91,9 @@ static int rl_gnu_readline_p = 0;
 
 /* features introduced by GNU Readline 4.2 */
 #if (RL_READLINE_VERSION < 0x0402)
-/* Provide backwards-compatible entry points for old function names
-   which are rename from readline-4.2. */
+static void rl_set_screen_size(int row, int col){};
+static void rl_get_screen_size(int *row, int *col){};
+
 typedef int rl_command_func_t PARAMS((int, int));
 typedef char *rl_compentry_func_t PARAMS((const char *, int));
 
@@ -102,6 +104,9 @@ static int rl_editing_mode = 0;
 static int rl_readline_state = 0;
 static Function *rl_directory_rewrite_hook = NULL;
 static char *history_word_delimiters = " \t\n;&()|<>";
+
+/* Provide backwards-compatible entry points for old function names
+   which are rename from readline-4.2. */
 static void
 rl_free_undo_list ()
 {
@@ -114,14 +119,12 @@ rl_crlf ()
   return crlf ();
 }
 
-#if (RL_VERSION_MAJOR >= 4)
 static void
 rl_tty_set_default_bindings (keymap)
 Keymap keymap;
 {
   rltty_set_default_bindings (keymap);
 }
-#endif /* (RL_VERSION_MAJOR >= 4) */
 
 static int
 rl_ding ()
@@ -181,11 +184,28 @@ static int rl_completion_found_quote = 0;
 static Function *rl_completion_word_break_hook = NULL;
 #endif /* (RL_VERSION_MAJOR < 5) */
 
+#if (RL_READLINE_VERSION < 0x0501)
+/* features introduced by GNU Readline 5.1 */
+static int rl_prefer_env_winsize = 0;
+static char *rl_variable_value(CONST char * v){ return NULL; };
+static void rl_reset_screen_size(){};
+
+#endif /* (RL_READLINE_VERSION < 0x0501) */
+
 /*
  * utility/dummy functions
  */                                                                                
+/* from GNU Readline:xmalloc.h */
+#ifndef PTR_T
+#ifdef __STDC__
+#  define PTR_T void *
+#else
+#  define PTR_T char *
+#endif
+#endif /* !PTR_T */
+
 /* from GNU Readline:xmalloc.c */
-extern char *xmalloc PARAMS((int));
+extern PTR_T xmalloc PARAMS((int));
 extern char *tgetstr PARAMS((const char *, char **));
 extern int tputs PARAMS((const char *, int, int (*)(int)));
 
@@ -198,12 +218,12 @@ extern int tputs PARAMS((const char *, int, int (*)(int)));
  */
 #ifdef OS2_USEDLL
 /* from GNU Readline:xmalloc.c */
-extern char *xfree PARAMS((char *));
+extern PTR_T xfree PARAMS((PTR_T));
 
 #else /* not OS2_USEDLL */
 static void
 xfree (string)
-     char *string;
+     PTR_T string;
 {
   if (string)
     free (string);
@@ -212,7 +232,7 @@ xfree (string)
 
 static char *
 dupstr(s)			/* duplicate string */
-     char *s;
+     CONST char * s;
 {
   /*
    * Use xmalloc(), because allocated block will be freed in the GNU
@@ -361,7 +381,8 @@ static struct int_vars {
   { &rl_completion_quote_character,		0, 0 },	/* 34 */
   { &rl_completion_suppress_quote,		0, 0 },	/* 35 */
   { &rl_completion_found_quote,			0, 0 },	/* 36 */
-  { &rl_completion_mark_symlink_dirs,		0, 0 }	/* 37 */
+  { &rl_completion_mark_symlink_dirs,		0, 0 },	/* 37 */
+  { &rl_prefer_env_winsize,			0, 0 }	/* 38 */
 };
 
 /*
@@ -1287,7 +1308,7 @@ rl_readline(prompt = NULL)
  #
 rl_command_func_t *
 rl_add_defun(name, fn, key = -1)
-	const char *	name
+	CONST char *	name
 	SV *		fn
 	int key
     PROTOTYPE: $$;$
@@ -1821,7 +1842,7 @@ rl_kill_text(start = 0, end = rl_end)
 
 void
 rl_push_macro_input(macro)
-	const char *	macro
+	CONST char *	macro
     PROTOTYPE: $
     CODE:
 	rl_push_macro_input(dupstr(macro));
@@ -1868,8 +1889,6 @@ rl_set_keyboard_input_timeout(usec)
  #	2.4.9 Terminal Management
  #
 
-#if (RL_VERSION_MAJOR >= 4)
-
 void
 rl_prep_terminal(meta_flag)
 	int meta_flag
@@ -1885,8 +1904,6 @@ _rl_tty_set_default_bindings(kmap = rl_get_keymap())
     PROTOTYPE: ;$
     CODE:
 	rl_tty_set_default_bindings(kmap);
-
-#endif /* (RL_VERSION_MAJOR >= 4) */
 
 #if (RL_VERSION_MAJOR >= 5)
 void
@@ -2018,6 +2035,12 @@ rl_variable_bind(name, value)
  # rl_variable_dumper is documented by Readline 4.2,
  # but have been implemented for 2.2.1.
 
+ # Do not free the string returned.
+char *
+rl_variable_value(variable)
+	CONST char *	variable
+    PROTOTYPE: $
+
 void
 rl_variable_dumper(readable = 0)
 	int readable
@@ -2103,8 +2126,6 @@ void
 rl_resize_terminal()
     PROTOTYPE:
 
-#if (RL_READLINE_VERSION >= 0x0402)
-
 void
 rl_set_screen_size(rows, cols)
 	int rows
@@ -2123,7 +2144,9 @@ rl_get_screen_size()
 	  PUSHs(sv_2mortal(newSViv(cols)));
 	}
 
-#endif /* (RL_READLINE_VERSION >= 0x0402) */
+void
+rl_reset_screen_size()
+    PROTOTYPE:
 
 int
 rl_set_signals()
@@ -2156,7 +2179,7 @@ _rl_completion_mode(function)
 
 void
 rl_completion_matches(text, fn = NULL)
-	const char *	text
+	CONST char *	text
 	SV *		fn
     PROTOTYPE: $;$
     PPCODE:
