@@ -1,9 +1,9 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.95 2004-10-17 17:44:43 hiroo Exp $
+#	$Id: Gnu.pm,v 1.96 2006-04-01 16:59:53 hiroo Exp $
 #
-#	Copyright (c) 2004 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 2006 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -73,7 +73,7 @@ END
     use DynaLoader;
     use vars qw($VERSION @ISA @EXPORT_OK);
 
-    $VERSION = '1.15';
+    $VERSION = '1.16';
 
     # Term::ReadLine::Gnu::AU makes a function in
     # `Term::ReadLine::Gnu::XS' as a method.
@@ -539,6 +539,7 @@ use vars qw(%_rl_vars);
        rl_completion_suppress_quote		=> ['I', 35], # GRL 5.0
        rl_completion_found_quote		=> ['I', 36], # GRL 5.0
        rl_completion_mark_symlink_dirs		=> ['I', 37], # GRL 4.3
+       rl_prefer_env_winsize			=> ['I', 38], # GRL 5.1
 
        rl_startup_hook				=> ['F', 0],
        rl_event_hook				=> ['F', 1],
@@ -1098,6 +1099,10 @@ When C<MAX> is ommited, the max length of an item in @matches is used.
 
 	int	rl_variable_bind(const str variable, const str value)
 
+=item C<variable_value(VARIABLE)>
+
+	str	rl_variable_value(const str variable)	# GRL 5.1
+
 =item C<variable_dumper(READABLE)>
 
 	int	rl_variable_dumper(int readline)
@@ -1159,6 +1164,10 @@ When C<MAX> is ommited, the max length of an item in @matches is used.
 =item C<get_screen_size()>
 
 	(int rows, int cols)	rl_get_screen_size()	# GRL 4.2
+
+=item C<reset_screen_size()>
+
+	void	rl_reset_screen_size()	# GRL 5.1
 
 =item C<set_signals>
 
@@ -1438,6 +1447,8 @@ Examples:
 	str rl_readline_name
 	filehandle rl_instream
 	filehandle rl_outstream
+	int rl_prefer_env_winsize (GRL 5.1)
+	pfunc rl_last_func (GRL 4.2)
 	pfunc rl_startup_hook
 	pfunc rl_pre_input_hook (GRL 4.0)
 	pfunc rl_event_hook
@@ -1445,7 +1456,6 @@ Examples:
 	pfunc rl_redisplay_function
 	pfunc rl_prep_term_function (GRL 4.2)
 	pfunc rl_deprep_term_function (GRL 4.2)
-	pfunc rl_last_func (GRL 4.2)
 	Keymap rl_executing_keymap (read only)
 	Keymap rl_binding_keymap (read only)
 	str rl_executing_macro (GRL 4.2)
