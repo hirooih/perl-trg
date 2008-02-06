@@ -1,15 +1,15 @@
 #
 #	Makefile.PL for Term::ReadLine::Gnu
 #
-#	$Id: Makefile.PL,v 1.28 2005-10-01 15:44:06 hiroo Exp $
+#	$Id: Makefile.PL,v 1.29 2008-02-06 14:50:09 hiroo Exp $
 #
-#	Copyright (c) 2005 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 2008 Hiroo Hayashi.  All rights reserved.
 #		<hiroo.hayashi@computer.org>
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
 #
-#	OS/2 support is contributed by Ilya Zakharevich.
+#	OS/2 support was contributed by Ilya Zakharevich.
 #		<ilya@math.ohio-state.edu>
 #
 # Usage: perl Makefile.PL [--prefix=...] [--includedir=...] [--libdir=...]
@@ -186,6 +186,14 @@ EOM
     # execute it and get version
     my $rlver;
     chomp($rlver = `./rlver`);
+    # MacOS X 10.4 has libedit by default.
+    if ($rlver =~ /EditLine/) {
+	die <<EOM;
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+The libreadline you use is libedit library.  Use the GNU Readline Library.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+EOM
+    }
     print "It seems that you have the GNU Readline Library version $rlver.\n";
     # $rlver may be '8.21-beta3' or '4.2a'
     return $rlver =~ /(\d+)\.(\d+)/;
