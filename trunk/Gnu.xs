@@ -1,9 +1,9 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.110 2006-04-01 16:53:29 hiroo Exp $
+ *	$Id: Gnu.xs,v 1.111 2008-02-06 14:48:59 hiroo Exp $
  *
- *	Copyright (c) 2006 Hiroo Hayashi.  All rights reserved.
+ *	Copyright (c) 2008 Hiroo Hayashi.  All rights reserved.
  *
  *	This program is free software; you can redistribute it and/or
  *	modify it under the same terms as Perl itself.
@@ -2665,14 +2665,18 @@ _rl_store_iostream(stream, id)
 	{
 	  switch (id) {
 	  case 0:
+#if 0	  /* PerlIO_releaseFILE must be called only before closing FILE *. */
 	    if (instreamPIO != NULL)
 	      PerlIO_releaseFILE(instreamPIO, rl_instream);
+#endif
 	    rl_instream = PerlIO_findFILE(stream);
 	    RETVAL = instreamPIO = stream;
 	    break;
 	  case 1:
+#if 0	  /* PerlIO_releaseFILE must be called only before closing FILE *. */
 	    if (outstreamPIO != NULL)
 	      PerlIO_releaseFILE(outstreamPIO, rl_outstream);
+#endif
 	    rl_outstream = PerlIO_findFILE(stream);
 	    RETVAL = outstreamPIO = stream;
 #ifdef __CYGWIN__
@@ -2694,6 +2698,8 @@ _rl_store_iostream(stream, id)
 	    XSRETURN_UNDEF;
 	    break;
 	  }
+	  PerlIO_debug("TRG:store_iostream id %d fd %d\n",
+		       id, PerlIO_fileno(RETVAL));
 	}
     OUTPUT:
 	RETVAL
@@ -2722,6 +2728,8 @@ _rl_fetch_iostream(id)
 	    XSRETURN_UNDEF;
 	    break;
 	  }
+	  PerlIO_debug("TRG:fetch_iostream id %d fd %d\n", 
+		       id, PerlIO_fileno(RETVAL));
 	}
     OUTPUT:
 	RETVAL
