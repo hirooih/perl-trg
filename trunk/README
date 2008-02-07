@@ -1,9 +1,9 @@
 	-*- Indented-text -*-
-$Id: README,v 1.26 2006-04-01 17:18:19 hiroo Exp $
+$Id: README,v 1.27 2008-02-07 14:09:14 hiroo Exp $
 
 Term::ReadLine::Gnu --- GNU Readline Library Wrapper Module
 
-	Copyright (c) 2006 Hiroo Hayashi.  All rights reserved.
+	Copyright (c) 2008 Hiroo Hayashi.  All rights reserved.
 
 	This program is free software; you can redistribute it and/or
 	modify it under the same terms as Perl itself.
@@ -66,6 +66,14 @@ Author:
 
 Revision History:
 
+1.17  2008-02-07
+	- Unnecessary PerlIO_releaseFILE() calls are removed.  This
+          fix prevents `make test' from failing on Perl 5.10.
+	- Makefile.PL now fails with the EditLine Library on MacOS X.
+          Use the GNU Readline Library.
+	- tested with readline-5.2 (which has no new feature to be
+          supported).
+
 1.16  2006-04-02
 	- fix Makefile.PL to work with the latest Cygwin.
          (Use 1.15 for old Cygwin.)
@@ -118,7 +126,7 @@ Revision History:
 	  terminal, or a terminal with wrong TERM environment variable
 	  setting.
 	- update documents
-	- improve coding style of Gnu.xs. (indentation stype, more
+	- improve coding style of Gnu.xs. (indentation style, more
           typemap, etc.)
 
 1.11  2001-10-27
@@ -316,22 +324,17 @@ Revision History:
 	- support readline-2.2
 		add rl_unbind_function_in_map() and rl_unbind_command_in_map()
 		Makefile.PL checks the version of the GNU Readline Library
-
 	- define rl_save_prompt() and rl_restore_prompt()
-
 	- document fix
 		'Changes' file is removed.  It is merged into README file.
 		fix a bug in a sample program of rl_completion_entry_function
 
 1.00  1998-04-15
 	- the 1st major release
-
 	- ornaments feature is now on by default as recent
 	  Term::ReadLine and Term::ReadLine::Perl
-
 	- document fix
 		remove description related to mymalloc
-
 	- add ornaments-change function to t/readline.t which
 	  demonstrates rl_message().
 
