@@ -1,9 +1,9 @@
 # -*- perl -*-
 #	history.t --- Term::ReadLine:GNU History Library Test Script
 #
-#	$Id: history.t,v 1.9 2003-03-16 05:22:39 hiroo Exp $
+#	$Id: history.t,v 1.10 2008-02-17 06:26:31 hiroo Exp $
 #
-#	Copyright (c) 2002 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 2008 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -14,6 +14,7 @@
 BEGIN {
     print "1..82\n"; $n = 1;
     $ENV{PERL_RL} = 'Gnu';	# force to use Term::ReadLine::Gnu
+    $ENV{LANG} = 'C';
 }
 END {print "not ok $n\n" unless $loaded;}
 
