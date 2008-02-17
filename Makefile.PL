@@ -1,7 +1,7 @@
 #
 #	Makefile.PL for Term::ReadLine::Gnu
 #
-#	$Id: Makefile.PL,v 1.29 2008-02-06 14:50:09 hiroo Exp $
+#	$Id: Makefile.PL,v 1.30 2008-02-17 06:20:24 hiroo Exp $
 #
 #	Copyright (c) 2008 Hiroo Hayashi.  All rights reserved.
 #		<hiroo.hayashi@computer.org>
@@ -23,6 +23,10 @@ use Config;
 use Getopt::Long;
 
 my ($defs, $libs, $lddflags, $RLLIB, $RLINC);
+
+# exit 0 before creating the Makefile to be CPAN Tests friendly
+# see http://cpantest.grango.org/wiki/CPANAuthorNotes
+my $err = $ENV{AUTOMATED_TESTING} ? 0 : 1;
 
 $defs = ($Config{strings} =~ m|/string.h$|) ? '-DHAVE_STRING_H' : '';
 
@@ -54,12 +58,16 @@ if ($Config{osname} eq 'os2') {
     my $TERMCAP_LIB = (! $PREFER_CURSES && &search_lib('-ltermcap'))
 	|| &search_lib('-lncurses')
 	    || &search_lib('-lcurses');
-    die "Could not find neither libtermcap.a, libncurses.a, or libcurses.\n"
-	unless $TERMCAP_LIB;
 
+    unless ($TERMCAP_LIB) {
+	warn "Could not find neither libtermcap.a, libncurses.a, or libcurses.\n";
+	exit $err;
+    } 
+ 
     $libs = "-lreadline $TERMCAP_LIB";
     # Latest Perl in FreeBSD does not need this hack. (Dec.2002)
     $libs .= ' -lcrypt' if ($Config{osname} =~ /freebsd/i);
+    $lddflags = '';
     # If you are using old Cygwin, enable the following line.
     #$lddflags = ($Config{osname} =~ /cygwin/i) ? '-static' : '';
 }
@@ -162,7 +170,7 @@ EOF
     print $comp_cmd, "\n";
     system($comp_cmd);
     if ($?) {
-	die <<EOM;
+	warn <<EOM;
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Could not compile $frlver.
 
@@ -181,6 +189,7 @@ here.  Update it to version 2.1 and/or later.
 Read INSTALL for more details.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 EOM
+    exit $err;
     }
 
     # execute it and get version
@@ -188,11 +197,12 @@ EOM
     chomp($rlver = `./rlver`);
     # MacOS X 10.4 has libedit by default.
     if ($rlver =~ /EditLine/) {
-	die <<EOM;
+	warn <<EOM;
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-The libreadline you use is libedit library.  Use the GNU Readline Library.
+The libreadline you are using is the libedit library.  Use the GNU Readline Library.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 EOM
+	exit $err;
     }
     print "It seems that you have the GNU Readline Library version $rlver.\n";
     # $rlver may be '8.21-beta3' or '4.2a'
