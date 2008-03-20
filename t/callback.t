@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	callback.t - Test script for Term::ReadLine:GNU callback function
 #
-#	$Id: callback.t,v 1.6 2003-03-16 05:22:39 hiroo Exp $
+#	$Id: callback.t,v 1.7 2008-03-20 13:56:02 hiroo Exp $
 #
 #	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
 #
@@ -37,16 +37,16 @@ print defined $attribs ? "ok $n\n" : "not ok $n\n"; $n++;
 my ($version) = $attribs->{library_version} =~ /(\d+\.\d+)/;
 
 ########################################################################
-# check Tk is installed
+# check Tk is installed and X Window is available
 #disable the warning, "Too late to run INIT block at..."
 $^W = 0;
-if (eval "use Tk; 1") {
+if (eval "use Tk; 1" && $ENV{DISPLAY} ne '') {
     print "ok $n\tuse Tk\n"; $n++;
 } else {
-    print "ok $n\t# skipped since Tk is not installed.\n"; $n++;
-    print "ok $n\t# skipped since Tk is not installed.\n"; $n++;
-    print "ok $n\t# skipped since Tk is not installed.\n"; $n++;
-    print "ok $n\t# skipped since Tk is not installed.\n"; $n++;
+    print "ok $n\t# skipped since Tk is not available.\n"; $n++;
+    print "ok $n\t# skipped since Tk is not available.\n"; $n++;
+    print "ok $n\t# skipped since Tk is not available.\n"; $n++;
+    print "ok $n\t# skipped since Tk is not available.\n"; $n++;
     exit 0;
 }
 $^W = 1; 
