@@ -1,9 +1,9 @@
 #
 #	Makefile.PL for Term::ReadLine::Gnu
 #
-#	$Id: Makefile.PL,v 1.30 2008-02-17 06:20:24 hiroo Exp $
+#	$Id: Makefile.PL,v 1.31 2009-02-27 13:30:47 hiroo Exp $
 #
-#	Copyright (c) 2008 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 2009 Hiroo Hayashi.  All rights reserved.
 #		<hiroo.hayashi@computer.org>
 #
 #	This program is free software; you can redistribute it and/or
@@ -91,6 +91,7 @@ WriteMakefile
      NAME	  => 'Term::ReadLine::Gnu',
      VERSION_FROM => 'Gnu.pm',
      LIBS	  => [ "$RLLIB $libs" ],
+     LDDLFLAGS	  => "$RLLIB $Config{lddlflags}",
      dynamic_lib  => { OTHERLDFLAGS => $lddflags },
      DEFINE	  => $defs,
      ($Config{osname} eq 'os2' ?
