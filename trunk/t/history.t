@@ -1,9 +1,9 @@
 # -*- perl -*-
 #	history.t --- Term::ReadLine:GNU History Library Test Script
 #
-#	$Id: history.t,v 1.10 2008-02-17 06:26:31 hiroo Exp $
+#	$Id: history.t,v 1.11 2009-02-27 12:15:01 hiroo Exp $
 #
-#	Copyright (c) 2008 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 2009 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -433,6 +433,7 @@ print $ret eq $exp ? "ok $n\n" : "not ok $n\n"; $n++;
 @list_set = ('red yellow', 'blue red', 'yellow blue', 'green blue');
 $t->SetHistory(@list_set);
 $t->history_set_pos(2);
+# equivalent with 'history_no_expand_chars = "...!..."'
 $attribs->{history_inhibit_expansion_function} = sub {
     my ($string, $index) = @_;
     substr($string, $index + 1, 1) eq '!'; # inhibit expanding '!!'
@@ -442,9 +443,14 @@ print $t->history_expand('!!') eq '!!'
     ? "ok $n\n" : "not ok $n\n"; $n++;
 print $t->history_expand(' !r') eq ' red yellow'
     ? "ok $n\n" : "not ok $n\n"; $n++;
-print $t->history_expand('!! !y') eq 'green blue yellow blue'
-    ? "ok $n\n" : "not ok $n\n"; $n++;
-
+# strange behavior was fixed on version 6.0
+if ($version < 6.0) {
+    print $t->history_expand('!! !y') eq 'green blue yellow blue'
+	? "ok $n\n" : "not ok $n\n"; $n++;
+} else {
+    print $t->history_expand('!! !y') eq '!! yellow blue'
+	? "ok $n\n" : "not ok $n\n"; $n++;
+}
 end_of_test:
 
 exit 0;
