@@ -15,6 +15,7 @@ t/comptest/012345	A file for t/readline.t
 t/comptest/023456	A file for t/readline.t
 t/comptest/README	A file for t/readline.t
 t/comptest/a_b		A file for t/readline.t
+t/00checkver.pl	a version check script
 t/button.pl	a test script for t/callback.t
 t/callback.t	a test script for the GNU Readline callback function
 t/history.t	a test script for the GNU History Library function
