@@ -1,9 +1,9 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.97 2008-02-07 14:12:23 hiroo Exp $
+#	$Id: Gnu.pm,v 1.98 2009-02-27 12:46:45 hiroo Exp $
 #
-#	Copyright (c) 2008 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 2009 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -73,7 +73,7 @@ END
     use DynaLoader;
     use vars qw($VERSION @ISA @EXPORT_OK);
 
-    $VERSION = '1.17';
+    $VERSION = '1.18';
 
     # Term::ReadLine::Gnu::AU makes a function in
     # `Term::ReadLine::Gnu::XS' as a method.
@@ -95,6 +95,9 @@ END
 		    RL_STATE_MACROINPUT RL_STATE_MACRODEF
 		    RL_STATE_OVERWRITE RL_STATE_COMPLETING
 		    RL_STATE_SIGHANDLER RL_STATE_UNDOING
+		    RL_STATE_INPUTPENDING RL_STATE_TTYCSAVED
+		    RL_STATE_CALLBACK RL_STATE_VIMOTION
+		    RL_STATE_MULTIKEY RL_STATE_VICMDONCE
 		    RL_STATE_DONE);
 
     bootstrap Term::ReadLine::Gnu $VERSION; # DynaLoader
@@ -130,6 +133,9 @@ use vars qw(%Attribs %Features);
 
 sub Attribs { \%Attribs; }
 sub Features { \%Features; }
+
+# keep rl_readline_version value for efficiency
+my $readline_version;
 
 #
 #	GNU Readline/History Library constant definition
@@ -179,7 +185,15 @@ sub RL_STATE_OVERWRITE		{ 0x02000; } # overwrite mode
 sub RL_STATE_COMPLETING		{ 0x04000; } # doing completion
 sub RL_STATE_SIGHANDLER		{ 0x08000; } # in readline sighandler
 sub RL_STATE_UNDOING		{ 0x10000; } # doing an undo
-sub RL_STATE_DONE		{ 0x80000; } # done; accepted line
+# The following RL_STATE_* are defined since TRL 6.0
+sub RL_STATE_INPUTPENDING	{ 0x020000; } #	rl_execute_next called
+sub RL_STATE_TTYCSAVED		{ 0x040000; } #	tty special chars saved
+sub RL_STATE_CALLBACK		{ 0x080000; } #	using the callback interface
+sub RL_STATE_VIMOTION		{ 0x100000; } #	reading vi motion arg
+sub RL_STATE_MULTIKEY		{ 0x200000; } #	reading multiple-key command
+sub RL_STATE_VICMDONCE		{ 0x400000; } #	entered vi command mode at least once
+# The value was changed since TRL 6.0
+sub RL_STATE_DONE		{ $readline_version < 0x0600 ? 0x80000 : 0x800000; } # done; accepted line
 
 #
 #	Methods Definition
@@ -249,6 +263,7 @@ sub new {
 	$Attribs{instream} = shift;
 	$Attribs{outstream} = shift;
     }
+    $readline_version = $Attribs{readline_version};
 
     $self;
 }
@@ -499,6 +514,7 @@ use vars qw(%_rl_vars);
        history_search_delimiter_chars		=> ['S', 12],
        rl_executing_macro			=> ['S', 13], # GRL4.2
        history_word_delimiters			=> ['S', 14], # GRL4.2
+       rl_display_prompt			=> ['S', 15], # GRL6.0
 
        rl_point					=> ['I', 0],
        rl_end					=> ['I', 1],
@@ -540,6 +556,8 @@ use vars qw(%_rl_vars);
        rl_completion_found_quote		=> ['I', 36], # GRL 5.0
        rl_completion_mark_symlink_dirs		=> ['I', 37], # GRL 4.3
        rl_prefer_env_winsize			=> ['I', 38], # GRL 5.1
+       rl_sort_completion_matches		=> ['I', 39], # GRL 6.0
+       rl_completion_invoking_key		=> ['C', 40], # GRL 6.0
 
        rl_startup_hook				=> ['F', 0],
        rl_event_hook				=> ['F', 1],
@@ -1055,7 +1073,17 @@ detail see 'GNU Readline Library Manual'.
 
 =over 4
 
-=item C<replace_line(TEXT [,CLEAR_UNDO]>
+=item C<save_state(READLINE_STATE)>
+
+	NOT IMPLEMENTED YET!
+	int	rl_save_state(struct readline_state *sp)	# GRL 6.0
+
+=item C<restore_state(READLINE_STATE)>
+
+	NOT IMPLEMENTED YET!
+	int	rl_restore_state(struct readline_state *sp)	# GRL 6.0
+
+=item C<replace_line(TEXT [,CLEAR_UNDO])>
 
 	int	rl_replace_line(str text, int clear_undo)	# GRL 4.3
 
@@ -1152,6 +1180,10 @@ When C<MAX> is ommited, the max length of an item in @matches is used.
 =item C<reset_after_signal>
 
 	void	rl_reset_after_signal()	# GRL 4.0
+
+=item C<echo_signal_char>
+
+	void	rl_echo_signal_char(int sig)	# GRL 6.0
 
 =item C<resize_terminal>
 
@@ -1439,6 +1471,7 @@ Examples:
 	int rl_dispatching (GRL 4.2)
 	int rl_erase_empty_line (GRL 4.0)
 	str rl_prompt (read only)
+	str rl_display_prompt (GRL 6.0)
 	int rl_already_prompted (GRL 4.1)
 	str rl_library_version (read only)
 	int rl_readline_version (read only)
@@ -1494,7 +1527,9 @@ Examples:
 	int rl_filename_completion_desired
 	int rl_filename_quoting_desired
 	int rl_attempted_completion_over (GRL 4.2)
+	int rl_sort_completion_matches (GRL 6.0)
 	int rl_completion_type (GRL 4.2)
+	int rl_completion_invoking_key (GRL 6.0)
 	int rl_inhibit_completion
 	pfunc rl_ignore_some_completion_function
 	pfunc rl_directory_completion_hook
