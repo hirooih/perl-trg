@@ -1,9 +1,9 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.111 2008-02-06 14:48:59 hiroo Exp $
+ *	$Id: Gnu.xs,v 1.112 2009-02-27 12:44:41 hiroo Exp $
  *
- *	Copyright (c) 2008 Hiroo Hayashi.  All rights reserved.
+ *	Copyright (c) 2009 Hiroo Hayashi.  All rights reserved.
  *
  *	This program is free software; you can redistribute it and/or
  *	modify it under the same terms as Perl itself.
@@ -220,6 +220,19 @@ static void rl_reset_screen_size(){}
 
 #endif /* (RL_READLINE_VERSION < 0x0501) */
 
+#if (RL_VERSION_MAJOR < 6)
+/* features introduced by GNU Readline 6.0 */
+static char *rl_display_prompt = NULL;
+static int rl_sort_completion_matches = 0;
+static int rl_completion_invoking_key = 0;
+/*
+  NOT IMPLEMENTED YET !!!FIXIT!!!
+static int rl_save_state(struct readline_state *sp){ return 0; }
+static int rl_restore_state(struct readline_state *sp){ return 0; }
+ */
+static void rl_echo_signal_char(int sig){}
+#endif /* (RL_VERSION_MAJOR < 6) */
+
 /*
  * utility/dummy functions
  */                                                                                
@@ -354,7 +367,8 @@ static struct str_vars {
   { &history_search_delimiter_chars,			0, 0 },	/* 12 */
 
   { &rl_executing_macro,				0, 0 },	/* 13 */
-  { &history_word_delimiters,				0, 0 }	/* 14 */
+  { &history_word_delimiters,				0, 0 },	/* 14 */
+  { &rl_display_prompt,					0, 0 }	/* 15 */
 };
 
 /*
@@ -410,7 +424,9 @@ static struct int_vars {
   { &rl_completion_suppress_quote,		0, 0 },	/* 35 */
   { &rl_completion_found_quote,			0, 0 },	/* 36 */
   { &rl_completion_mark_symlink_dirs,		0, 0 },	/* 37 */
-  { &rl_prefer_env_winsize,			0, 0 }	/* 38 */
+  { &rl_prefer_env_winsize,			0, 0 },	/* 38 */
+  { &rl_sort_completion_matches,		0, 0 },	/* 39 */
+  { &rl_completion_invoking_key,		1, 0 }	/* 40 */
 };
 
 /*
@@ -2101,6 +2117,11 @@ rl_free_line_state()
 void
 rl_reset_after_signal()
     PROTOTYPE:
+
+void
+rl_echo_signal_char(sig)
+	int sig
+    PROTOTYPE: $
 
 void
 rl_resize_terminal()
