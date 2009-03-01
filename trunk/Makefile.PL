@@ -1,7 +1,7 @@
 #
 #	Makefile.PL for Term::ReadLine::Gnu
 #
-#	$Id: Makefile.PL,v 1.31 2009-02-27 13:30:47 hiroo Exp $
+#	$Id: Makefile.PL,v 1.32 2009-03-01 02:57:15 hiroo Exp $
 #
 #	Copyright (c) 2009 Hiroo Hayashi.  All rights reserved.
 #		<hiroo.hayashi@computer.org>
@@ -21,12 +21,17 @@ use strict;
 use ExtUtils::MakeMaker;
 use Config;
 use Getopt::Long;
-
+use 5.007; use 5.7.0;		# use version 1.09 for older Perl
 my ($defs, $libs, $lddflags, $RLLIB, $RLINC);
 
-# exit 0 before creating the Makefile to be CPAN Tests friendly
-# see http://cpantest.grango.org/wiki/CPANAuthorNotes
+# exit 0 before creating the Makefile to be CPAN Testers friendly
+# see http://wiki.cpantester.org/wiki/CPANAuthorNotes
 my $err = $ENV{AUTOMATED_TESTING} ? 0 : 1;
+# test /dev/tty for CPAN Testers
+if ($ENV{AUTOMATED_TESTING} && !open(SESAMI, '/dev/tty')) {
+    warn "cannot open /dev/tty\n";
+    exit 0;
+}
 
 $defs = ($Config{strings} =~ m|/string.h$|) ? '-DHAVE_STRING_H' : '';
 
