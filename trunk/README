@@ -1,5 +1,5 @@
 	-*- Indented-text -*-
-$Id: README,v 1.28 2009-02-27 13:31:39 hiroo Exp $
+$Id: README,v 1.29 2009-03-20 16:37:36 hiroo Exp $
 
 Term::ReadLine::Gnu --- GNU Readline Library Wrapper Module
 
@@ -65,6 +65,18 @@ Author:
 
 
 Revision History:
+
+1.19  2009-03-21
+	- make sure the outstream fd inside the readline library is in
+          sync (see http://bugs.debian.org/236018)
+	- fixes to be more CPAN Testers friendly
+	  - t/readline.t does not use visible bell for "make test"
+	  - Makefile.PL requires perl 5.7.0 or later.  (Use
+	    Term::ReadLine::Gnu-1.09 for older Perl.)
+	  - Makefile.PL exits 0 when /dev/tty cannot be opened.
+	- INSTALL
+	    add description of the -DPERL_USE_SAFE_PUTENV issue.  If
+	    you encounter a segmentation fault, read it.
 
 1.18  2009-02-27
 	- better error checking of Makefile.PL for automatic testing
