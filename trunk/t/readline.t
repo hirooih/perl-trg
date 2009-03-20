@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.45 2008-02-17 06:26:31 hiroo Exp $
+#	$Id: readline.t,v 1.46 2009-03-20 14:17:27 hiroo Exp $
 #
 #	Copyright (c) 2008 Hiroo Hayashi.  All rights reserved.
 #
@@ -866,7 +866,9 @@ $t->ornaments('md,me,,');
 print $OUT "\n" unless defined $t->readline("bold>");
 $t->ornaments('mr,me,,');
 print $OUT "\n" unless defined $t->readline("reverse>");
-$t->ornaments('vb,,,');
+# It seems that on some systems a visible bell cannot be redirected
+# to /dev/null and confuses ExtUtils::Command:MM::test_harness().
+$t->ornaments('vb,,,') if $verbose;
 print $OUT "\n" unless defined $t->readline("visible bell>");
 $t->ornaments(0);
 print $OUT "# end of ornaments test\n";
@@ -876,10 +878,9 @@ print "ok $n\n"; $n++;
 ########################################################################
 # end of non-interactive test
 unless ($verbose) {
-    # $^X : `perl' for dynamically linked perl, `./perl' for
-    #        statically linked perl.
+    # Be quiet during CPAN Testers testing.
     print STDERR "ok\tTry \`$^X -Mblib t/readline.t verbose\', if you will.\n"
-	if $ok;
+	if ($ok && !$ENV{AUTOMATED_TESTING});
     exit 0;
 }
 undef $a->{getc_function};
