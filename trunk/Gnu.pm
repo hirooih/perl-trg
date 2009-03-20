@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.98 2009-02-27 12:46:45 hiroo Exp $
+#	$Id: Gnu.pm,v 1.99 2009-03-20 15:38:16 hiroo Exp $
 #
 #	Copyright (c) 2009 Hiroo Hayashi.  All rights reserved.
 #
@@ -291,6 +291,11 @@ $Term::ReadLine::registered = $Term::ReadLine::registered;
 sub readline {			# should be ReadLine
     my $self = shift;
     my ($prompt, $preput) = @_;
+
+    # contributed fix for Perl debugger
+    # make sure the outstream fd inside the readline library is
+    # in sync (see http://bugs.debian.org/236018)
+    $Attribs{outstream} = $Attribs{outstream};
 
     # ornament support (now prompt only)
     $prompt = ${$Attribs{term_set}}[0] . $prompt . ${$Attribs{term_set}}[1];
