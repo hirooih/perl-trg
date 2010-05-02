@@ -1,9 +1,9 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.112 2009-02-27 12:44:41 hiroo Exp $
+ *	$Id: Gnu.xs,v 1.113 2010-05-02 10:23:52 hiroo Exp $
  *
- *	Copyright (c) 2009 Hiroo Hayashi.  All rights reserved.
+ *	Copyright (c) 2010 Hiroo Hayashi.  All rights reserved.
  *
  *	This program is free software; you can redistribute it and/or
  *	modify it under the same terms as Perl itself.
@@ -232,6 +232,20 @@ static int rl_restore_state(struct readline_state *sp){ return 0; }
  */
 static void rl_echo_signal_char(int sig){}
 #endif /* (RL_VERSION_MAJOR < 6) */
+
+#if 0 /* comment out until GNU Readline 6.2 will be released. */
+#if (RL_READLINE_VERSION < 0x0601)
+/* features introduced by GNU Readline 6.1 */
+/* Convenience function that discards, then frees, MAP. */
+void
+rl_free_keymap (map)
+     Keymap map;
+{
+  rl_discard_keymap (map);
+  free ((char *)map);
+}
+#endif /* (RL_READLINE_VERSION < 0x0601) */
+#endif
 
 /*
  * utility/dummy functions
@@ -1411,6 +1425,13 @@ _rl_discard_keymap(map)
     OUTPUT:
 	RETVAL
 
+#if 0 /* comment out until GNU Readline 6.2 will be released. */
+void
+rl_free_keymap(map)
+	Keymap map
+    PROTOTYPE: $
+#endif
+
 Keymap
 rl_get_keymap()
     PROTOTYPE:
@@ -1943,6 +1964,56 @@ rl_replace_line(text, clear_undo = 0)
 int
 rl_initialize()
     PROTOTYPE:
+    CODE:
+    {
+      RETVAL = rl_initialize();
+      /*
+       * Perl optionally maintains its own envirnment variable array
+       * using its own memory management functions.  On the other hand
+       * the GNU Readline Library sets variables, $LINES and $COLUMNS,
+       * by using the C library function putenv() in
+       * rl_initialize(). When Perl frees the memory for the variables
+       * during the destruction (perl.c:perl_destruct()), it may cause
+       * segmentation faults.
+       *
+       * CPAN ticket #37194
+       *   https://rt.cpan.org/Public/Bug/Display.html?id=37194
+       *
+       * To solve the problem, make a copy of the whole environment
+       * variable array which might be reallocated by rl_initialize().
+       */
+      /* from perl.c:perl_destruct() */
+#if defined(USE_ENVIRON_ARRAY) && !defined(PERL_USE_SAFE_PUTENV) \
+  && !defined(PERL_DARWIN)
+      if (environ != PL_origenviron && !PL_use_safe_putenv
+#  ifdef USE_ITHREADS
+	  /* only main thread can free environ[0] contents */
+	  && PL_curinterp == aTHX
+#  endif
+	  ) {
+	int i, len;
+	char *s;
+	char **tmpenv;
+	for (i = 0; environ[i]; i++)
+	  ;
+	/* 
+	 * We cannot use New*() which uses safemalloc() instead of
+	 * safesysmalloc().
+	 */
+	tmpenv = (char **)safesysmalloc((i+1)*sizeof(char *));
+	for (i = 0; environ[i]; i++) {
+	  len = strlen(environ[i]);
+	  s = (char*)safesysmalloc((len+1)*sizeof(char));
+	  Copy(environ[i], s, len+1, char);
+	  tmpenv[i] = s;
+	}
+	tmpenv[i] = NULL;
+	environ = tmpenv;
+      }
+#endif
+    }
+    OUTPUT:
+	RETVAL
 
 int
 rl_ding()
