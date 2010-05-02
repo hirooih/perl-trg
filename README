@@ -1,9 +1,9 @@
 	-*- Indented-text -*-
-$Id: README,v 1.29 2009-03-20 16:37:36 hiroo Exp $
+$Id: README,v 1.30 2010-05-02 10:38:53 hiroo Exp $
 
 Term::ReadLine::Gnu --- GNU Readline Library Wrapper Module
 
-	Copyright (c) 2009 Hiroo Hayashi.  All rights reserved.
+	Copyright (c) 2010 Hiroo Hayashi.  All rights reserved.
 
 	This program is free software; you can redistribute it and/or
 	modify it under the same terms as Perl itself.
@@ -65,6 +65,17 @@ Author:
 
 
 Revision History:
+
+1.20  2010-05-02
+	- Make a copy of the environment variable array to stop
+          segmentation faults on some systems (ex. FreeBSD)
+	- t/readline.t skip the test of rl_readline_version for GNU
+	  Readline Library 6.1 which may return a wrong value
+	- readline-6.1 support
+	    new function
+		rl_free_keymap (disabled due to readline-6.1 bug)
+	    new variable
+		rl_filename_rewrite_hook (not supported yet)
 
 1.19  2009-03-21
 	- make sure the outstream fd inside the readline library is in
