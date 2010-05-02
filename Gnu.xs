@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.113 2010-05-02 10:23:52 hiroo Exp $
+ *	$Id: Gnu.xs,v 1.114 2010-05-02 10:34:41 hiroo Exp $
  *
  *	Copyright (c) 2010 Hiroo Hayashi.  All rights reserved.
  *
@@ -1425,12 +1425,11 @@ _rl_discard_keymap(map)
     OUTPUT:
 	RETVAL
 
-#if 0 /* comment out until GNU Readline 6.2 will be released. */
-void
-rl_free_keymap(map)
-	Keymap map
-    PROTOTYPE: $
-#endif
+ # comment out until GNU Readline 6.2 will be released.
+ #void
+ #rl_free_keymap(map)
+ #	Keymap map
+ #    PROTOTYPE: $
 
 Keymap
 rl_get_keymap()
