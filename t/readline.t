@@ -1,9 +1,9 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.46 2009-03-20 14:17:27 hiroo Exp $
+#	$Id: readline.t,v 1.47 2010-05-02 10:24:59 hiroo Exp $
 #
-#	Copyright (c) 2008 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 2010 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -91,7 +91,13 @@ $res = defined $a; ok('Attrib method');
 
 my ($maj, $min) = $a->{library_version} =~ /(\d+)\.(\d+)/;
 my $version = $a->{readline_version};
-$res = ($version == 0x100 * $maj + $min); ok('readline_version');
+if ($a->{library_version} eq '6.1') {
+    # rl_readline_version returns 0x0600.  The bug is fixed GNU Readline 6.1-p2
+    print "ok $n # skipped because GNU Readline Library 6.1 may return wrong value.\n";
+    $n++;
+} else {
+    $res = ($version == 0x100 * $maj + $min); ok('readline_version');
+}
 
 # Version 2.0 is NOT supported.
 $res = $version > 0x0200; ok('rl_version');
