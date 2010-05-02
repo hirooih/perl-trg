@@ -1,7 +1,7 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id: Gnu.pm,v 1.100 2009-03-20 16:33:25 hiroo Exp $
+#	$Id: Gnu.pm,v 1.101 2010-05-02 10:39:19 hiroo Exp $
 #
 #	Copyright (c) 2009 Hiroo Hayashi.  All rights reserved.
 #
@@ -73,7 +73,7 @@ END
     use DynaLoader;
     use vars qw($VERSION @ISA @EXPORT_OK);
 
-    $VERSION = '1.19';
+    $VERSION = '1.20';
 
     # Term::ReadLine::Gnu::AU makes a function in
     # `Term::ReadLine::Gnu::XS' as a method.
@@ -775,6 +775,10 @@ C<FunctionPtr>.
 =item C<discard_keymap(MAP)>
 
 	Keymap	rl_discard_keymap(Keymap|str map)
+
+=item C<free_keymap(MAP)>
+
+	void	rl_free_keymap(Keymap|str map)
 
 =item C<get_keymap>
 
