@@ -1,7 +1,7 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.114 2010-05-02 10:34:41 hiroo Exp $
+ *	$Id: Gnu.xs,v 1.115 2010-09-25 12:59:38 hiroo Exp $
  *
  *	Copyright (c) 2010 Hiroo Hayashi.  All rights reserved.
  *
@@ -1984,7 +1984,12 @@ rl_initialize()
       /* from perl.c:perl_destruct() */
 #if defined(USE_ENVIRON_ARRAY) && !defined(PERL_USE_SAFE_PUTENV) \
   && !defined(PERL_DARWIN)
+# if ((PERL_VERSION > 8) || (PERL_VERSION == 8 && PERL_SUBVERSION >= 6)) 
+      /* Perl 5.8.6 introduced PL_use_safe_putenv. */
       if (environ != PL_origenviron && !PL_use_safe_putenv
+#  else
+      if (environ != PL_origenviron
+#  endif
 #  ifdef USE_ITHREADS
 	  /* only main thread can free environ[0] contents */
 	  && PL_curinterp == aTHX
