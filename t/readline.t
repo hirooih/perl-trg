@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.47 2010-05-02 10:24:59 hiroo Exp $
+#	$Id: readline.t,v 1.48 2010-10-10 04:01:10 hiroo Exp $
 #
 #	Copyright (c) 2010 Hiroo Hayashi.  All rights reserved.
 #
@@ -12,7 +12,7 @@
 # `make test'. After `make install' it should work as `perl t/readline.t'
 
 BEGIN {
-    print "1..104\n"; $n = 1;
+    print "1..113\n"; $n = 1;
     $ENV{PERL_RL} = 'Gnu';	# force to use Term::ReadLine::Gnu
     $ENV{LANG} = 'C';
 }
@@ -33,6 +33,8 @@ print "ok 1\tloading\n"; $n++;
 
 # Perl-5.005 and later has Test.pm, but I define this here to support
 # older version.
+# MEMO: Since version TRL-1.10 Perl 5.7.0 has been required. So Test.pm
+#       can be used now.
 my $res;
 my $ok = 1;
 sub ok {
@@ -51,7 +53,14 @@ sub ok {
 ########################################################################
 # test new method
 
-$ENV{'INPUTRC'} = '/dev/null';	# stop reading ~/.inputrc
+# stop reading ~/.inputrc not to change the default key-bindings.
+$ENV{'INPUTRC'} = '/dev/null';
+# These tty setting affects GNU Readline key-bindings.
+# Set the standard bindings before rl_initialize() being called.
+system('stty erase  ^h') == 0 or warn "stty erase failed: $?";
+system('stty kill   ^u') == 0 or warn "stty kill failed: $?";
+system('stty lnext  ^v') == 0 or warn "stty lnext failed: $?";
+system('stty werase ^w') == 0 or warn "stty werase failed: $?";
 
 my $t = new Term::ReadLine 'ReadLineTest';
 $res =  defined $t; ok('new');
@@ -537,18 +546,33 @@ sub is_boundp {
     }
 }
 
-$res = (is_boundp("\cM", 'accept-line')
-	&& is_boundp("\cF", 'forward-char')
-	&& is_boundp("\cB", 'backward-char')
-	&& is_boundp("\ef", 'forward-word')
-	&& is_boundp("\eb", 'backward-word')
-	&& is_boundp("\cE", 'end-of-line')
-	&& is_boundp("\cA", 'beginning-of-line')
-	&& is_boundp("\cH", 'backward-delete-char')
-	&& is_boundp("\cD", 'delete-char')
-	&& is_boundp("\cI", 'complete'));
-ok('default key binding',
-   "Default key binding is changed?  Some of following test will fail.");
+sub check_default_keybind_and_fix {
+    my ($seq, $fname) = @_;
+    if (is_boundp($seq, $fname)) {
+	print "ok $n\t$fname is bound to " . toprint($seq) . "\n";
+    } else {
+	# Try to fix the binding.  But tty setting seems have precedence.
+	$t->set_key($seq, $fname);
+	if (is_boundp($seq, $fname)) {
+	    print "ok $n\tThe default keybinding for $fname was changed. Fixed.\n";
+	    print "$fname is bound to " . toprint($seq) . "\n";
+	} else {
+	    print "not ok $n\t$fname cannot be bound to " . toprint($seq) . "\n";
+	    $ok = 0;
+	}
+    }
+    $n++;
+}
+check_default_keybind_and_fix("\cM", 'accept-line');
+check_default_keybind_and_fix("\cF", 'forward-char');
+check_default_keybind_and_fix("\cB", 'backward-char');
+check_default_keybind_and_fix("\ef", 'forward-word');
+check_default_keybind_and_fix("\eb", 'backward-word');
+check_default_keybind_and_fix("\cE", 'end-of-line');
+check_default_keybind_and_fix("\cA", 'beginning-of-line');
+check_default_keybind_and_fix("\cH", 'backward-delete-char');
+check_default_keybind_and_fix("\cD", 'delete-char');
+check_default_keybind_and_fix("\cI", 'complete');
 
 $INSTR = "abcdefgh\cM";
 $line = $t->readline("self insert> ");
