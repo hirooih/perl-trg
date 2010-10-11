@@ -659,7 +659,9 @@ $line = $t->readline("insert completion>");
 # But it seems that it does not affect strcoll() linked to GNU
 # Readline Library.
 $res = $line eq 't/comptest/0123 t/comptest/012345 t/comptest/023456 t/comptest/README t/comptest/a_b '
-    || $line eq 't/comptest/0123 t/comptest/012345 t/comptest/023456 t/comptest/a_b t/comptest/README ';
+    || $line eq 't/comptest/0123 t/comptest/012345 t/comptest/023456 t/comptest/a_b t/comptest/README '
+    || $line eq 't/comptest/.svn t/comptest/0123 t/comptest/012345 t/comptest/023456 t/comptest/README t/comptest/a_b '
+    || $line eq 't/comptest/.svn t/comptest/0123 t/comptest/012345 t/comptest/023456 t/comptest/a_b t/comptest/README ';
 ok('insert completion', $line);
 
 $INSTR = "t/comp\cIR\cI\cM";
