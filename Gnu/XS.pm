@@ -579,10 +579,7 @@ sub _trp_completion_function ( $$ ) {
 	return undef unless defined $_matches[0];
     }
 
-    for (; $_i <= $#_matches; $_i++) {
-	return $_matches[$_i] if ($_matches[$_i] =~ /^\Q$text/);
-    }
-    return undef;
+    return $_matches[$_i];
 }
 
 1;
