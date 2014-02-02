@@ -77,7 +77,7 @@ if ($Config{osname} eq 'os2') {
     #$lddflags = ($Config{osname} =~ /cygwin/i) ? '-static' : '';
 }
 
-# Check version of  GNU Readline Library (for version 4.2 and before)
+# Check version of GNU Readline Library (for version 4.2 and before)
 {
     my ($rlmajorver, $rlminorver) =
 	check_readline_version($RLINC, $RLLIB, $defs, $lddflags, $libs);
@@ -88,6 +88,9 @@ if ($Config{osname} eq 'os2') {
 	$defs .= " -DRL_VERSION_MAJOR=$rlmajorver";
 	$defs .= " -DRL_VERSION_MINOR=$rlminorver";
     }
+    # to show GNU Readline Library version in CPAN Tester Reports
+    $defs .= " -DTRG_READLINE_VERSION=" .
+	sprintf("0x%02x%02x", $rlmajorver, $rlminorver);
 }
 
 # generate a Makefile
