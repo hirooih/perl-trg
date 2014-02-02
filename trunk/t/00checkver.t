@@ -33,6 +33,7 @@ my $t = new Term::ReadLine 'ReadLineTest';
 print "ok $n\tnew\n"; $n++;
 
 print "OS: $^O\nPerl version: $]\n";
+$t->Attribs->{outstream} = \*STDOUT;
 $t->rl_call_function('display-readline-version');
 print "ok $n\tdone\n"; $n++;
 
