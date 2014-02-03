@@ -1,9 +1,9 @@
 /*
  *	Gnu.xs --- GNU Readline wrapper module
  *
- *	$Id: Gnu.xs,v 1.115 2010-09-25 12:59:38 hiroo Exp $
+ *	$Id$
  *
- *	Copyright (c) 2010 Hiroo Hayashi.  All rights reserved.
+ *	Copyright (c) 2014 Hiroo Hayashi.  All rights reserved.
  *
  *	This program is free software; you can redistribute it and/or
  *	modify it under the same terms as Perl itself.
@@ -58,9 +58,47 @@ typedef char *	t_xstr;		/* string which must be xfreed */
 /*
  * compatibility definitions
  */
+#if (RL_READLINE_VERSION < 0x0402)
+typedef int rl_command_func_t PARAMS((int, int));
+
+typedef char *rl_compentry_func_t PARAMS((const char *, int));
+typedef char **rl_completion_func_t PARAMS((const char *, int, int));
+typedef char *rl_quote_func_t PARAMS((char *, int, char *));
+typedef char *rl_dequote_func_t PARAMS((char *, int));
+typedef int rl_compignore_func_t PARAMS((char **));
+typedef void rl_compdisp_func_t PARAMS((char **, int, int));
+typedef int rl_hook_func_t PARAMS((void));
+typedef int rl_getc_func_t PARAMS((FILE *));
+typedef int rl_linebuf_func_t PARAMS((char *, int));
+
+/* `Generic' function pointer typedefs */
+typedef int rl_intfunc_t PARAMS((int));
+#define rl_ivoidfunc_t rl_hook_func_t
+typedef int rl_icpfunc_t PARAMS((char *));
+typedef int rl_icppfunc_t PARAMS((char **));
+
+typedef void rl_voidfunc_t PARAMS((void));
+typedef void rl_vintfunc_t PARAMS((int));
+typedef void rl_vcpfunc_t PARAMS((char *));
+typedef void rl_vcppfunc_t PARAMS((char **));
+#endif /* (RL_READLINE_VERSION < 0x0402) */
+
+#if (RL_READLINE_VERSION >= 0x0603)
+/* obsoleted by Readline 6.3 */
+typedef int Function ();
+typedef void VFunction ();
+typedef char *CPFunction ();
+typedef char **CPPFunction ();
+#endif /* (RL_READLINE_VERSION >= 0x0603) */
 
 /* rl_last_func() is defined in rlprivate.h */
 extern Function *rl_last_func;
+
+/* features introduced by GNU Readline 2.1 */
+#if (RL_READLINE_VERSION < 0x0201)
+static VFunction *rl_prep_term_function;
+static VFunction *rl_deprep_term_function;
+#endif /* (RL_READLINE_VERSION < 0x0201) */
 
 /* features introduced by GNU Readline 2.2 */
 #if (RL_READLINE_VERSION < 0x0202)
@@ -81,8 +119,6 @@ static int rl_catch_signals = 1;
 static int rl_catch_sigwinch = 1;
 static Function *rl_pre_input_hook;
 static VFunction *rl_completion_display_matches_hook;
-static VFunction *rl_prep_term_function;
-static VFunction *rl_deprep_term_function;
 
 static void rl_cleanup_after_signal(){}
 static void rl_free_line_state(){}
@@ -233,19 +269,36 @@ static int rl_restore_state(struct readline_state *sp){ return 0; }
 static void rl_echo_signal_char(int sig){}
 #endif /* (RL_VERSION_MAJOR < 6) */
 
-#if 0 /* comment out until GNU Readline 6.2 will be released. */
 #if (RL_READLINE_VERSION < 0x0601)
 /* features introduced by GNU Readline 6.1 */
+static rl_dequote_func_t *rl_filename_rewrite_hook;
+
+static void xfree(void *);
 /* Convenience function that discards, then frees, MAP. */
 void
 rl_free_keymap (map)
      Keymap map;
 {
   rl_discard_keymap (map);
-  free ((char *)map);
+  xfree ((char *)map);
 }
 #endif /* (RL_READLINE_VERSION < 0x0601) */
-#endif
+
+/* No feature to be handled by this module is introduced by GNU Readline 6.2 */
+
+#if (RL_READLINE_VERSION < 0x0603)
+/* features introduced by GNU Readline 6.3 */
+static int rl_executing_key = 0;
+static rl_hook_func_t *rl_signal_event_hook = NULL;
+static rl_hook_func_t *rl_input_available_hook = NULL;
+static rl_icppfunc_t *rl_filename_stat_hook = NULL;
+/*
+  NOT IMPLEMENTED YET !!!FIXIT!!!
+  static char *rl_executing_keyseq;
+  extern int rl_key_sequence_length;
+ */
+void rl_clear_history (void) {}
+#endif /* (RL_READLINE_VERSION < 0x0603) */
 
 /*
  * utility/dummy functions
@@ -440,7 +493,8 @@ static struct int_vars {
   { &rl_completion_mark_symlink_dirs,		0, 0 },	/* 37 */
   { &rl_prefer_env_winsize,			0, 0 },	/* 38 */
   { &rl_sort_completion_matches,		0, 0 },	/* 39 */
-  { &rl_completion_invoking_key,		1, 0 }	/* 40 */
+  { &rl_completion_invoking_key,		0, 1 },	/* 40 */
+  { &rl_executing_key,				0, 1 }	/* 41 */
 };
 
 /*
@@ -453,7 +507,6 @@ static PerlIO *outstreamPIO = NULL;
  *	function pointer variable table for _rl_store_function(),
  *	_rl_fetch_funtion()
  */
-
 static int startup_hook_wrapper PARAMS((void));
 static int event_hook_wrapper PARAMS((void));
 static int getc_function_wrapper PARAMS((PerlIO *));
@@ -462,8 +515,7 @@ static char *completion_entry_function_wrapper PARAMS((const char *, int));;
 static char **attempted_completion_function_wrapper PARAMS((char *, int, int));
 static char *filename_quoting_function_wrapper PARAMS((char *text, int match_type,
 						    char *quote_pointer));
-static char *filename_dequoting_function_wrapper PARAMS((char *text,
-						      int quote_char));
+static char *filename_dequoting_function_wrapper PARAMS((char *text, int quote_char));
 static int char_is_quoted_p_wrapper PARAMS((char *text, int index));
 static void ignore_some_completions_function_wrapper PARAMS((char **matches));
 static int directory_completion_hook_wrapper PARAMS((char **textp));
@@ -474,14 +526,19 @@ static void completion_display_matches_hook_wrapper PARAMS((char **matches,
 static char *completion_word_break_hook_wrapper PARAMS((void));
 static int prep_term_function_wrapper PARAMS((int meta_flag));
 static int deprep_term_function_wrapper PARAMS((void));
-static int directory_rewrite_hook_wrapper PARAMS((char **));
+static int directory_rewrite_hook_wrapper PARAMS((char **dirnamep));
+static char *filename_rewrite_hook_wrapper PARAMS((char *text, int quote_char));
+static int signal_event_hook_wrapper PARAMS((void));
+static int input_available_hook_wrapper PARAMS((void));
+static int filename_stat_hook_wrapper PARAMS((char **fnamep));
 
 enum { STARTUP_HOOK, EVENT_HOOK, GETC_FN, REDISPLAY_FN,
        CMP_ENT, ATMPT_COMP,
        FN_QUOTE, FN_DEQUOTE, CHAR_IS_QUOTEDP,
        IGNORE_COMP, DIR_COMP, HIST_INHIBIT_EXP,
        PRE_INPUT_HOOK, COMP_DISP_HOOK, COMP_WD_BRK_HOOK,
-       PREP_TERM, DEPREP_TERM, DIR_REWRITE
+       PREP_TERM, DEPREP_TERM, DIR_REWRITE, FN_REWRITE,
+       SIG_EVT, INP_AVL, FN_STAT
 };
 
 static struct fn_vars {
@@ -577,6 +634,30 @@ static struct fn_vars {
     NULL,
     (Function *)directory_rewrite_hook_wrapper,
     NULL
+  },
+  {
+    (Function **)&rl_filename_rewrite_hook,			/* 18 */
+    NULL,
+    (Function *)filename_rewrite_hook_wrapper,
+    NULL
+  },
+  {
+    (Function **)&rl_signal_event_hook,				/* 19 */
+    NULL,
+    (Function *)signal_event_hook_wrapper,
+    NULL
+  },
+  {
+    (Function **)&rl_input_available_hook,			/* 20 */
+    NULL,
+    (Function *)input_available_hook_wrapper,
+    NULL
+  },
+  {
+    (Function **)&rl_filename_stat_hook,			/* 21 */
+    NULL,
+    (Function *)filename_stat_hook_wrapper,
+    NULL
   }
 };
 
@@ -585,8 +666,9 @@ static struct fn_vars {
  */
 
 /*
- * for rl_voidfunc_t : void fn(void)
+ * common utility wrappers
  */
+/* for rl_voidfunc_t : void fn(void) */
 static int
 voidfunc_wrapper(type)
      int type;
@@ -614,9 +696,7 @@ voidfunc_wrapper(type)
   return ret;
 }
 
-/*
- * for rl_vintfunc_t : void fn(int)
- */
+/* for rl_vintfunc_t : void fn(int) */
 static int
 vintfunc_wrapper(type, arg)
      int type;
@@ -647,9 +727,189 @@ vintfunc_wrapper(type, arg)
   return ret;
 }
 
-/*
- * for rl_icppfunc_t : int fn(char **)
- */
+/* for rl_vcpfunc_t  : void fn(char *) */
+#if 0
+static int
+vcpfunc_wrapper(type, text)
+     int type;
+     char *text;
+{
+  dSP;
+  int count;
+  int ret;
+  SV *svret;
+  
+  ENTER;
+  SAVETMPS;
+
+  PUSHMARK(sp);
+  if (text) {
+    XPUSHs(sv_2mortal(newSVpv(text, 0)));
+  } else {
+    XPUSHs(&PL_sv_undef);
+  }
+  PUTBACK;
+
+  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+  SPAGAIN;
+
+  if (count != 1)
+    croak("Gnu.xs:vcpfunc_wrapper: Internal error\n");
+
+  svret = POPs;
+  ret = SvIOK(svret) ? SvIV(svret) : -1;
+  PUTBACK;
+  FREETMPS;
+  LEAVE;
+  return ret;
+}
+#endif
+
+/* for rl_vcppfunc_t : void fn(char **) */
+#if 0
+static int
+vcppfunc_wrapper(type, arg)
+     int type;
+     char **arg;
+{
+  dSP;
+  int count;
+  SV *sv;
+  int ret;
+  SV *svret;
+  char *rstr;
+  
+  ENTER;
+  SAVETMPS;
+
+  if (arg && *arg) {
+    sv = sv_2mortal(newSVpv(*arg, 0));
+  } else {
+    sv = &PL_sv_undef;
+  }
+
+  PUSHMARK(sp);
+  XPUSHs(sv);
+  PUTBACK;
+
+  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+
+  SPAGAIN;
+
+  if (count != 1)
+    croak("Gnu.xs:vcppfunc_wrapper: Internal error\n");
+
+  svret = POPs;
+  ret = SvIOK(svret) ? SvIV(svret) : -1;
+
+  rstr = SvPV(sv, PL_na);
+  if (strcmp(*arg, rstr) != 0) {
+    xfree(*arg);
+    *arg = dupstr(rstr);
+  }
+
+  PUTBACK;
+  FREETMPS;
+  LEAVE;
+  return ret;
+}
+#endif
+
+/* for rl_hook_func_t, rl_ivoidfunc_t : int fn(void) */
+static int
+hook_func_wrapper(type)
+     int type;
+{
+  dSP;
+  int count;
+  int ret;
+
+  ENTER;
+  SAVETMPS;
+
+  PUSHMARK(sp);
+  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+  SPAGAIN;
+
+  if (count != 1)
+    croak("Gnu.xs:hook_func_wrapper: Internal error\n");
+
+  ret = POPi;			/* warns unless integer */
+  PUTBACK;
+  FREETMPS;
+  LEAVE;
+  return ret;
+}
+
+/* for rl_intfunc_t  : int fn(int) */
+#if 0
+static int
+intfunc_wrapper(type, arg)
+     int type;
+     int arg;
+{
+  dSP;
+  int count;
+  int ret;
+
+  ENTER;
+  SAVETMPS;
+
+  PUSHMARK(sp);
+  XPUSHs(sv_2mortal(newSViv(arg)));
+  PUTBACK;
+  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+  SPAGAIN;
+
+  if (count != 1)
+    croak("Gnu.xs:intfunc_wrapper: Internal error\n");
+
+  ret = POPi;			/* warns unless integer */
+  PUTBACK;
+  FREETMPS;
+  LEAVE;
+  return ret;
+}
+#endif
+
+/* for rl_icpfunc_t : int fn(char *) */
+#if 0
+static int
+icpfunc_wrapper(type, text)
+     int type;
+     char *text;
+{
+  dSP;
+  int count;
+  int ret;
+  
+  ENTER;
+  SAVETMPS;
+
+  PUSHMARK(sp);
+  if (text) {
+    XPUSHs(sv_2mortal(newSVpv(text, 0)));
+  } else {
+    XPUSHs(&PL_sv_undef);
+  }
+  PUTBACK;
+
+  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+
+  SPAGAIN;
+
+  if (count != 1)
+    croak("Gnu.xs:icpfunc_wrapper: Internal error\n");
+
+  ret = POPi;			/* warns unless integer */
+  PUTBACK;
+  FREETMPS;
+  LEAVE;
+  return ret;
+}
+#endif
+
+/* for rl_icppfunc_t : int fn(char **) */
 static int
 icppfunc_wrapper(type, arg)
      int type;
@@ -692,52 +952,10 @@ icppfunc_wrapper(type, arg)
   PUTBACK;
   FREETMPS;
   LEAVE;
-
   return ret;
 }
 
-#if 0
-/*
- * for rl_icpfunc_t : int fn(char *)
- */
-static int
-icpfunc_wrapper(type, text)
-     int type;
-     char *text;
-{
-  dSP;
-  int count;
-  int ret;
-  
-  ENTER;
-  SAVETMPS;
-
-  PUSHMARK(sp);
-  if (text) {
-    XPUSHs(sv_2mortal(newSVpv(text, 0)));
-  } else {
-    XPUSHs(&PL_sv_undef);
-  }
-  PUTBACK;
-
-  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
-
-  SPAGAIN;
-
-  if (count != 1)
-    croak("Gnu.xs:icpfunc_wrapper: Internal error\n");
-
-  ret = POPi;			/* warns unless integer */
-  PUTBACK;
-  FREETMPS;
-  LEAVE;
-  return ret;
-}
-#endif
-
-/*
- * for rl_cpvfunc_t : (char *)fn(void)
- */
+/* for rl_cpvfunc_t : (char *)fn(void) */
 static char *
 cpvfunc_wrapper(type)
      int type;
@@ -765,8 +983,129 @@ cpvfunc_wrapper(type)
   return str;
 }
 
+/* for rl_cpifunc_t   : (char *)fn(int) */
+#if 0
+static char *
+cpifunc_wrapper(type, arg)
+     int type;
+     int arg;
+{
+  dSP;
+  int count;
+  char *str;
+  SV *svret;
+  
+  ENTER;
+  SAVETMPS;
+
+  PUSHMARK(sp);
+  XPUSHs(sv_2mortal(newSViv(arg)));
+  PUTBACK;
+  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+  SPAGAIN;
+
+  if (count != 1)
+    croak("Gnu.xs:cpifunc_wrapper: Internal error\n");
+
+  svret = POPs;
+  str = SvOK(svret) ? dupstr(SvPV(svret, PL_na)) : NULL;
+  PUTBACK;
+  FREETMPS;
+  LEAVE;
+  return str;
+}
+#endif
+
+/* for rl_cpcpfunc_t  : (char *)fn(char *) */
+#if 0
+static char *
+cpcpfunc_wrapper(type, text)
+     int type;
+     char *text;
+{
+  dSP;
+  int count;
+  char *str;
+  SV *svret;
+  
+  ENTER;
+  SAVETMPS;
+
+  PUSHMARK(sp);
+  if (text) {
+    XPUSHs(sv_2mortal(newSVpv(text, 0)));
+  } else {
+    XPUSHs(&PL_sv_undef);
+  }
+  PUTBACK;
+
+  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+  SPAGAIN;
+
+  if (count != 1)
+    croak("Gnu.xs:cpcpfunc_wrapper: Internal error\n");
+
+  svret = POPs;
+  str = SvOK(svret) ? dupstr(SvPV(svret, PL_na)) : NULL;
+  PUTBACK;
+  FREETMPS;
+  LEAVE;
+  return str;
+}
+#endif
+
+/* for rl_cpcppfunc_t : (char *)fn(char **) */
+#if 0
+static char *
+cpcppfunc_wrapper(type, arg)
+     int type;
+     char **arg;
+{
+  dSP;
+  int count;
+  SV *sv;
+  char *str;
+  SV *svret;
+  char *rstr;
+  
+  ENTER;
+  SAVETMPS;
+
+  if (arg && *arg) {
+    sv = sv_2mortal(newSVpv(*arg, 0));
+  } else {
+    sv = &PL_sv_undef;
+  }
+
+  PUSHMARK(sp);
+  XPUSHs(sv);
+  PUTBACK;
+
+  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+
+  SPAGAIN;
+
+  if (count != 1)
+    croak("Gnu.xs:cpcppfunc_wrapper: Internal error\n");
+
+  svret = POPs;
+  str = SvOK(svret) ? dupstr(SvPV(svret, PL_na)) : NULL;
+
+  rstr = SvPV(sv, PL_na);
+  if (strcmp(*arg, rstr) != 0) {
+    xfree(*arg);
+    *arg = dupstr(rstr);
+  }
+
+  PUTBACK;
+  FREETMPS;
+  LEAVE;
+  return str;
+}
+#endif
+
 /*
- * for rl_linebuf_func_t : int fn(char *, int)
+ * for rl_icpintfunc_t : int fn(char *, int)
  */
 static int
 icpintfunc_wrapper(type, text, index)
@@ -804,6 +1143,51 @@ icpintfunc_wrapper(type, text, index)
   return ret;
 }
 
+/*
+ * for rl_dequote_func_t : (char *)fn(char *, int)
+ */
+static char *
+dequoting_function_wrapper(type, text, quote_char)
+     int type;
+     char *text;
+     int quote_char;
+{
+  dSP;
+  int count;
+  SV *replacement;
+  char *str;
+  
+  ENTER;
+  SAVETMPS;
+
+  PUSHMARK(sp);
+  if (text) {
+    XPUSHs(sv_2mortal(newSVpv(text, 0)));
+  } else {
+    XPUSHs(&PL_sv_undef);
+  }
+  XPUSHs(sv_2mortal(newSViv(quote_char)));
+  PUTBACK;
+
+  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+
+  SPAGAIN;
+
+  if (count != 1)
+    croak("Gnu.xs:dequoting_function_wrapper: Internal error\n");
+
+  replacement = POPs;
+  str = SvOK(replacement) ? dupstr(SvPV(replacement, PL_na)) : NULL;
+
+  PUTBACK;
+  FREETMPS;
+  LEAVE;
+  return str;
+}
+
+/*
+ * Specific wrappers for each variable
+ */
 static int
 startup_hook_wrapper()		{ return voidfunc_wrapper(STARTUP_HOOK); }
 static int
@@ -827,7 +1211,6 @@ redisplay_function_wrapper()	{ voidfunc_wrapper(REDISPLAY_FN); }
  * call a perl function as rl_completion_entry_function
  * for rl_compentry_func_t : (char *)fn(const char *, int)
  */
-
 static char *
 completion_entry_function_wrapper(text, state)
      const char *text;
@@ -1001,52 +1384,13 @@ filename_quoting_function_wrapper(text, match_type, quote_pointer)
   return str;
 }
 
-/*
- * call a perl function as rl_filename_dequoting_function
- * for rl_dequote_func_t : (char *)fn(char *, int)
- */
-
 static char *
 filename_dequoting_function_wrapper(text, quote_char)
      char *text;
      int quote_char;
 {
-  dSP;
-  int count;
-  SV *replacement;
-  char *str;
-  
-  ENTER;
-  SAVETMPS;
-
-  PUSHMARK(sp);
-  if (text) {
-    XPUSHs(sv_2mortal(newSVpv(text, 0)));
-  } else {
-    XPUSHs(&PL_sv_undef);
-  }
-  XPUSHs(sv_2mortal(newSViv(quote_char)));
-  PUTBACK;
-
-  count = perl_call_sv(fn_tbl[FN_DEQUOTE].callback, G_SCALAR);
-
-  SPAGAIN;
-
-  if (count != 1)
-    croak("Gnu.xs:filename_dequoting_function_wrapper: Internal error\n");
-
-  replacement = POPs;
-  str = SvOK(replacement) ? dupstr(SvPV(replacement, PL_na)) : NULL;
-
-  PUTBACK;
-  FREETMPS;
-  LEAVE;
-  return str;
-}
-
-/*
- * call a perl function as rl_char_is_quoted_p
- */
+  return dequoting_function_wrapper(FN_DEQUOTE, text, quote_char);
+}  
 
 static int
 char_is_quoted_p_wrapper(text, index)
@@ -1144,20 +1488,12 @@ ignore_some_completions_function_wrapper(matches)
   LEAVE;
 }
 
-/*
- * call a perl function as rl_directory_completion_hook
- */
-
 static int
 directory_completion_hook_wrapper(textp)
      char **textp;
 {
   return icppfunc_wrapper(DIR_COMP, textp);
 }
-
-/*
- * call a perl function as history_inhibit_expansion_function
- */
 
 static int
 history_inhibit_expansion_function_wrapper(text, index)
@@ -1237,16 +1573,34 @@ prep_term_function_wrapper(meta_flag)
 }
 
 static int
-deprep_term_function_wrapper()	{ return voidfunc_wrapper(DEPREP_TERM); }
+deprep_term_function_wrapper() { return voidfunc_wrapper(DEPREP_TERM); }
 
-/*
- * call a perl function as rl_directory_completion_hook
- */
 static int
-directory_rewrite_hook_wrapper(dirname)
-     char **dirname;
+directory_rewrite_hook_wrapper(dirnamep)
+     char **dirnamep;
 {
-  return icppfunc_wrapper(DIR_REWRITE, dirname);
+  return icppfunc_wrapper(DIR_REWRITE, dirnamep);
+}
+
+static char *
+filename_rewrite_hook_wrapper(text, quote_char)
+     char *text;
+     int quote_char;
+{
+  return dequoting_function_wrapper(FN_REWRITE, text, quote_char);
+}  
+
+static int
+signal_event_hook_wrapper() { return hook_func_wrapper(SIG_EVT); }
+
+static int
+input_available_hook_wrapper() { return hook_func_wrapper(INP_AVL); }
+
+static int
+filename_stat_hook_wrapper(fnamep)
+     char **fnamep;
+{
+  return icppfunc_wrapper(FN_STAT, fnamep);
 }
 
 /*

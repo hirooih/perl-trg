@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	callback.t - Test script for Term::ReadLine:GNU callback function
 #
-#	$Id: callback.t,v 1.7 2008-03-20 13:56:02 hiroo Exp $
+#	$Id$
 #
 #	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
 #

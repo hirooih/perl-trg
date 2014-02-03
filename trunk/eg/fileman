@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl
 #
-# $Id: fileman,v 1.1 1998-02-28 10:01:24 hayashi Exp $
+# $Id$
 #
 # This is a sample program of Term::ReadLine::Gnu perl module.  The
 # origin is a C program in the GNU Readline Libarary manual Edition

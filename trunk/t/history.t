@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	history.t --- Term::ReadLine:GNU History Library Test Script
 #
-#	$Id: history.t,v 1.11 2009-02-27 12:15:01 hiroo Exp $
+#	$Id$
 #
 #	Copyright (c) 2009 Hiroo Hayashi.  All rights reserved.
 #

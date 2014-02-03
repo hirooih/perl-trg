@@ -1,6 +1,6 @@
 #	typemap for Term::ReadLine::Gnu
 #
-#	$Id: typemap,v 1.8 2004-10-17 16:44:57 hiroo Exp $
+#	$Id$
 
 const char *	T_PV
 CONST char *	T_PV

@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	readline.t - Test script for Term::ReadLine:GNU
 #
-#	$Id: readline.t,v 1.48 2010-10-10 04:01:10 hiroo Exp $
+#	$Id$
 #
 #	Copyright (c) 2010 Hiroo Hayashi.  All rights reserved.
 #
