@@ -1,9 +1,9 @@
 	-*- Indented-text -*-
-$Id: README,v 1.30 2010-05-02 10:38:53 hiroo Exp $
+$Id$
 
 Term::ReadLine::Gnu --- GNU Readline Library Wrapper Module
 
-	Copyright (c) 2010 Hiroo Hayashi.  All rights reserved.
+	Copyright (c) 2014 Hiroo Hayashi.  All rights reserved.
 
 	This program is free software; you can redistribute it and/or
 	modify it under the same terms as Perl itself.
@@ -56,15 +56,44 @@ How to build/install:
 	See INSTALL.
 
 Bugs:
-	There may be many bugs in both programs and documents
-	(especially in English grammar).  Comments and bug reports are
-	very welcome.
+	There may be many bugs in both programs and documents).
+	Comments and bug reports are very welcome.
 
 Author:
 	Hiroo Hayashi <hiroo.hayashi@computer.org>
 
 
 Revision History:
+
+1.21  2014-02-02
+	- readline-6.1 support
+	    new function
+		rl_free_keymap (enabled)
+	    new variable
+		rl_filename_rewrite_hook (now implemented)
+	- readline-6.3 support
+	    new function
+		rl_clear_history
+	    new variable
+		rl_signal_event_hook
+		rl_input_available_hook
+		rl_executing_key
+		rl_executing_keyseq (not implemented yet)
+		rl_key_sequence_length (not implemented yet)
+		rl_filename_stat_hook
+	- Fix Term::ReadLine::Gnu::XS::_trp_completion_function not to
+	  perform a case-sensitive filter.
+	- fix Gnu.xs:rl_initialize to be compiled with Perl 5.8.5 or
+          before.
+	- Fix t/readline.t to consider .svn directory on filename
+          completion test and to set the standard tty setting before
+          re_initialize() being called.
+	- Fix t/00checkver.t to let messages go to stdout.
+	- eg/perlsh makes use of the deferred signal (safe signal)
+          feature.
+	- remove out-of-date descriptions in README
+	- Makefile.PL: add -DTRL_READLINE_VERSION to show GNU Readline
+          Library version in CPAN Tester Reports.
 
 1.20  2010-05-02
 	- Make a copy of the environment variable array to stop
@@ -75,7 +104,7 @@ Revision History:
 	    new function
 		rl_free_keymap (disabled due to readline-6.1 bug)
 	    new variable
-		rl_filename_rewrite_hook (not supported yet)
+		rl_filename_rewrite_hook (not implemented yet)
 
 1.19  2009-03-21
 	- make sure the outstream fd inside the readline library is in

@@ -2,7 +2,7 @@
 #
 #	XS.pm : perl function definition for Term::ReadLine::Gnu
 #
-#	$Id: XS.pm,v 1.23 2008-02-07 15:43:46 hiroo Exp $
+#	$Id$
 #
 #	Copyright (c) 2008 Hiroo Hayashi.  All rights reserved.
 #

@@ -1,7 +1,7 @@
 #
 #	Makefile.PL for Term::ReadLine::Gnu
 #
-#	$Id: Makefile.PL,v 1.32 2009-03-01 02:57:15 hiroo Exp $
+#	$Id$
 #
 #	Copyright (c) 2009 Hiroo Hayashi.  All rights reserved.
 #		<hiroo.hayashi@computer.org>
