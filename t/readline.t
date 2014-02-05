@@ -330,7 +330,7 @@ sub bind_my_function {
     $t->generic_bind(ISFUNC, "\e?m", 'dump-macros') if $version > 0x0201;
     
     # bind a macro
-    $mymacro = "\ca[insert text from beginning of line]";
+    $mymacro = "\ca[insert text from the beginning of line]";
     $t->generic_bind(ISMACR, "\e?i", $mymacro);
 }
 
@@ -532,6 +532,11 @@ $a->{getc_function} = sub {
     return ord $c;
 };
 
+# This is required after GNU Readline Library 6.3.
+$a->{input_available_hook} = sub {
+    return 1;
+};
+
 # check some key binding used by following test
 sub is_boundp {
     my ($seq, $fname) = @_;
@@ -595,7 +600,7 @@ $res = $line eq 'abcdefgh'; ok('undo', $line);
 # test macro, change_ornaments
 $INSTR = "1234\e?i\eoB\cM\cM";
 $line = $t->readline("keyboard macro> ");
-$res = $line eq "[insert text from beginning of line]1234"; ok('macro', $line);
+$res = $line eq "[insert text from the beginning of line]1234"; ok('macro', $line);
 $INSTR = "\cM";
 $line = $t->readline("bold face prompt> ");
 $res = $line eq ''; ok('ornaments', $line);
@@ -916,6 +921,7 @@ unless ($verbose) {
     exit 0;
 }
 undef $a->{getc_function};
+undef $a->{input_available_hook};
 
 ########################################################################
 # interactive test
@@ -939,11 +945,11 @@ sub uppercase {
 
 $a->{getc_function} = \&uppercase;
 print $OUT "\n" unless defined $t->readline("convert to uppercase>");
-$a->{getc_function} = undef;
+undef $a->{getc_function};
+undef $a->{input_available_hook};
 
 ########################################################################
 # test event_hook
-$a->{getc_function} = undef;
 
 my $timer = 20;			# 20 x 0.1 = 2.0 sec timer
 $a->{event_hook} = sub {
