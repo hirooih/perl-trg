@@ -3,7 +3,7 @@
 #
 #	$Id$
 #
-#	Copyright (c) 2000 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 2014 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -14,7 +14,8 @@ BEGIN {
 }
 END {print "not ok 1\tfail to loading\n" unless $loaded;}
 
-my $verbose = defined @ARGV && ($ARGV[0] eq 'verbose');
+# 'define @ARGV' is deprecated
+my $verbose = scalar @ARGV && ($ARGV[0] eq 'verbose');
 
 $^W = 1;			# perl -w
 use strict;

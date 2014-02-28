@@ -3,7 +3,7 @@
 #
 #	$Id$
 #
-#	Copyright (c) 2010 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 2014 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -18,7 +18,8 @@ BEGIN {
 }
 END {print "not ok 1\tfail to loading\n" unless $loaded;}
 
-my $verbose = defined @ARGV && ($ARGV[0] eq 'verbose');
+# 'define @ARGV' is deprecated
+my $verbose = scalar @ARGV && ($ARGV[0] eq 'verbose');
 
 $^W = 1;			# perl -w
 use strict;
@@ -108,7 +109,7 @@ if ($a->{library_version} eq '6.1') {
     $res = ($version == 0x100 * $maj + $min); ok('readline_version');
 }
 
-# Version 2.0 is NOT supported.
+# Version 2.0 and before are NOT supported.
 $res = $version > 0x0200; ok('rl_version');
 
 # check the values of initialized variables
