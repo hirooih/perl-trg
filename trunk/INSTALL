@@ -79,10 +79,32 @@
 	3. make and install
 		% make install
 
-	If you have any reason in which use must use one of the follows;
+	If you have any reasons in which use must use one of the follows;
 		readline-2.1
 		libreadline.a in bash-2.0.tar.gz
 		Cygwin b20.1
 	see INSTALL file which is included in Term-ReadLine-Gnu-1.11.
+
+2.1.1. Install on Mac OS X
+
+	/usr/bin/perl on Mac OS X 10.5 (Leopard) and later supports
+	32bit/64bit universal binary.  Make Makefile as follows;
+
+	# tested only on Mavericks
+	ARCHFLAGS='-arch x86_64' perl Makefile.PL --prefix=/usr/local/gnu
+
+	Or build 32bit/64bit-universal GNU Readline Library as
+	follows.  (works on GNU Readline 6.3 and later)
+
+	Enable the following lines in support/shobj-conf in GNU
+        Readline 6.3 distribution;
+
+	# for 32 and 64bit universal library
+	#SHOBJ_ARCHFLAGS='-arch i386 -arch x86_64'
+	#SHOBJ_CFLAGS=${SHOBJ_CFLAGS}' -arch i386 -arch x86_64'
+
+	run configure script and do 'make install' and make Makefile simply;
+	# tested only on Mavericks
+	perl Makefile.PL --prefix=/usr/local/gnu
 
 EOF
