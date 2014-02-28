@@ -289,14 +289,13 @@ rl_free_keymap (map)
 #if (RL_READLINE_VERSION < 0x0603)
 /* features introduced by GNU Readline 6.3 */
 static int rl_executing_key = 0;
+static char *rl_executing_keyseq = NULL;
+static int rl_key_sequence_length = 0;
+static int rl_change_environment = 0;
 static rl_hook_func_t *rl_signal_event_hook = NULL;
 static rl_hook_func_t *rl_input_available_hook = NULL;
 static rl_icppfunc_t *rl_filename_stat_hook = NULL;
-/*
-  NOT IMPLEMENTED YET !!!FIXIT!!!
-  static char *rl_executing_keyseq;
-  extern int rl_key_sequence_length;
- */
+
 void rl_clear_history (void) {}
 #endif /* (RL_READLINE_VERSION < 0x0603) */
 
@@ -433,9 +432,10 @@ static struct str_vars {
   { &history_no_expand_chars,				0, 0 },	/* 11 */
   { &history_search_delimiter_chars,			0, 0 },	/* 12 */
 
-  { &rl_executing_macro,				0, 0 },	/* 13 */
+  { &rl_executing_macro,				0, 1 },	/* 13 */
   { &history_word_delimiters,				0, 0 },	/* 14 */
-  { &rl_display_prompt,					0, 0 }	/* 15 */
+  { &rl_display_prompt,					0, 0 },	/* 15 */
+  { &rl_executing_keyseq,				0, 1 }	/* 16 */
 };
 
 /*
@@ -461,7 +461,7 @@ static struct int_vars {
   { &rl_inhibit_completion,			0, 0 },	/* 10 */
 
   { &history_base,				0, 0 },	/* 11 */
-  { &history_length,				0, 0 },	/* 12 */
+  { &history_length,				0, 1 },	/* 12 */
 #if (RL_READLINE_VERSION >= 0x0402)
   { &history_max_entries,			0, 1 },	/* 13 */
 #else /* (RL_READLINE_VERSION < 0x0402) */
@@ -479,10 +479,10 @@ static struct int_vars {
   { &rl_num_chars_to_read,			0, 0 },	/* 23 */
   { &rl_dispatching,				0, 0 },	/* 24 */
   { &rl_gnu_readline_p,				0, 1 },	/* 25 */
-  { &rl_readline_state,				0, 0 },	/* 26 */
-  { &rl_explicit_arg,				0, 0 },	/* 27 */
-  { &rl_numeric_arg,				0, 0 },	/* 28 */
-  { &rl_editing_mode,				0, 0 },	/* 29 */
+  { &rl_readline_state,				0, 1 },	/* 26 */
+  { &rl_explicit_arg,				0, 1 },	/* 27 */
+  { &rl_numeric_arg,				0, 1 },	/* 28 */
+  { &rl_editing_mode,				0, 1 },	/* 29 */
   { &rl_attempted_completion_over,		0, 0 },	/* 30 */
   { &rl_completion_type,			0, 0 },	/* 31 */
   { &rl_readline_version,			0, 1 },	/* 32 */
@@ -494,7 +494,9 @@ static struct int_vars {
   { &rl_prefer_env_winsize,			0, 0 },	/* 38 */
   { &rl_sort_completion_matches,		0, 0 },	/* 39 */
   { &rl_completion_invoking_key,		0, 1 },	/* 40 */
-  { &rl_executing_key,				0, 1 }	/* 41 */
+  { &rl_executing_key,				0, 1 },	/* 41 */
+  { &rl_key_sequence_length,			0, 1 },	/* 42 */
+  { &rl_change_environment,			0, 0 }	/* 43 */
 };
 
 /*
