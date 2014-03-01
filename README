@@ -62,10 +62,12 @@ Bugs:
 Author:
 	Hiroo Hayashi <hiroo.hayashi@computer.org>
 
+Project Home Page
+	http://sourceforge.net/projects/perl-trg/
 
 Revision History:
 
-1.21  2014-02-02
+1.21  2014-03-02
 	- readline-6.1 support
 	    new function
 		rl_free_keymap (enabled)
@@ -78,22 +80,37 @@ Revision History:
 		rl_signal_event_hook
 		rl_input_available_hook
 		rl_executing_key
-		rl_executing_keyseq (not implemented yet)
-		rl_key_sequence_length (not implemented yet)
+		rl_executing_keyseq
+		rl_key_sequence_length
+		rl_change_environment
 		rl_filename_stat_hook
+	- make the following variables read-only.: rl_executing_macro,
+          history_length, rl_readline_state, rl_explicit_arg,
+	  rl_numeric_arg, rl_editing_mode
+	- Improve backward compatiblity variable and function definitions.
 	- Fix Term::ReadLine::Gnu::XS::_trp_completion_function not to
 	  perform a case-sensitive filter.
 	- fix Gnu.xs:rl_initialize to be compiled with Perl 5.8.5 or
           before.
-	- Fix t/readline.t to consider .svn directory on filename
+	- update Pod documents
+
+	- t/readline.t, t/history.t: add variable access tests.
+	- t/readline.t: consider .svn directory on filename
           completion test and to set the standard tty setting before
           re_initialize() being called.
-	- Fix t/00checkver.t to let messages go to stdout.
 	- eg/perlsh makes use of the deferred signal (safe signal)
           feature.
-	- remove out-of-date descriptions in README
+
+	- Maefile.PL checks whether the xmalloc exported by readline
+	  is indeed called 'xmalloc' or whether it has been renamed to
+	  '_rl_malloc'.
 	- Makefile.PL: add -DTRL_READLINE_VERSION to show GNU Readline
           Library version in CPAN Tester Reports.
+	- t/00checkver.t: let messages go to stdout.
+
+	- README: add project home page URL and remove out-of-date
+          descriptions.
+	- INSTALL: add a section "Install on Mac OS X"
 
 1.20  2010-05-02
 	- Make a copy of the environment variable array to stop
