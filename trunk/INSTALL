@@ -56,7 +56,17 @@
 2. How to Install GNU Readline Library
 
 	Now this module supports only GNU Readline Library 2.1 and
-	later. Executing `perl Makefile.PL` detects which version of
+	later.  But GNU Readline 2.2 has some bugs, so Use 2.2.1
+	instead.  GNU Readline Library 4.2 is not supported.  Use 4.2a
+	instead.
+
+	If you have any reasons in which use must use one of the follows;
+		GNU Readline Library 2.1
+		libreadline.a in bash-2.0.tar.gz
+		Cygwin b20.1
+	see INSTALL file which is included in Term-ReadLine-Gnu-1.11.
+
+	Executing `perl Makefile.PL` detects which version of
 	the GNU Readline Library is already installed and warns you if
 	you have the unsupported version.
 
@@ -69,21 +79,12 @@
 
 2.1. Install
 
-	readline-2.2.tar.gz has some bugs, so I strongly recommend you
-	to use readline-2.2.1.tar.gz and/or later instead.
-
 	1. get and extract readline-XX.tar.gz
 
 	2. configure
 		% ./configure --prefix=/usr/local/gnu
 	3. make and install
 		% make install
-
-	If you have any reasons in which use must use one of the follows;
-		readline-2.1
-		libreadline.a in bash-2.0.tar.gz
-		Cygwin b20.1
-	see INSTALL file which is included in Term-ReadLine-Gnu-1.11.
 
 2.1.1. Install on Mac OS X
 
