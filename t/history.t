@@ -3,7 +3,7 @@
 #
 #	$Id$
 #
-#	Copyright (c) 2009 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 2014 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -12,7 +12,7 @@
 # `make test'. After `make install' it should work as `perl t/history.t'
 
 BEGIN {
-    print "1..82\n"; $n = 1;
+    print "1..84\n"; $n = 1;
     $ENV{PERL_RL} = 'Gnu';	# force to use Term::ReadLine::Gnu
     $ENV{LANG} = 'C';
 }
@@ -90,19 +90,18 @@ print $attribs->{history_length} == 0
     ? "ok $n\n" : "not ok $n\n"; $n++;
 print $attribs->{max_input_history} == 0
     ? "ok $n\n" : "not ok $n\n"; $n++;
+print $attribs->{history_max_entries} == 0
+    ? "ok $n\n" : "not ok $n\n"; $n++;
+print $attribs->{history_write_timestamps} == 0
+    ? "ok $n\n" : "not ok $n\n"; $n++;
 print $attribs->{history_expansion_char} eq '!'
     ? "ok $n\n" : "not ok $n\n"; $n++;
 print $attribs->{history_subst_char} eq '^'
     ? "ok $n\n" : "not ok $n\n"; $n++;
 print $attribs->{history_comment_char} eq "\0"
     ? "ok $n\n" : "not ok $n\n"; $n++;
-if ($version > 4.2 - 0.01) {
-    $res = $attribs->{history_word_delimiters} eq " \t\n;&()|<>";
-    ok('history_word_delimiters');
-} else {
-    print "ok $n # skipped because GNU Readline Library is older than 4.2.\n";
-    $n++;
-}
+print $attribs->{history_word_delimiters} eq " \t\n;&()|<>"
+    ? "ok $n\n" : "not ok $n\n"; $n++;
 print $attribs->{history_no_expand_chars} eq " \t\n\r="
     ? "ok $n\n" : "not ok $n\n"; $n++;
 print ! defined $attribs->{history_search_delimiter_chars}
@@ -125,7 +124,7 @@ $t->SetHistory(@list_set);
 print cmp_list(\@list_set, [$t->GetHistory]) ? "ok $n\n" : "not ok $n\n"; $n++;
 show_indices;
 
-# test add_history()
+# test add_history(), add_history_time!!!
 $t->add_history('four');
 push(@list_set, 'four');
 print cmp_list(\@list_set, [$t->GetHistory]) ? "ok $n\n" : "not ok $n\n"; $n++;
@@ -142,6 +141,8 @@ $t->replace_history_entry(3, 'daarn');
 splice(@list_set, 3, 1, 'daarn');
 print cmp_list(\@list_set, [$t->GetHistory]) ? "ok $n\n" : "not ok $n\n"; $n++;
 show_indices;
+
+# clear_history() is tested below.
 
 # stifle_history
 print $t->history_is_stifled == 0 ? "ok $n\n" : "not ok $n\n"; $n++;
@@ -201,6 +202,8 @@ print $t->where_history == 0		? "ok $n\n" : "not ok $n\n"; $n++;
 # current_history()
 #   history_base + 0 = 1
 print $t->current_history eq 'one'	? "ok $n\n" : "not ok $n\n"; $n++;
+
+# history_get()!!!, history_get_time()!!!
 
 # history_total_bytes()
 print $t->history_total_bytes == 15	? "ok $n\n" : "not ok $n\n"; $n++;
