@@ -56,7 +56,9 @@ These methods are standard methods defined by B<Term::ReadLine>.
 =cut
 
 use strict;
+use warnings;
 use Carp;
+use 5.007; use 5.7.0;		# use version 1.09 for older Perl
 
 # This module can't be loaded directly.
 BEGIN {
@@ -73,7 +75,7 @@ END
     use DynaLoader;
     use vars qw($VERSION @ISA @EXPORT_OK);
 
-    $VERSION = '1.21';
+    $VERSION = '1.22';
 
     # Term::ReadLine::Gnu::AU makes a function in
     # `Term::ReadLine::Gnu::XS' as a method.
@@ -728,7 +730,7 @@ sub AUTOLOAD {
     } else {
 	croak "Cannot do `$AUTOLOAD' in Term::ReadLine::Gnu";
     }
-    local $^W = 0;		# Why is this line necessary ?
+    no warnings 'redefine';	# Why is this line necessary ?
     *$AUTOLOAD = sub { shift; &$name(@_); };
     goto &$AUTOLOAD;
 }
@@ -1378,7 +1380,7 @@ C<readline> is present.
 
 	str	history_get(offset)
 
-=item C<history_get_time(OFFSET)
+=item C<history_get_time(OFFSET)>
 
 	time_t	history_get_time(offset)			# GRL 5.0
 
@@ -1998,5 +2000,12 @@ ornament input line.
 
 Some readline function and variable are not tested yet.  Your
 contribution is welcome.  See C<t/readline.t>XS for details.
+
+=head1 LICENSE
+
+Copyright (c) 2014 Hiroo Hayashi.  All rights reserved.
+
+This program is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
 
 =cut

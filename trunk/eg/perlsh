@@ -2,7 +2,7 @@
 #
 #	$Id$	
 #
-#	Copyright (c) 2000 Hiroo Hayashi. All Rights Reserved.
+#	Copyright (c) 2014 Hiroo Hayashi. All Rights Reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -32,6 +32,7 @@ Perl symbol name completion function is also available.
 package PerlSh;
 
 use strict;
+use warnings;
 use Term::ReadLine;
 use POSIX;			#  for sigaction below
 
@@ -223,6 +224,7 @@ sub perl_hash_key_completion_function ($$) {
 sub _search_ISA ($) {
     my ($mypkg) = @_;
     no strict 'refs';
+    no warnings 'prototype';
     my $isa = "${mypkg}::ISA";
     return $mypkg, map _search_ISA($_), @$isa;
 }

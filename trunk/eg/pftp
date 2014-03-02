@@ -2,7 +2,7 @@
 #
 #	$Id$
 #
-#	Copyright (c) 1997,1998,1999 Hiroo Hayashi.  All Rights Reserved.
+#	Copyright (c) 2014 Hiroo Hayashi.  All Rights Reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -27,6 +27,7 @@ This is a sample program of Perl Term::ReadLine::Gnu module.
 
 use Term::ReadLine;
 use strict;
+use warnings;
 use Net::Domain qw(hostdomain);	# libnet
 use Net::FTP;			# libnet-1.05 or later is recommended
 use File::Listing;		# libwww (for parse_dir)
@@ -74,7 +75,8 @@ if (@ARGV) {
     $attribs->{completion_append_character} = '';
     $attribs->{completion_entry_function} =
 	$attribs->{'list_completion_function'};
-    $host = $term->readline('hostname> ');
+    no warnings 'uninitialized'; # in case of typing ^D
+    $host = $term->readline('hostname> ') . '';
     $host =~ s/^\s+//;
     $host =~ s/\s+$//;
     $attribs->{completion_append_character} = ' ';
@@ -210,7 +212,7 @@ sub ftp_dirname_completion_function ( $$ ) {
 
 sub ftp_display_match_list {
     my($matches, $num_matches, $max_length) = @_;
-    map { $_ =~ s|.*/([^/])|\1|; }(@{$matches});
+    map { $_ =~ s|.*/([^/])|$1|; }(@{$matches});
     $term->display_match_list($matches);
     $term->forced_update_display;
 }
@@ -262,7 +264,7 @@ sub cmd_cd {
 sub cmd_pwd {
     $pwd = $ftp->pwd();
     if ($pwd) {
-	print STDERR "$pwd\n";
+	#print STDERR "$pwd\n";
     } else {
 	print STDERR "pwd failed.\n";
     }
@@ -271,7 +273,7 @@ sub cmd_pwd {
 
 sub cmd_ls {
     # strip ls option
-    return &cmd_dir if $_[0] =~ /^-/ && shift =~ /l/;
+    return &cmd_dir if defined $_[0] && $_[0] =~ /^-/ && shift =~ /l/;
 
     my $dir = shift || $pwd;
     my $d = rdir($dir);
@@ -315,7 +317,7 @@ sub dump_list {
 
 sub cmd_dir {
     # strip ls option
-    shift if $_[0] =~ /^-/;
+    shift if defined $_[0] && $_[0] =~ /^-/;
 
     my $dir = $ftp->dir('-F', @_);
     print STDERR $ftp->message;
@@ -375,7 +377,11 @@ sub cmd_mput {
 }
 
 sub cmd_lcd {
-    chdir $_[0] or warn "cannot chdir to $_[0]: $!\n";
+    my $dir = shift;
+    no warnings 'uninitialized';
+    if ($dir) {
+	chdir $dir or warn "cannot chdir to $dir: $!\n";
+    }
     printf STDERR "local current directory is \`%s\'\n", getcwd();
 }
 

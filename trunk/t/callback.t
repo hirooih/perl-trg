@@ -17,8 +17,8 @@ END {print "not ok 1\tfail to loading\n" unless $loaded;}
 # 'define @ARGV' is deprecated
 my $verbose = scalar @ARGV && ($ARGV[0] eq 'verbose');
 
-$^W = 1;			# perl -w
 use strict;
+use warnings;
 use vars qw($loaded $n);
 eval "use ExtUtils::testlib;" or eval "use lib './blib';";
 use Term::ReadLine;
@@ -40,17 +40,19 @@ my ($version) = $attribs->{library_version} =~ /(\d+\.\d+)/;
 ########################################################################
 # check Tk is installed and X Window is available
 #disable the warning, "Too late to run INIT block at..."
-$^W = 0;
-if (eval "use Tk; 1" && $ENV{DISPLAY} ne '') {
-    print "ok $n\tuse Tk\n"; $n++;
-} else {
-    print "ok $n\t# skipped since Tk is not available.\n"; $n++;
-    print "ok $n\t# skipped since Tk is not available.\n"; $n++;
-    print "ok $n\t# skipped since Tk is not available.\n"; $n++;
-    print "ok $n\t# skipped since Tk is not available.\n"; $n++;
-    exit 0;
+
+{
+    no warnings 'uninitialized';
+    if (eval "use Tk; 1" && $ENV{DISPLAY} ne '') {
+	print "ok $n\tuse Tk\n"; $n++;
+    } else {
+	print "ok $n\t# skipped since Tk is not available.\n"; $n++;
+	print "ok $n\t# skipped since Tk is not available.\n"; $n++;
+	print "ok $n\t# skipped since Tk is not available.\n"; $n++;
+	print "ok $n\t# skipped since Tk is not available.\n"; $n++;
+	exit 0;
+    }
 }
-$^W = 1; 
 
 ########################################################################
 my ($IN, $OUT);
