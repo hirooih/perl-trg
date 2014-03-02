@@ -47,11 +47,16 @@
 
 	When you report your trouble, be sure to send me the following
 	information;
-		o result of `perl -V'
-		o compiler you used to compile the GNU Readline Library
-		  (libreadline.a).
-		o terminal emulator which you are using
-		o result of `echo $TERM`
+
+	- result of `perl -V'
+	- output of
+		perl Makefile.PL verbose
+		make test TEST_VERBOSE=1
+		perl -Mblib t/00checkver.t'
+	- terminal emulator which you are using
+	- result of `echo $TERM`
+	- compiler which is used to compile the GNU Readline Library
+	  (libreadline.a) if you can know.
 
 2. How to Install GNU Readline Library
 
