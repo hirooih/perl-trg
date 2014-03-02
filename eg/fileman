@@ -16,6 +16,7 @@
 # to manipulate files and their modes.
 
 use strict;
+use warnings;
 use Term::ReadLine;
 
 # A structure which contains information on the commands this program
@@ -180,7 +181,7 @@ sub fileman_completion {
 # List the file(s) named in arg.
 sub com_list {
     my $arg = shift;
-
+    no warnings 'uninitialized';
     return (system ("ls -FClg $arg"));
 }
 
@@ -232,13 +233,13 @@ sub com_help {
     my $arg = shift;
     my $printed = 0;
 
-    if ($commands{$arg}) {
+    if (defined $arg && $commands{$arg}) {
 	printf ("%s\t\t%s.\n", $arg, $commands{$arg}->{doc});
 	$printed++;
     }
 
     unless ($printed) {
-	print "No commands match \`$arg\'.  Possibilties are:\n";
+	defined $arg && print "No commands match \`$arg\'.  Possibilties are:\n";
 
 	foreach (sort keys(%commands)) {
 	    # Print in six columns.

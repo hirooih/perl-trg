@@ -101,8 +101,22 @@ if (my $extra_defs = guess_malloc_names($RLINC, $RLLIB, $defs, $lddflags, $libs)
 # generate a Makefile
 WriteMakefile
     (
+     #ABSTRACT	  => 'Perl extension for the GNU Readline/History Library',
+     ABSTRACT_FROM => 'Gnu.pm',
+     AUTHOR	  => 'Hiroo HAYASHI <hiroo.hayashi@computer.org>',
      NAME	  => 'Term::ReadLine::Gnu',
+     LICENSE	  => 'perl',
+     EXE_FILES	  => [ 'eg/perlsh' ],
+     META_MERGE	  => {
+	 resources => {
+	     license => 'http://dev.perl.org/licenses/',
+	     homepage => 'http://sourceforge.net/projects/perl-trg/',
+	     bugtracker => 'http://search.cpan.org/dist/Term-ReadLine-Gnu/',
+	     repository => 'svn://svn.code.sf.net/p/perl-trg/code/trunk',
+	 },
+     },
      VERSION_FROM => 'Gnu.pm',
+     MIN_PERL_VERSION => '5.7.0',
      LIBS	  => [ "$RLLIB $libs" ],
      LDDLFLAGS	  => "$RLLIB $Config{lddlflags}",
      dynamic_lib  => { OTHERLDFLAGS => $lddflags },
