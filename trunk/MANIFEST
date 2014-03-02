@@ -1,3 +1,4 @@
+Changes		A change history
 Gnu.pm		The GNU Readline extension Perl module
 Gnu.xs		The GNU Readline extension external subroutines
 Gnu/XS.pm
@@ -15,9 +16,9 @@ t/comptest/012345	A file for t/readline.t
 t/comptest/023456	A file for t/readline.t
 t/comptest/README	A file for t/readline.t
 t/comptest/a_b		A file for t/readline.t
-t/00checkver.t	a version check script
-t/callback.t	a test script for the GNU Readline callback function
-t/history.t	a test script for the GNU History Library function
+t/00checkver.t	A version check script
+t/callback.t	A test script for the GNU Readline callback function
+t/history.t	A test script for the GNU History Library function
 t/inputrc	A file for t/readline.t
-t/readline.t	a test script for the GNU Readline extension
+t/readline.t	A test script for the GNU Readline Library function
 typemap		The GNU Readline extension interface types
