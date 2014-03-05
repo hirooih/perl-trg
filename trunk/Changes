@@ -1,21 +1,19 @@
 	-*- Indented-text -*-
-$Id: $
+$Id$
 
-1.22  2014-03-02
+1.22  2014-03-05
 	- make Kwalitee <http://cpants.cpanauthors.org/> friendly
-	  - add META.yml
+	  - add MakeMaker options for META.yml
 	  - add Changelog
 	  - fix POD errors
 	  - make .pm versions consistent
 	  - use "use warnings"
+	- Makefile.PL dies on the CPAN Test for OpenBSD temporarily
+          (hopefully).
 
 1.21  2014-03-02
-	- readline-6.1 support
-	    new function
-		rl_free_keymap (enabled)
-	    new variable
-		rl_filename_rewrite_hook (now implemented)
-	- readline-6.3 support
+	- readline-6.3 support (Gnu Readline Library 6.3 requires this
+	  release or newers.)
 	    new function
 		rl_clear_history
 	    new variable
@@ -26,6 +24,11 @@ $Id: $
 		rl_key_sequence_length
 		rl_change_environment
 		rl_filename_stat_hook
+	- readline-6.1 support
+	    new function
+		rl_free_keymap (enabled)
+	    new variable
+		rl_filename_rewrite_hook (now implemented)
 	- make the following variables read-only.: rl_executing_macro,
           history_length, rl_readline_state, rl_explicit_arg,
 	  rl_numeric_arg, rl_editing_mode

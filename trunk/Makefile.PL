@@ -32,6 +32,10 @@ if ($ENV{AUTOMATED_TESTING} && !open(SESAMI, '/dev/tty')) {
     warn "cannot open /dev/tty\n";
     exit 0;
 }
+# I could not reach a tester, "Chris Williams (BINGOS)".
+if ($ENV{AUTOMATED_TESTING} && ($Config{osname} eq 'openbsd')) {
+    die "OS unsupported\nPlease contact the author.\n";
+}
 
 $defs = ($Config{strings} =~ m|/string.h$|) ? '-DHAVE_STRING_H' : '';
 
