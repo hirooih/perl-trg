@@ -115,7 +115,7 @@ WriteMakefile
 	 resources => {
 	     license => 'http://dev.perl.org/licenses/',
 	     homepage => 'http://sourceforge.net/projects/perl-trg/',
-	     bugtracker => 'http://search.cpan.org/dist/Term-ReadLine-Gnu/',
+	     bugtracker => 'http://rt.cpan.org/Public/Dist/Display.html?Name=Term-ReadLine-Gnu',
 	     repository => 'svn://svn.code.sf.net/p/perl-trg/code/trunk',
 	 },
      },
