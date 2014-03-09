@@ -133,9 +133,6 @@ use vars qw(%Attribs %Features);
 	     stiflehistory => 1,
 	    );
 
-sub Attribs { \%Attribs; }
-sub Features { \%Features; }
-
 # keep rl_readline_version value for efficiency
 my $readline_version;
 
@@ -246,14 +243,7 @@ sub new {
     $self->initialize();
 
     # enable ornaments to be compatible with perl5.004_05(?)
-    unless ($ENV{PERL_RL} and $ENV{PERL_RL} =~ /\bo\w*=0/) {
-	local $^W = 0;		# Term::ReadLine is not warning flag free
-	# Without the next line Term::ReadLine::Stub::ornaments is used.
-	# Why does Term::ReadLine::Gnu::AU selects it at first?!!!
-	# If you know why this happens, please let me know.  Thanks.
-	undef &Term::ReadLine::Gnu::ornaments;
-	$self->ornaments(1);
-    }
+    $self->ornaments(1) unless ($ENV{PERL_RL} and $ENV{PERL_RL} =~ /\bo\w*=0/);
 
     if (!@_) {
 	my ($IN,$OUT) = $self->findConsole();
@@ -401,12 +391,14 @@ sub MinLine {
     $old_minlength;
 }
 
-# findConsole is defined in ReadLine.pm.
-
 =item C<findConsole>
 
 returns an array with two strings that give most appropriate names for
 files for input and output using conventions C<"E<lt>$in">, C<"E<gt>$out">.
+
+=cut
+
+# findConsole is defined in ReadLine.pm.
 
 =item C<Attribs>
 
@@ -415,6 +407,10 @@ returns a reference to a hash which describes internal configuration
 standard conventions with the leading C<rl_> stripped.
 
 See section "Variables" for supported variables.
+
+=cut
+
+sub Attribs { \%Attribs; }
 
 =item C<Features>
 
@@ -429,6 +425,39 @@ C<preput> means the second argument to C<readline> method is processed.
 C<getHistory> and C<setHistory> denote that the corresponding methods are 
 present. C<tkRunning> denotes that a Tk application may run while ReadLine
 is getting input.
+
+=cut
+
+sub Features { \%Features; }
+
+=item C<tkRunning>
+
+makes Tk event loop run when waiting for user input (i.e., during
+C<readline> method).
+
+=cut
+
+# tkRunning is defined in ReadLine.pm.
+
+=item C<ornaments>
+
+makes the command line stand out by using termcap data.  The argument
+to C<ornaments> should be 0, 1, or a string of a form
+C<"aa,bb,cc,dd">.  Four components of this string should be names of
+I<terminal capacities>, first two will be issued to make the prompt
+standout, last two to make the input line standout.
+
+=cut
+
+sub ornaments {
+    my $self = shift;
+    return Term::ReadLine::Gnu::XS::ornaments(@_);
+}
+
+=item C<newTTY>
+
+takes two arguments which are input filehandle and output filehandle.
+Switches to use these filehandles.
 
 =cut
 
