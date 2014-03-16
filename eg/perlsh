@@ -433,7 +433,7 @@ the history.  The default value is 256.
 If true, restrict unsafe constructs.  See C<use strict> in perl man
 page.  The default value is 0;
 
-=over
+=back
 
 =head1 FILES
 
