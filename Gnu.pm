@@ -291,6 +291,9 @@ sub readline {			# should be ReadLine
     # contributed fix for Perl debugger
     # make sure the outstream fd inside the readline library is
     # in sync (see http://bugs.debian.org/236018)
+    # This is not a real fix but left for system where this fix works.
+    # Here is the real fix for perl5db.pl.
+    # https://rt.perl.org/Public/Bug/Display.html?id=121456
     $Attribs{outstream} = $Attribs{outstream};
 
     # ornament support (now prompt only)
@@ -461,7 +464,8 @@ Switches to use these filehandles.
 
 =cut
 
-# Not tested yet.  How do I use this?
+# used by a program who changes input/output stream.
+# perldb5.pl is an example.
 sub newTTY {
     my ($self, $in, $out) = @_;
     $Attribs{instream}  = $in;
@@ -697,7 +701,14 @@ sub STORE {
     } elsif ($type eq 'F') {
 	return _rl_store_function($value, $id);
     } elsif ($type eq 'IO') {
-	return _rl_store_iostream($value, $id);
+	# pop stdio layer pushed by PerlIO_findFILE().
+	# https://rt.cpan.org/Ticket/Display.html?id=59832
+	#my @layers;
+	my $FH = _rl_store_iostream($value, $id);
+	#@layers = PerlIO::get_layers($FH); warn "<", join(':', @layers), ">\n";
+	binmode($FH, ":pop");
+	#@layers = PerlIO::get_layers($FH); warn "<", join(':', @layers), ">\n";
+	return $FH;
     } elsif ($type eq 'K' || $type eq 'LF') {
 	carp "Term::ReadLine::Gnu::Var::STORE: read only variable `$name'\n";
 	return undef;
