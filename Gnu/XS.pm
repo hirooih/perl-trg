@@ -4,7 +4,7 @@
 #
 #	$Id$
 #
-#	Copyright (c) 2008 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 2014 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -17,7 +17,7 @@ use warnings;
 use AutoLoader 'AUTOLOAD';
 
 use vars qw($VERSION);
-$VERSION='1.22';	# added for CPAN
+$VERSION='1.23';	# added for CPAN
 
 # make aliases
 use vars qw(%Attribs);

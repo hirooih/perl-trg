@@ -1,5 +1,18 @@
 	-*- Indented-text -*-
-$Id$
+	$Id$
+
+1.23  2014-03-20
+	- add description of the pager command bug in Perl debugger
+	  which causes segementation fault [rt.perl.org #121456]
+	- fix not to clobber binmode layer (utf-8) on filehandles
+	  [rt.cpan.org #59832]
+	- support UTF-8 input as compatible with Term::ReadLine
+	  - Now Term::ReadLine::Gnu requires perl 5.8.0 or above
+	- define Term::ReadLine::Gnu::ornaments method [rt.cpan.org #93614]
+	- Makefile.PL: Fix the URL of the bug-tracker [rt.cpan.org #93680]
+	- eg/perlsh: POD syntax fix. [rt.cpan.org #93895]
+	- README: add note for bug-tracker
+	- INSTALL: update "1.3 Trouble Shooting"
 
 1.22  2014-03-05
 	- make Kwalitee <http://cpants.cpanauthors.org/> friendly
