@@ -76,7 +76,7 @@ END
     use DynaLoader;
     use vars qw($VERSION @ISA @EXPORT_OK);
 
-    $VERSION = '1.22';
+    $VERSION = '1.23';		# update Gnu::XS::VERSION also.
 
     # Term::ReadLine::Gnu::AU makes a function in
     # `Term::ReadLine::Gnu::XS' as a method.
@@ -2049,6 +2049,10 @@ ornament input line.
 
 Some readline function and variable are not tested yet.  Your
 contribution is welcome.  See C<t/readline.t>XS for details.
+
+If the pager command (| or ||) in Perl debugger causes segmentation
+fault, you need to fix perl5db.pl.  See
+https://rt.perl.org/Public/Bug/Display.html?id=121456 for details.
 
 =head1 LICENSE
 
