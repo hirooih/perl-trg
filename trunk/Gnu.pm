@@ -58,7 +58,8 @@ These methods are standard methods defined by B<Term::ReadLine>.
 use strict;
 use warnings;
 use Carp;
-use 5.007; use 5.7.0;		# use version 1.09 for older Perl
+# use version 1.22 for perl 5.7.x, or 1.09 for older Perl
+use 5.008; use 5.8.0;
 
 # This module can't be loaded directly.
 BEGIN {
@@ -330,6 +331,14 @@ sub readline {			# should be ReadLine
 	$line = $self->rl_readline($prompt);
     }
     return undef unless defined $line;
+
+    # from ReadLine.pm: convert to the internal representation from UTF-8
+    # see 'perldoc perlvar'
+    if ((${^UNICODE} & 1 || defined ${^ENCODING}) &&
+	utf8::valid($line)) {
+	#utf8::upgrade($line);
+	utf8::decode($line);
+    }
 
     # history expansion
     if ($Attribs{do_expand}) {
@@ -705,9 +714,9 @@ sub STORE {
 	# https://rt.cpan.org/Ticket/Display.html?id=59832
 	#my @layers;
 	my $FH = _rl_store_iostream($value, $id);
-	#@layers = PerlIO::get_layers($FH); warn "<", join(':', @layers), ">\n";
+	#@layers = PerlIO::get_layers($FH); warn "$id<", join(':', @layers), "\n";
 	binmode($FH, ":pop");
-	#@layers = PerlIO::get_layers($FH); warn "<", join(':', @layers), ">\n";
+	#@layers = PerlIO::get_layers($FH); warn "$id>", join(':', @layers), "\n";
 	return $FH;
     } elsif ($type eq 'K' || $type eq 'LF') {
 	carp "Term::ReadLine::Gnu::Var::STORE: read only variable `$name'\n";
