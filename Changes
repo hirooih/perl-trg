@@ -1,11 +1,18 @@
 	-*- Indented-text -*-
 	$Id$
 
+1.24  2014-03-23
+	- fix not to make the PerlIO layer empty for Perl 5.8.9 or
+          before. [rt.cpan.org #59832]
+	- update Pod document assuming the use of Pod::Simple::HTMLBatch.
+	- t/00checkver.t: not to use 'display-readline-version') and "use
+	  Test;"
+	- INSTALL: add "(Install) Using Package" section.
+
 1.23  2014-03-20
 	- add description of the pager command bug in Perl debugger
 	  which causes segementation fault [rt.perl.org #121456]
-	- fix not to clobber binmode layer (utf-8) on filehandles
-	  [rt.cpan.org #59832]
+	- fix not to clobber binmode layer (utf-8) on filehandles [rt.cpan.org #59832]
 	- support UTF-8 input as compatible with Term::ReadLine
 	  - Now Term::ReadLine::Gnu requires perl 5.8.0 or above
 	- define Term::ReadLine::Gnu::ornaments method [rt.cpan.org #93614]
@@ -47,9 +54,9 @@
 	  rl_numeric_arg, rl_editing_mode
 	- Improve backward compatiblity variable and function definitions.
 	- Fix Term::ReadLine::Gnu::XS::_trp_completion_function not to
-	  perform a case-sensitive filter.
+	  perform a case-sensitive filter. [rt.cpan.org #72378]
 	- fix Gnu.xs:rl_initialize to be compiled with Perl 5.8.5 or
-          before.
+          before. [rt.cpan.org #61626]
 	- update Pod documents
 
 	- t/readline.t, t/history.t: add variable access tests.
@@ -61,7 +68,7 @@
 
 	- Maefile.PL checks whether the xmalloc exported by readline
 	  is indeed called 'xmalloc' or whether it has been renamed to
-	  '_rl_malloc'.
+	  '_rl_malloc'. [rt.cpan.org #65973]
 	- Makefile.PL: add -DTRL_READLINE_VERSION to show GNU Readline
           Library version in CPAN Tester Reports.
 	- t/00checkver.t: let messages go to stdout.
@@ -74,7 +81,7 @@
 	- Make a copy of the environment variable array to stop
           segmentation faults on some systems (ex. FreeBSD)
 	- t/readline.t skip the test of rl_readline_version for GNU
-	  Readline Library 6.1 which may return a wrong value
+	  Readline Library 6.1 which may return a wrong value [rt.cpan.org #54977]
 	- readline-6.1 support
 	    new function
 		rl_free_keymap (disabled due to readline-6.1 bug)
@@ -83,7 +90,7 @@
 
 1.19  2009-03-21
 	- make sure the outstream fd inside the readline library is in
-          sync (see http://bugs.debian.org/236018)
+          sync [rt.cpan.org #16440]
 	- fixes to be more CPAN Testers friendly
 	  - t/readline.t does not use visible bell for "make test"
 	  - Makefile.PL requires perl 5.7.0 or later.  (Use
@@ -91,7 +98,7 @@
 	  - Makefile.PL exits 0 when /dev/tty cannot be opened.
 	- INSTALL
 	    add description of the -DPERL_USE_SAFE_PUTENV issue.  If
-	    you encounter a segmentation fault, read it.
+	    you encounter a segmentation fault, read it. [rt.cpan.org #37194]
 
 1.18  2009-02-27
 	- better error checking of Makefile.PL for automatic testing
@@ -113,7 +120,7 @@
 	- Unnecessary PerlIO_releaseFILE() calls are removed.  This
           fix prevents `make test' from failing on Perl 5.10.
 	- Makefile.PL now fails with the EditLine Library on MacOS X.
-          Use the GNU Readline Library.
+          Use the GNU Readline Library. [rt.cpan.org #28523]
 	- tested with readline-5.2 (which has no new feature to be
           supported).
 
@@ -142,7 +149,7 @@
 		completion_suppress_quote
 		completion_found_quote
 		completion_word_break_hook
-	- double IO stream close bug fix (more use of PerlIO)
+	- double IO stream close bug fix (more use of PerlIO) [rt.cpan.org #7672]
 	- warning on 'use Term::ReadLine::Gnu;'.
 
 1.14  2003-03-16

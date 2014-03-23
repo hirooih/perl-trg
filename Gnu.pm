@@ -30,7 +30,7 @@ Term::ReadLine::Gnu - Perl extension for the GNU Readline/History Library
 =head2 Overview
 
 This is an implementation of
-L<Term::ReadLine|http://search.cpan.org/~flora/Term-ReadLine/> using
+L<Term::ReadLine|http://search.cpan.org/dist/Term-ReadLine/> using
 L<the GNU ReadlineE<sol>History
 Library|http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html>.
 
@@ -51,13 +51,13 @@ L<GNU History Library
 Manual|http://cnswww.cns.cwru.edu/php/chet/readline/history.html>.
 
 The sample programs under F<eg/> directory and test programs under
-F<t/> directory in L<the C<Term::ReadLine::Gnu> distribution|http://search.cpan.org/~hayashi/Term-ReadLine-Gnu/> include
+F<t/> directory in L<the C<Term::ReadLine::Gnu> distribution|http://search.cpan.org/dist/Term-ReadLine-Gnu/> include
 many example of this module.
 
 =head2 Standard Methods
 
 These methods are standard methods defined by
-L<Term::ReadLine|http://search.cpan.org/~flora/Term-ReadLine/>.
+L<Term::ReadLine|http://search.cpan.org/dist/Term-ReadLine/>.
 
 =cut
 
@@ -82,7 +82,7 @@ END
     use DynaLoader;
     use vars qw($VERSION @ISA @EXPORT_OK);
 
-    $VERSION = '1.23';		# update Gnu::XS::VERSION also.
+    $VERSION = '1.24';		# update Gnu::XS::VERSION also.
 
     # Term::ReadLine::Gnu::AU makes a function in
     # `Term::ReadLine::Gnu::XS' as a method.
@@ -1954,9 +1954,9 @@ None.
 
 =item L<GNU History Library Manual|http://cnswww.cns.cwru.edu/php/chet/readline/history.html>
 
-=item Sample and test programs (F<eg/*> and F<t/*>) in L<the C<Term::ReadLine::Gnu> distribution|http://search.cpan.org/~hayashi/Term-ReadLine-Gnu/>
+=item Sample and test programs (F<eg/*> and F<t/*>) in L<the C<Term::ReadLine::Gnu> distribution|http://search.cpan.org/dist/Term-ReadLine-Gnu/>
 
-=item L<Term::ReadLine|http://search.cpan.org/~flora/Term-ReadLine/>
+=item L<Term::ReadLine|http://search.cpan.org/dist/Term-ReadLine/>
 
 =item Works which use Term::ReadLine::Gnu
 
