@@ -6,7 +6,7 @@
 	You need the GNU Readline library installed.  Except for this,
 	you can install this module by the standard method, i.e.
 
-		perl Makefile.PL; make install
+	% perl Makefile.PL; make install
 
 1.1 Install GNU Readline library 2.1 or later and their header files.
 
@@ -41,22 +41,21 @@
 1.3 Trouble Shooting
 
         If you have any trouble when using or installing this module
-	or find a bug, please let me (hiroo.hayashi@computer.org) know
-	by E-Mail or open a ticket on the bug tracker at rt.cpan.org;
+	or find a bug, please open a ticket on the bug tracker at
+	rt.cpan.org;
+	<http://rt.cpan.org/Dist/Display.html?Queue=Term-ReadLine-Gnu>
 
-	http://rt.cpan.org/Dist/Display.html?Queue=Term-ReadLine-Gnu
-
-	It may help other people who have the same problem.
+	It will help other people who have same problems.
 
 	When you report your trouble, be sure to send me the following
 	information;
 
 	- output of
-		perl -V
-		perl Makefile.PL verbose
-		make test TEST_VERBOSE=1
-		perl -Mblib t/00checkver.t
-		echo $TERM
+		% perl -V
+		% perl Makefile.PL verbose
+		% make test TEST_VERBOSE=1
+		% perl -Mblib t/00checkver.t
+		% echo $TERM
 	- terminal emulator which you are using
 	- compiler which is used to compile the GNU Readline Library
 	  (libreadline.a) if you can know.
@@ -65,7 +64,7 @@
 
 	If the pager command (| or ||) in Perl debugger causes
 	segmentation fault, you need to fix perl5db.pl.  See
-	https://rt.perl.org/Public/Bug/Display.html?id=121456
+	<https://rt.perl.org/Public/Bug/Display.html?id=121456>
 	for details.
 
 2. How to Install GNU Readline Library
@@ -92,7 +91,7 @@
 	its header files, by editing `LIBS' and/or `INC' section in
 	Makefile.PL.
 
-2.1. Install
+2.1. Install from the GNU Readline Library Source
 
 	1. get and extract readline-XX.tar.gz
 
@@ -122,5 +121,14 @@
 	run configure script and do 'make install' and make Makefile simply;
 	# tested only on Mavericks
 	perl Makefile.PL --prefix=/usr/local/gnu
+
+2.2. Using Package
+
+	On Linux you need to install 'ncurses-devel' package in
+	addition to 'readline-devel' package.  On distributions using
+	RPM do follows;
+
+	% sudo yum install ncurses-devel
+	% sudo yum install readline-devel
 
 EOF
