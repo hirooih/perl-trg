@@ -19,7 +19,7 @@ Term::ReadLine::Gnu - Perl extension for the GNU Readline/History Library
 
 =head1 SYNOPSIS
 
-  use Term::ReadLine;
+  use Term::ReadLine;	# Do not "use Term::ReadLine::Gnu;"
   $term = new Term::ReadLine 'ProgramName';
   while ( defined ($_ = $term->readline('prompt>')) ) {
     ...
@@ -29,8 +29,10 @@ Term::ReadLine::Gnu - Perl extension for the GNU Readline/History Library
 
 =head2 Overview
 
-This is an implementation of Term::ReadLine using the GNU
-Readline/History Library.
+This is an implementation of
+L<Term::ReadLine|http://search.cpan.org/~flora/Term-ReadLine/> using
+L<the GNU ReadlineE<sol>History
+Library|http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html>.
 
 For basic functions object oriented interface is provided. These are
 described in the section L<"Standard Methods"|"Standard Methods"> and
@@ -41,17 +43,21 @@ variables which are documented in the GNU Readline/History Library
 Manual.  They are documented in the section
 L<"C<Term::ReadLine::Gnu> Functions"|"C<Term::ReadLine::Gnu> Functions">
 and
-L<"C<Term::ReadLine::Gnu> Variables"|"C<Term::ReadLine::Gnu> Variables">
-briefly.  For more detail of the GNU Readline/History Library, see
-'GNU Readline Library Manual' and 'GNU History Library Manual'.
+L<"C<Term::ReadLine::Gnu> Variables"|"C<Term::ReadLine::Gnu>
+Variables"> briefly.  For more detail of the GNU Readline/History
+Library, see L<GNU Readline Library
+Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html> and
+L<GNU History Library
+Manual|http://cnswww.cns.cwru.edu/php/chet/readline/history.html>.
 
-The sample programs under C<eg/> directory and test programs under
-C<t/> directory in the C<Term::ReadLine::Gnu> distribution include
+The sample programs under F<eg/> directory and test programs under
+F<t/> directory in L<the C<Term::ReadLine::Gnu> distribution|http://search.cpan.org/~hayashi/Term-ReadLine-Gnu/> include
 many example of this module.
 
 =head2 Standard Methods
 
-These methods are standard methods defined by B<Term::ReadLine>.
+These methods are standard methods defined by
+L<Term::ReadLine|http://search.cpan.org/~flora/Term-ReadLine/>.
 
 =cut
 
@@ -712,10 +718,10 @@ sub STORE {
     } elsif ($type eq 'IO') {
 	# pop stdio layer pushed by PerlIO_findFILE().
 	# https://rt.cpan.org/Ticket/Display.html?id=59832
-	#my @layers;
 	my $FH = _rl_store_iostream($value, $id);
-	#@layers = PerlIO::get_layers($FH); warn "$id<", join(':', @layers), "\n";
-	binmode($FH, ":pop");
+	my @layers = PerlIO::get_layers($FH);
+	#warn "$id<", join(':', @layers), "\n";
+	binmode($FH, ":pop") if @layers > 1;
 	#@layers = PerlIO::get_layers($FH); warn "$id>", join(':', @layers), "\n";
 	return $FH;
     } elsif ($type eq 'K' || $type eq 'LF') {
@@ -923,7 +929,8 @@ Bind C<KEY> to the null function.  Returns non-zero in case of error.
 
 Parse C<LINE> as if it had been read from the F<~/.inputrc> file and
 perform any key bindings and variable assignments found.  For more
-detail see 'GNU Readline Library Manual'.
+detail see L<GNU Readline Library
+Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>.
 
 =item C<read_init_file([FILENAME])>
 
@@ -1189,7 +1196,6 @@ detail see 'GNU Readline Library Manual'.
 Since the first element of an array @matches as treated as a possible
 completion, it is not displayed.  See the descriptions of
 C<completion_matches()>.
-
 When C<MAX> is ommited, the max length of an item in @matches is used.
 
 =back
@@ -1554,10 +1560,13 @@ Note that this function returns C<expansion> in scalar context.
 =head2 C<Term::ReadLine::Gnu> Variables
 
 Following GNU Readline/History Library variables can be accessed by a
-Perl program.  See 'GNU Readline Library Manual' and 'GNU History
-Library Manual' for details of each variable.  You can access them with
-C<Attribs> methods.  Names of keys in this hash conform to standard
-conventions with the leading C<rl_> stripped.
+Perl program.  See L<GNU Readline Library
+Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html> and
+L<GNU History Library
+Manual|http://cnswww.cns.cwru.edu/php/chet/readline/history.html> for
+details of each variable.  You can access them with C<Attribs>
+methods.  Names of keys in this hash conform to standard conventions
+with the leading C<rl_> stripped.
 
 Examples:
 
@@ -1683,11 +1692,12 @@ Examples:
 
 =head2 Custom Completion
 
-In this section variables and functions for custom completion is
+In this section variables and functions for custom completion are
 described with examples.
 
-Most of descriptions in this section is cited from GNU Readline
-Library manual.
+Most of descriptions in this section are cited from L<GNU Readline
+Library
+Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>.
 
 =over 4
 
@@ -1905,8 +1915,8 @@ Change ornaments interactively.
 
 Readline init file.  Using this file it is possible that you would
 like to use a different set of key bindings.  When a program which
-uses the Readline library starts up, the init file is read, and the
-key bindings are set.
+uses the GNU Readline library starts up, the init file is read, and
+the key bindings are set.
 
 Conditional key binding is also available.  The program name which is
 specified by the first argument of C<new> method is used as the
@@ -1938,40 +1948,32 @@ None.
 
 =over 4
 
-=item Term::ReadLine::Gnu Project Home Page
+=item L<Term::ReadLine::Gnu Project Home Page|http://sourceforge.net/projects/perl-trg/>
 
-	http://sourceforge.net/projects/perl-trg/
+=item L<GNU Readline Library Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>
 
-=item GNU Readline Library Manual
+=item L<GNU History Library Manual|http://cnswww.cns.cwru.edu/php/chet/readline/history.html>
 
-=item GNU History Library Manual
+=item Sample and test programs (F<eg/*> and F<t/*>) in L<the C<Term::ReadLine::Gnu> distribution|http://search.cpan.org/~hayashi/Term-ReadLine-Gnu/>
 
-=item C<Term::ReadLine>
-
-=item C<Term::ReadLine::Perl> (Term-ReadLine-Perl-xx.tar.gz)
-
-=item F<eg/*> and F<t/*> in the Term::ReadLine::Gnu distribution
+=item L<Term::ReadLine|http://search.cpan.org/~flora/Term-ReadLine/>
 
 =item Works which use Term::ReadLine::Gnu
 
 =over 4
 
-=item Perl Debugger
+=item L<Perl Debugger|http://perldoc.perl.org/perldebug.html>
 
 	perl -d
 
-=item Perl Shell (psh)
-
-	http://gnp.github.io/psh/
+=item L<Perl Shell (psh)|http://gnp.github.io/psh/>
 
 The Perl Shell is a shell that combines the interactive nature of a
 Unix shell with the power of Perl.
 
 A programmable completion feature compatible with bash is implemented.
 
-=item SPP (Synopsys Plus Perl)
-
-	http://vlsiweb.stanford.edu/~jsolomon/SPP/
+=item L<SPP (Synopsys Plus Perl)|http://vlsiweb.stanford.edu/~jsolomon/SPP/>
 
 SPP (Synopsys Plus Perl) is a Perl module that wraps around Synopsys'
 shell programs.  SPP is inspired by the original dc_perl written by
@@ -1979,48 +1981,38 @@ Steve Golson, but it's an entirely new implementation.  Why is it
 called SPP and not dc_perl?  Well, SPP was written to wrap around any
 of Synopsys' shells.
 
-=item PFM (Personal File Manager for Unix/Linux)
-
-	http://p-f-m.sourceforge.net/
+=item L<PFM (Personal File Manager for UnixE<sol>Linux)|http://p-f-m.sourceforge.net/>
 
 Pfm is a terminal-based file manager written in Perl, based on PFM.COM
 for MS-DOS (originally by Paul Culley and Henk de Heer).
 
-=item The soundgrab
-
-	http://brittonkerin.com/soundgrab/soundgrab.html
+=item L<The soundgrab|http://brittonkerin.com/soundgrab/soundgrab.html>
 
 soundgrab is designed to help you slice up a big long raw audio file
 (by default 44.1 kHz 2 channel signed sixteen bit little endian) and
 save your favorite sections to other files. It does this by providing
 you with a cassette player like command line interface.
 
-=item PDL (The Perl Data Language)
-
-	http://pdl.perl.org/
+=item L<PDL (The Perl Data Language)|http://pdl.perl.org/>
 
 PDL (``Perl Data Language'') gives standard Perl the ability to
 compactly store and speedily manipulate the large N-dimensional data
 arrays which are the bread and butter of scientific computing.
 
-=item PIQT (Perl Interactive DBI Query Tool)
-
-	http://piqt.sourceforge.net/
+=item L<PIQT (Perl Interactive DBI Query Tool)|http://piqt.sourceforge.net/>
 
 PIQT is an interactive query tool using the Perl DBI database
 interface. It supports ReadLine, provides a built in scripting language
 with a Lisp like syntax, an online help system, and uses wrappers to
 interface to the DBD modules.
 
-=item vshnu (the New Visual Shell)
-
-	http://www.cs.indiana.edu/~kinzler/vshnu/
+=item L<vshnu (the New Visual Shell)|http://www.cs.indiana.edu/~kinzler/vshnu/>
 
 A visual shell and CLI shell supplement.
 
-=item Distributions which depend on Term::ReadLine::Gnu on CPAN
+=item Distributions which depend on Term::ReadLine::Gnu on L<CPAN|http://www.cpan.org/>
 
-	https://metacpan.org/requires/distribution/Term-ReadLine-Gnu
+L<https://metacpan.org/requires/distribution/Term-ReadLine-Gnu>
 
 =back
 
@@ -2033,7 +2025,7 @@ know.
 
 Hiroo Hayashi C<E<lt>hiroo.hayashi@computer.orgE<gt>>
 
-C<http://www.perl.org/CPAN/authors/Hiroo_HAYASHI/>
+L<http://search.cpan.org/~hayashi/>
 
 =head1 TODO
 
@@ -2043,16 +2035,12 @@ GTK+ support in addition to Tk.
 
 C<rl_add_defun()> can define up to 16 functions.
 
-Ornament feature works only on prompt strings.  It requires very hard
-hacking of C<display.c:rl_redisplay()> in GNU Readline library to
-ornament input line.
-
-Some readline function and variable are not tested yet.  Your
-contribution is welcome.  See C<t/readline.t>XS for details.
+Some functions and variables do not have test code yet.  Your
+contribution is welcome.  See F<t/readline.t> for details.
 
 If the pager command (| or ||) in Perl debugger causes segmentation
-fault, you need to fix perl5db.pl.  See
-https://rt.perl.org/Public/Bug/Display.html?id=121456 for details.
+fault, you need to fix F<perl5db.pl>.  See
+L<https://rt.perl.org/Public/Bug/Display.html?id=121456> for details.
 
 =head1 LICENSE
 
