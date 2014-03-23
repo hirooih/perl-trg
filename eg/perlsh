@@ -89,8 +89,9 @@ sub toplevel {
     $attribs->{completion_display_matches_hook}
 	= \&perl_symbol_display_match_list;
 
-    # See http://www.perldoc.com/perl5.8.4/pod/perlipc.html#Deferred-Signals-(Safe-Signals)
-    sigaction SIGINT, new POSIX::SigAction sub { # $SIG{INT} = sub {
+    # See http://perldoc.perl.org/perlipc.html#Deferred-Signals-%28Safe-Signals%29
+    # was '$SIG{INT} = sub { ...'
+    sigaction SIGINT, new POSIX::SigAction sub {
 	$term->modifying;
 	$term->delete_text;
 	$attribs->{point} = $attribs->{end} = 0;
@@ -472,9 +473,9 @@ for details.
 
 =head1 SEE ALSO
 
-Term::ReadLine::Gnu
+L<Term::ReadLine::Gnu|http://search.cpan.org/dist/Term-ReadLine-Gnu/>
 
-GNU Readline Library Manual
+L<GNU Readline Library|http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html>
 
 =head1 AUTHOR
 
