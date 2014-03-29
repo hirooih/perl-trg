@@ -75,7 +75,7 @@ print defined $attribs ? "ok $n\n" : "not ok $n\n"; $n++;
 my ($version) = $attribs->{library_version} =~ /(\d+\.\d+)/;
 
 ########################################################################
-# 2.3.1 Initializing History and State Management
+print "# 2.3.1 Initializing History and State Management\n";
 
 # test using_history
 # This is verbose since 'new' has already initialized the GNU history library.
@@ -112,7 +112,7 @@ print ! defined $attribs->{history_inhibit_expansion_function}
     ? "ok $n\n" : "not ok $n\n"; $n++;
 
 ########################################################################
-# 2.3.2 History List Management
+print "# 2.3.2 History List Management\n";
 
 my @list_set;
 # default value of `history_base' is 1
@@ -178,7 +178,7 @@ print ($attribs->{history_length} == 0 ? "ok $n\n" : "not ok $n\n"); $n++;
 show_indices;
 
 ########################################################################
-# 2.3.3 Information About the History List
+print "# 2.3.3 Information About the History List\n";
 
 $attribs->{history_base} = 0;
 show_indices;
@@ -209,7 +209,7 @@ print $t->current_history eq 'one'	? "ok $n\n" : "not ok $n\n"; $n++;
 print $t->history_total_bytes == 15	? "ok $n\n" : "not ok $n\n"; $n++;
 
 ########################################################################
-# 2.3.4 Moving Around the History List
+print "# 2.3.4 Moving Around the History List\n";
 
 # history_set_pos()
 $t->history_set_pos(2);
@@ -243,7 +243,7 @@ show_indices;
 
 
 ########################################################################
-# 2.3.5 Searching the History List
+print "# 2.3.5 Searching the History List\n";
 
 @list_set = ('red yellow', 'green red', 'yellow blue', 'green blue');
 $t->SetHistory(@list_set);
@@ -299,7 +299,7 @@ print($t->history_search_pos('red',     1, 2) == -1
       ? "ok $n\n" : "not ok $n\n"); $n++;
 
 ########################################################################
-# 2.3.6 Managing the History File
+print "# 2.3.6 Managing the History File\n";
 
 $t->stifle_history(undef);
 my $hfile = '.history_test';
@@ -350,7 +350,7 @@ print cmp_list([4,1,2,2,3,4], [$t->GetHistory])
 #print "@{[$t->GetHistory]}\n";
 
 ########################################################################
-# 2.3.7 History Expansion
+print "# 2.3.7 History Expansion\n";
 
 my ($string, $ret, @ret, $exp, @exp);
 
@@ -421,7 +421,7 @@ $ret = $t->history_arg_extract;
 print $ret eq $exp ? "ok $n\n" : "not ok $n\n"; $n++;
 
 ########################################################################
-# 2.4 History Variables
+print "# 2.4 History Variables\n";
 
 # history_base, history_length, max_input_history are tested above
 

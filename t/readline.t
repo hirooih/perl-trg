@@ -100,7 +100,7 @@ my $a = $t->Attribs;
 $res = defined $a; ok('Attrib method');
 
 ########################################################################
-# 2.3 Readline Variables
+print "# 2.3 Readline Variables\n";
 
 my ($maj, $min) = $a->{library_version} =~ /(\d+)\.(\d+)/;
 my $version = $a->{readline_version};
@@ -178,7 +178,7 @@ $res = $a->{editing_mode} == 1;			ok('editing_mode');
 
 
 ########################################################################
-# 2.4 Readline Convenience Functions
+print "# 2.4 Readline Convenience Functions\n";
 
 ########################################################################
 # define some custom functions
@@ -229,7 +229,7 @@ sub invert_case_line {
 }
 
 ########################################################################
-# 2.4.1 Naming a Function
+print "# 2.4.1 Naming a Function\n";
 
 my ($func, $type);
 
@@ -260,7 +260,7 @@ $res = $type == ISFUNC && $t->get_function_name($func) eq 'reverse-line';
 ok;
 
 ########################################################################
-# 2.4.2 Selecting a Keymap
+print "# 2.4.2 Selecting a Keymap\n";
 
 # test rl_make_bare_keymap, rl_copy_keymap, rl_make_keymap, rl_discard_keymap
 my $baremap = $t->make_bare_keymap;
@@ -298,7 +298,7 @@ $res = $t->get_keymap_name($t->get_keymap) eq 'emacs';
 ok;
 
 ########################################################################
-# 2.4.3 Binding Keys
+print "# 2.4.3 Binding Keys\n";
 
 #print $t->get_keymap_name($a->{executing_keymap}), "\n";
 #print $t->get_keymap_name($a->{binding_keymap}), "\n";
@@ -410,7 +410,7 @@ if ($version >= 0x0402) {
     $n++;
 }
 ########################################################################
-# 2.4.4 Associating Function Names and Bindings
+print "# 2.4.4 Associating Function Names and Bindings\n";
 
 bind_my_function;		# do bind
 
@@ -424,12 +424,12 @@ $res = "\\C-g" eq "@keyseqs";
 ok('invoking_keyseqs');
 
 ########################################################################
-# 2.4.5 Allowing Undoing
+print "# 2.4.5 Allowing Undoing\n";
 # rl_begin_undo_group!!!, rl_end_undo_group!!!, rl_add_undo!!!,
 # rl_free_undo_list!!!, rl_do_undo!!!, rl_modifying
 
 ########################################################################
-# 2.4.6 Redisplay
+print "# 2.4.6 Redisplay\n";
 # rl_redisplay!!!, rl_forced_update_display, rl_on_new_line!!!,
 # rl_on_new_line_with_prompt!!!, rl_reset_line_state!!!, rl_crlf!!!,
 # rl_show_char!!!,
@@ -438,41 +438,41 @@ ok('invoking_keyseqs');
 # rl_expand_prompt!!!, rl_set_prompt!!!
 
 ########################################################################
-# 2.4.7 Modifying Text
+print "# 2.4.7 Modifying Text\n";
 # rl_insert_text!!!, rl_delete_text!!!, rl_copy_text!!!, rl_kill_text!!!,
 # rl_push_macro_input!!!
 
 ########################################################################
-# 2.4.8 Character Input
+print "# 2.4.8 Character Input\n";
 # rl_read_key!!!, rl_getc, rl_stuff_char!!!, rl_execute_next!!!,
 # rl_clear_pending_input!!!, rl_set_keyboard_input_timeout!!!
 
 ########################################################################
-# 2.4.9 Terminal Management
+print "# 2.4.9 Terminal Management\n";
 # rl_prep_terminal!!!, rl_deprep_terminal!!!,
 # rl_tty_set_default_bindings!!!, rl_tty_unset_default_bindings!!!,
 # rl_reset_terminal!!!
 
 ########################################################################
-# 2.4.10 Utility Functions
+print "# 2.4.10 Utility Functions\n";
 # rl_save_state!!!, rl_restore_state!!!, rl_replace_line!!!,
 # rl_initialize, rl_ding!!!, rl_alphabetic!!!,
 # rl_display_match_list
 
 ########################################################################
-# 2.4.11 Miscellaneous Functions
+print "# 2.4.11 Miscellaneous Functions\n";
 # rl_macro_bind!!!, rl_macro_dumpter!!!,
 # rl_variable_bind!!!, rl_variable_value!!!, rl_variable_dumper!!!
 # rl_set_paren_blink_timeout!!!, rl_get_termcap!!!, rl_clear_history!!!
 
 ########################################################################
-# 2.4.12 Alternate Interface
+print "# 2.4.12 Alternate Interface\n";
 # tested in callback.t
 # rl_callback_handler_install, rl_callback_read_char,
 # rl_callback_handler_remove,
 
 ########################################################################
-# 2.5 Readline Signal Handling
+print "# 2.5 Readline Signal Handling\n";
 $res = $a->{catch_signals} == 1;		ok('catch_signals');
 $res = $a->{catch_sigwinch} == 1;		ok('catch_sigwinch');
 $res = $a->{change_environment} == 1;		ok('change_environment');
@@ -497,14 +497,14 @@ if ($version >= 0x0402) {
 # rl_reset_screen_size!!!, rl_set_signals!!!, rl_clear_signals!!!
 
 ########################################################################
-# 2.6 Custom Completers
-# 2.6.1 How Completing Works
-# 2.6.2 Completion Functions
+print "# 2.6 Custom Completers\n";
+print "# 2.6.1 How Completing Works\n";
+print "# 2.6.2 Completion Functions\n";
 # rl_complete_internal!!!, rl_completion_mode!!!, rl_completion_matches,
 # rl_filename_completion_function, rl_username_completion_function,
 # list_completion_function
 
-# 2.6.3 Completion Variables
+print "# 2.6.3 Completion Variables\n";
 $res = ! defined $a->{completion_entry_function};	ok;
 $res = ! defined $a->{attempted_completion_function};	ok;
 $res = ! defined $a->{filename_quoting_function};	ok;
@@ -652,7 +652,7 @@ $line = $t->readline("> ");
 $res = $line eq 'one';	 ok('operate_and_get_next 4', $line);
 
 ########################################################################
-# test history expansion
+print "# test history expansion\n";
 
 $t->ornaments(0);		# ornaments off
 
@@ -683,7 +683,7 @@ $line = $t->readline(prompt);
 $res = $line eq '1234'; ok('history 3', $line);
 
 ########################################################################
-# test custom completion function
+print "# test custom completion function\n";
 
 $t->parse_and_bind('set bell-style none'); # make readline quiet
 
@@ -849,7 +849,7 @@ ok('filename_list', $#m);
 $t->parse_and_bind('set bell-style audible'); # resume to default style
 
 ########################################################################
-# test rl_startup_hook, rl_pre_input_hook
+print "# test rl_startup_hook, rl_pre_input_hook\n";
 
 $a->{startup_hook} = sub { $a->{point} = 10; };
 $INSTR = "insert\cM";
@@ -869,7 +869,7 @@ if ($version >= 0x0400) {
 $a->{pre_input_hook} = undef;
 
 #########################################################################
-# test redisplay_function
+print "# test redisplay_function\n";
 $a->{redisplay_function} = $a->{shadow_redisplay};
 $INSTR = "\cX\cVThis is a password.\cM";
 $line = $t->readline("password> ");
@@ -879,7 +879,7 @@ undef $a->{redisplay_function};
 print "ok $n\n"; $n++;
 
 #########################################################################
-# test rl_display_match_list
+#print " test rl_display_match_list\n";
 
 if ($version >= 0x0400) {
     my @match_list = @{$a->{completion_word}};
@@ -894,7 +894,7 @@ if ($version >= 0x0400) {
 }
 
 #########################################################################
-# test rl_completion_display_matches_hook
+print "# test rl_completion_display_matches_hook\n";
 
 if ($version >= 0x0400) {
     # See 'eg/perlsh' for better example
@@ -916,7 +916,7 @@ if ($version >= 0x0400) {
 }
 
 ########################################################################
-# test ornaments
+print "# test ornaments\n";
 
 $INSTR = "\cM\cM\cM\cM\cM\cM\cM";
 print $OUT "# ornaments test\n";
@@ -945,7 +945,7 @@ print $OUT "# end of ornaments test\n";
 print "ok $n\n"; $n++;
 
 ########################################################################
-# end of non-interactive test
+print "# end of non-interactive test\n";
 unless ($verbose) {
     # Be quiet during CPAN Testers testing.
     print STDERR "ok\tTry \`$^X -Mblib t/readline.t verbose\', if you will.\n"
@@ -956,7 +956,7 @@ undef $a->{getc_function};
 undef $a->{input_available_hook};
 
 ########################################################################
-# interactive test
+print "# interactive test\n";
 
 ########################################################################
 # test redisplay_function
