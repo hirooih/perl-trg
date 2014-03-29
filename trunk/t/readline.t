@@ -28,6 +28,8 @@ eval "use ExtUtils::testlib;" or eval "use lib './blib';";
 use Term::ReadLine;
 use Term::ReadLine::Gnu qw(ISKMAP ISMACR ISFUNC RL_STATE_INITIALIZED);
 
+print "# Testing Term::ReadLine::Gnu version $Term::ReadLine::Gnu::VERSION\n";
+
 $loaded = 1;
 print "ok 1\tloading\n"; $n++;
 
@@ -58,10 +60,11 @@ sub ok {
 $ENV{'INPUTRC'} = '/dev/null';
 # These tty setting affects GNU Readline key-bindings.
 # Set the standard bindings before rl_initialize() being called.
-system('stty erase  ^h') == 0 or warn "stty erase failed: $?";
-system('stty kill   ^u') == 0 or warn "stty kill failed: $?";
-system('stty lnext  ^v') == 0 or warn "stty lnext failed: $?";
-system('stty werase ^w') == 0 or warn "stty werase failed: $?";
+# comment out since check_default_keybind_and_fix() takes care.
+# system('stty erase  ^?') == 0 or warn "stty erase failed: $?";
+# system('stty kill   ^u') == 0 or warn "stty kill failed: $?";
+# system('stty lnext  ^v') == 0 or warn "stty lnext failed: $?";
+# system('stty werase ^w') == 0 or warn "stty werase failed: $?";
 
 my $t = new Term::ReadLine 'ReadLineTest';
 $res =  defined $t; ok('new');
