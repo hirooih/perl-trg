@@ -247,7 +247,8 @@ sub new {
     $ENV{_TRL_DUMMY} = '';
 
     # initialize the GNU Readline Library and termcap library
-    $self->initialize();
+    # https://rt.cpan.org/Ticket/Display.html?id=96569
+    #$self->initialize();
 
     # enable ornaments to be compatible with perl5.004_05(?)
     $self->ornaments(1) unless ($ENV{PERL_RL} and $ENV{PERL_RL} =~ /\bo\w*=0/);
