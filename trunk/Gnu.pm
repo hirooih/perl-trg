@@ -246,10 +246,6 @@ sub new {
     # calls setenv() before the 1st assignment to $ENV{}.
     $ENV{_TRL_DUMMY} = '';
 
-    # initialize the GNU Readline Library and termcap library
-    # https://rt.cpan.org/Ticket/Display.html?id=96569
-    #$self->initialize();
-
     # enable ornaments to be compatible with perl5.004_05(?)
     $self->ornaments(1) unless ($ENV{PERL_RL} and $ENV{PERL_RL} =~ /\bo\w*=0/);
 
@@ -268,6 +264,11 @@ sub new {
 	$Attribs{outstream} = shift;
     }
     $readline_version = $Attribs{readline_version};
+
+    # initialize the GNU Readline Library and termcap library
+    # This is not necessary but is left to keep backward compatibility.
+    # https://rt.cpan.org/Ticket/Display.html?id=96569
+    $self->initialize();
 
     $self;
 }

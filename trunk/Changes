@@ -2,7 +2,8 @@
 	$Id$
 
 1.25  201X-XX-XX
-	- fix for new() not to call rl_initialize(). [rt.cpan.org #96569]
+	- fix to call rl_initialize() after I/O stream
+	  setting. [rt.cpan.org #96569]
 	- t/readline.t: comment-out stty-command calls. 
 	- t/history.t, t/readline.t: print out the corresponding
           section names in the manuals of the libraries.
