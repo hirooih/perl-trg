@@ -78,10 +78,6 @@ if ($verbose) {
     $t->Attribs->{outstream} = \*NULL;
 }
 
-# rl_initialized() is not called in new().
-# https://rt.cpan.org/Ticket/Display.html?id=96569
-$t->initialize();
-
 ########################################################################
 # test ReadLine method
 
