@@ -6,7 +6,7 @@
 
 # This program is contributed by Achim Bohnet.  It demonstrates how to
 # use the callback functions in the GNU Readline Library.  This script
-# is essetially equivalent with executing the following lines in
+# is essentially equivalent with executing the following lines in
 # `eg/perlsh';
 #	$PerlSh::term->tkRunning(1);
 #	use Tk;
