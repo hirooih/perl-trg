@@ -288,8 +288,7 @@ sub perl_method_completion_function ($$) {
 			    !$prefix && @keyword,
 			    grep (/^\w+$/
 				  && ($sym = $pkg . $_,
-				      defined *$sym{CODE}
-				      || defined *$sym{FILEHANDLE}
+				      defined *$sym{CODE} || defined *$sym{IO}
 				     ),
 				  keys %$pkg));
 	    }

@@ -7,6 +7,8 @@
 	- t/readline.t: comment-out stty-command calls. 
 	- t/history.t, t/readline.t: print out the corresponding
           section names in the manuals of the libraries.
+	- eg/perlsh: use 'IO' instead of 'FILEHANDLE' which Perl 5.20
+	  warns. [rt.cpan.org #100883]
 
 1.24  2014-03-23
 	- fix not to make the PerlIO layer empty for Perl 5.8.9 or
