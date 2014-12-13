@@ -1,7 +1,7 @@
 	-*- Indented-text -*-
 	$Id$
 
-1.25  201X-XX-XX
+1.25  2014-12-13
 	- fix to call rl_initialize() after I/O stream
 	  setting. [rt.cpan.org #96569]
 	- t/readline.t: comment-out stty-command calls. 
@@ -434,7 +434,6 @@
 				the callback functions
 
 0.08  Sun Apr 13 23:24:52 1997
-
 	- bug fix: AddHistory() accepts list again.
 	- move perlsh into eg/.
 	- add eg/ptksh+ which demonstrates the callback functions.
@@ -444,7 +443,6 @@
 	- internal functions, fetch_var() and store_var(), are removed.
 
 0.07  Wed Mar 19 02:26:06 1997
-
 	- interface to internal function and variables are changed.
 	  New interface is compatible with new Term::ReadLine.pm which
 	  is distributed with Perl 5.003_92 and later.  But it is not
