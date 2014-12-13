@@ -3,7 +3,7 @@
 #
 #	$Id$
 #
-#	Copyright (c) 2014 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
 #		<hiroo.hayashi@computer.org>
 #
 #	This program is free software; you can redistribute it and/or

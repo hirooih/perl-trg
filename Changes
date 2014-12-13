@@ -9,12 +9,13 @@
           section names in the manuals of the libraries.
 	- eg/perlsh: use 'IO' instead of 'FILEHANDLE' which Perl 5.20
 	  warns. [rt.cpan.org #100883]
+	- Fix copyright notices to use the year of first publication.
 
 1.24  2014-03-23
 	- fix not to make the PerlIO layer empty for Perl 5.8.9 or
           before. [rt.cpan.org #59832]
 	- update Pod document assuming the use of Pod::Simple::HTMLBatch.
-	- t/00checkver.t: not to use 'display-readline-version') and "use
+	- t/00checkver.t: not to use 'display-readline-version' and "use
 	  Test;"
 	- INSTALL: add "(Install) Using Package" section.
 
