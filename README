@@ -42,7 +42,7 @@ Description:
 	of fixing his module.
 
 Prerequisites:
-	You must have Perl 5.7 or later.  If you have to use old Perl
+	You must have Perl 5.8 or later.  If you have to use old Perl
 	for some reason, use Term::ReadLine::Gnu 1.09.  (I recommend
 	you to use newer Perl.)
 
