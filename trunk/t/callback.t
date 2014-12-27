@@ -38,23 +38,6 @@ print defined $attribs ? "ok $n\n" : "not ok $n\n"; $n++;
 my ($version) = $attribs->{library_version} =~ /(\d+\.\d+)/;
 
 ########################################################################
-# check Tk is installed and X Window is available
-#disable the warning, "Too late to run INIT block at..."
-
-{
-    no warnings 'uninitialized';
-    if (eval "use Tk; 1" && $ENV{DISPLAY} ne '') {
-	print "ok $n\tuse Tk\n"; $n++;
-    } else {
-	print "ok $n\t# skipped since Tk is not available.\n"; $n++;
-	print "ok $n\t# skipped since Tk is not available.\n"; $n++;
-	print "ok $n\t# skipped since Tk is not available.\n"; $n++;
-	print "ok $n\t# skipped since Tk is not available.\n"; $n++;
-	exit 0;
-    }
-}
-
-########################################################################
 my ($IN, $OUT);
 if ($verbose) {
     # wait for Perl Tk script from tty
@@ -74,8 +57,31 @@ if ($verbose) {
 }
 
 ########################################################################
+# check Tk is installed and X Window is available
+#disable the warning, "Too late to run INIT block at..."
+
+{
+    no warnings 'uninitialized';
+    if (eval "use Tk; 1" && $ENV{DISPLAY} ne '') {
+	print "ok $n\tuse Tk\n"; $n++;
+    } else {
+	print "ok $n\t# skipped since Tk is not available.\n"; $n++;
+	print "ok $n\t# skipped since Tk is not available.\n"; $n++;
+	print "ok $n\t# skipped since Tk is not available.\n"; $n++;
+	print "ok $n\t# skipped since Tk is not available.\n"; $n++;
+	exit 0;
+    }
+}
+
+########################################################################
 my $mw;
-$mw = MainWindow->new();
+$mw = eval { MainWindow->new(); };
+if (!$mw) {
+    print "ok $n\t# skipped since Tk is not available.\n"; $n++;
+    print "ok $n\t# skipped since Tk is not available.\n"; $n++;
+    print "ok $n\t# skipped since Tk is not available.\n"; $n++;
+    exit 0;
+}
 $mw->protocol('WM_DELETE_WINDOW' => \&quit);
 
 $attribs->{instream} = $IN;
