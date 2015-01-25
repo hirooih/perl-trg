@@ -82,7 +82,7 @@ END
     use DynaLoader;
     use vars qw($VERSION @ISA @EXPORT_OK);
 
-    $VERSION = '1.25';		# update Gnu::XS::VERSION also.
+    $VERSION = '1.26';		# update Gnu::XS::VERSION also.
 
     # Term::ReadLine::Gnu::AU makes a function in
     # `Term::ReadLine::Gnu::XS' as a method.
@@ -246,9 +246,9 @@ sub new {
     # calls setenv() before the 1st assignment to $ENV{}.
     $ENV{_TRL_DUMMY} = '';
 
-    # enable ornaments to be compatible with perl5.004_05(?)
-    $self->ornaments(1) unless ($ENV{PERL_RL} and $ENV{PERL_RL} =~ /\bo\w*=0/);
-
+    # set tty before calling rl_initialize() not to output some
+    # charactores to STDIO.
+    # https://rt.cpan.org/Ticket/Display.html?id=96569
     if (!@_) {
 	my ($IN,$OUT) = $self->findConsole();
 	open(IN,"<$IN")   || croak "Cannot open $IN for read";
@@ -263,12 +263,16 @@ sub new {
 	$Attribs{instream} = shift;
 	$Attribs{outstream} = shift;
     }
-    $readline_version = $Attribs{readline_version};
 
     # initialize the GNU Readline Library and termcap library
-    # This is not necessary but is left to keep backward compatibility.
-    # https://rt.cpan.org/Ticket/Display.html?id=96569
+    # This calls tgetent().
     $self->initialize();
+
+    # enable ornaments to be compatible with perl5.004_05(?)
+    # This calls tgetstr().
+    $self->ornaments(1) unless ($ENV{PERL_RL} and $ENV{PERL_RL} =~ /\bo\w*=0/);
+
+    $readline_version = $Attribs{readline_version};
 
     $self;
 }
