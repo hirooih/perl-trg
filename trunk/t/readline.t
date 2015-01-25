@@ -879,7 +879,7 @@ undef $a->{redisplay_function};
 print "ok $n\n"; $n++;
 
 #########################################################################
-#print " test rl_display_match_list\n";
+print "# test rl_display_match_list\n";
 
 if ($version >= 0x0400) {
     my @match_list = @{$a->{completion_word}};
