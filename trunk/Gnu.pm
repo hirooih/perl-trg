@@ -660,6 +660,8 @@ use vars qw(%_rl_vars);
        rl_last_func                             => ['LF', 0],
       );
 
+my @stream;
+
 sub TIESCALAR {
     my $class = shift;
     my $name = shift;
@@ -686,7 +688,8 @@ sub FETCH {
     } elsif ($type eq 'F') {
 	return _rl_fetch_function($id);
     } elsif ($type eq 'IO') {
-	return _rl_fetch_iostream($id);
+	# STORE was called in new() before coming here
+	return $stream[$id];
     } elsif ($type eq 'K') {
 	return _rl_fetch_keymap($id);
     } elsif ($type eq 'LF') {
@@ -722,14 +725,16 @@ sub STORE {
     } elsif ($type eq 'F') {
 	return _rl_store_function($value, $id);
     } elsif ($type eq 'IO') {
+	my $FH = $value;
+	# Pass filehandles to the GNU Readline Library
+	_rl_store_iostream($FH, $id);
 	# pop stdio layer pushed by PerlIO_findFILE().
 	# https://rt.cpan.org/Ticket/Display.html?id=59832
-	my $FH = _rl_store_iostream($value, $id);
 	my @layers = PerlIO::get_layers($FH);
 	#warn "$id<", join(':', @layers), "\n";
 	binmode($FH, ":pop") if @layers > 1;
 	#@layers = PerlIO::get_layers($FH); warn "$id>", join(':', @layers), "\n";
-	return $FH;
+	return $stream[$id] = $FH;
     } elsif ($type eq 'K' || $type eq 'LF') {
 	carp "Term::ReadLine::Gnu::Var::STORE: read only variable `$name'\n";
 	return undef;
