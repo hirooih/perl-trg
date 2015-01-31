@@ -1,6 +1,16 @@
 	-*- Indented-text -*-
 	$Id$
 
+1.26  2015-01-31
+	- Call ornaments() after rl_initialize() to set tty before
+          calling rl_initialize() not to output some charactores to
+          STDIO. [rt.cpan.org #96569, #101196]
+	- make handling of iostreams simple (make _rl_store_iostream()
+          return void and remove _rl_fetch_iostream()) [rt.cpan.org #101078]
+	- Fix the Prerequisites section to require Perl 5.8 (it was
+          required since TRG 1.23.).
+	- t/callback.t: add some new Tk-tests from CPAN Testers' site.
+
 1.25  2014-12-13
 	- fix to call rl_initialize() after I/O stream
 	  setting. [rt.cpan.org #96569]
