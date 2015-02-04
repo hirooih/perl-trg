@@ -17,7 +17,7 @@ use warnings;
 use AutoLoader 'AUTOLOAD';
 
 use vars qw($VERSION);
-$VERSION='1.25';	# added for CPAN
+$VERSION='1.26';	# added for CPAN
 
 # make aliases
 use vars qw(%Attribs);
@@ -565,7 +565,10 @@ sub _trp_completion_function ( $$ ) {
     my($text, $state) = @_;
 
     my $cf;
-    return undef unless defined ($cf = $Attribs{completion_function});
+    if (not defined ($cf = $Attribs{completion_function})) {
+	carp "_trp_comletion_fuction: internal error\n";
+	return undef;
+    }
 
     if ($state) {
 	$_i++;
@@ -580,7 +583,13 @@ sub _trp_completion_function ( $$ ) {
 	return undef unless defined $_matches[0];
     }
 
-    return $_matches[$_i];
+    for (; $_i <= $#_matches; $_i++) {
+	# case insensitive match to be compatible with
+	# Term::ReadLine::Perl.
+	# https://rt.cpan.org/Ticket/Display.html?id=72378
+	return $_matches[$_i] if ($_matches[$_i] =~ /^\Q$text/i);
+    }
+    return undef;
 }
 
 1;
