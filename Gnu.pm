@@ -1817,7 +1817,7 @@ to use.
     $attribs->{completion_function} = sub {
 	my ($text, $line, $start) = @_;
 	return qw(a list of candidates to complete);
-    }
+    };
 
 =item C<list_completion_function(TEXT, STATE)>
 
