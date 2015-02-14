@@ -725,9 +725,8 @@ sub STORE {
     } elsif ($type eq 'F') {
 	return _rl_store_function($value, $id);
     } elsif ($type eq 'IO') {
-	my $FH = $value;
 	# Pass filehandles to the GNU Readline Library
-	_rl_store_iostream($FH, $id);
+	my $FH = _rl_store_iostream($value, $id);
 	# pop stdio layer pushed by PerlIO_findFILE().
 	# https://rt.cpan.org/Ticket/Display.html?id=59832
 	my @layers = PerlIO::get_layers($FH);

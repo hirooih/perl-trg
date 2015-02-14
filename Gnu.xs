@@ -3138,7 +3138,7 @@ _rl_fetch_int(id)
 	  }
 	}
 
-void
+PerlIO *
 _rl_store_iostream(stream, id)
 	PerlIO *stream
 	int id
@@ -3148,9 +3148,11 @@ _rl_store_iostream(stream, id)
 	  switch (id) {
 	  case 0:
 	    rl_instream = PerlIO_findFILE(stream);
+	    RETVAL = stream;
 	    break;
 	  case 1:
 	    rl_outstream = PerlIO_findFILE(stream);
+	    RETVAL = stream;
 #ifdef __CYGWIN__
 	    {
 	      /* Cygwin b20.1 library converts NL to CR-NL
@@ -3167,11 +3169,14 @@ _rl_store_iostream(stream, id)
 	    break;
 	  default:
 	    warn("Gnu.xs:_rl_store_iostream: Illegal `id' value: `%d'", id);
+	    XSRETURN_UNDEF;
 	    break;
 	  }
 	  PerlIO_debug("TRG:store_iostream id %d fd %d\n",
-		       id, PerlIO_fileno(stream));
+		       id, PerlIO_fileno(RETVAL));
 	}
+     OUTPUT:
+	RETVAL
 
 #if 0 /* not used since 1.26 */
 
