@@ -35,28 +35,32 @@ L<the GNU ReadlineE<sol>History
 Library|http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html>.
 
 For basic functions object oriented interface is provided. These are
-described in the section L<"Standard Methods"|"Standard Methods"> and
-L<"C<Term::ReadLine::Gnu> Functions"|"C<Term::ReadLine::Gnu> Functions">.
+described in the section L</"Standard Methods"> and
+L</"C<Term::ReadLine::Gnu> Functions">.
 
 This package also has the interface with the almost all functions and
 variables which are documented in the GNU Readline/History Library
 Manual.  They are documented in the section
-L<"C<Term::ReadLine::Gnu> Functions"|"C<Term::ReadLine::Gnu> Functions">
+L</"C<Term::ReadLine::Gnu> Functions">
 and
-L<"C<Term::ReadLine::Gnu> Variables"|"C<Term::ReadLine::Gnu>
-Variables"> briefly.  For more detail of the GNU Readline/History
+L</"C<Term::ReadLine::Gnu>
+Variables"> briefly.  For further details of the GNU Readline/History
 Library, see L<GNU Readline Library
 Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html> and
 L<GNU History Library
 Manual|http://cnswww.cns.cwru.edu/php/chet/readline/history.html>.
 
+There are some C<Term::ReadLine::Gnu> original features.  They are
+described in the section L</"C<Term::ReadLine::Gnu> Specific
+Features">
+
 The sample programs under F<eg/> directory and test programs under
 F<t/> directory in L<the C<Term::ReadLine::Gnu> distribution|http://search.cpan.org/dist/Term-ReadLine-Gnu/> include
-many example of this module.
+many examples of this module.
 
 =head2 Standard Methods
 
-These methods are standard methods defined by
+These are standard methods defined by
 L<Term::ReadLine|http://search.cpan.org/dist/Term-ReadLine/>.
 
 =cut
@@ -121,7 +125,7 @@ use vars qw(%Attribs %Features);
 # this hash (%Attribs).  By accessing the hash entry, you can read
 # and/or write the variable in the GNU Readline Library.  See the
 # package definition of Term::ReadLine::Gnu::Var and following code
-# for more details.
+# for further details.
 
 # Normal (non-tied) entries
 %Attribs  = (
@@ -213,8 +217,8 @@ sub RL_STATE_DONE { $readline_version < 0x0600 ? 0x80000 :
 
 =item C<ReadLine>
 
-returns the actual package that executes the commands. If you have
-installed this package,  possible value is C<Term::ReadLine::Gnu>.
+returns the actual package that executes the commands. If
+this package is being used, C<Term::ReadLine::Gnu> is returned.
 
 =cut
 
@@ -290,7 +294,7 @@ is in C<Features>.
 
 C<PROMPT> may include some escape sequences.  Use
 C<RL_PROMPT_START_IGNORE> to begin a sequence of non-printing
-characters, and C<RL_PROMPT_END_IGNORE> to end of such a sequence.
+characters, and C<RL_PROMPT_END_IGNORE> to end the sequence.
 
 =cut
 
@@ -430,7 +434,7 @@ returns a reference to a hash which describes internal configuration
 (variables) of the package.  Names of keys in this hash conform to
 standard conventions with the leading C<rl_> stripped.
 
-See section "Variables" for supported variables.
+See section L</"C<Term::ReadLine::Gnu> Variables"> for supported variables.
 
 =cut
 
@@ -462,6 +466,11 @@ C<readline> method).
 =cut
 
 # tkRunning is defined in ReadLine.pm.
+
+=item C<event_loop>
+
+See the description of C<event_loop> on
+L<Term::ReadLine|http://search.cpan.org/dist/Term-ReadLine/>.
 
 =item C<ornaments>
 
@@ -805,38 +814,85 @@ __END__
 
 =head2 C<Term::ReadLine::Gnu> Functions
 
-All these GNU Readline/History Library functions are callable via
+All these GNU Readline/History Library functions supported are callable via
 method interface and have names which conform to standard conventions
-with the leading C<rl_> stripped.
+with the leading C<rl_> stripped.  For example C<rl_foo()>
+function is called as C<$term-E<gt>foo()>.
 
-Almost methods have lower level functions in
-C<Term::ReadLine::Gnu::XS> package.  To use them full qualified name
-is required.  Using method interface is preferred.
+The titles of the following sections are same as the titles of the
+corresponding sections in the "Programming with GNU Readline" section
+in the L<GNU Readline Library
+Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>.
+Refer them for further details.
+
+Although it is preferred to use method interface, most methods have
+lower level functions in
+C<Term::ReadLine::Gnu::XS> package.  To use them a full qualified name
+is required.
+
+=head3 Basic Behavior
+
+The function C<readline()> prints a prompt and then reads and returns
+a single line of text from the user.
+
+	$_ = $term->readline('Enter a line: ');
+
+You can change key-bindings using C<bind_key(KEY, FUNCTION [,MAP])>
+function.  The first argument, C<KEY>, is the character that you want
+bind.  The second argument, C<FUNCTION>, is the function to call when
+C<KEY> is pressed.  The C<FUNCTION> can be a reference to a Perl
+function (see L</"Custom Functions">) or a "named function" named by
+C<add_defun()> function or commands described in the "Bindable
+Readline Commands" section in the L<GNU Readline Library
+Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>.
+
+	$term->bind_key(ord "\ci, 'tab-insert');
+
+The above example binds Control-I to the 'tab-insert' command.
+
+=head3 Custom Functions
+
+You can write new functions using Perl.  The calling sequence for a
+command foo looks like
+
+	sub foo ($count, $key) { ... }
+
+where C<$count> is the numeric argument (or 1 if defaulted) and
+C<$key> is the key that invoked this function.
+
+Here is an example;
+
+	sub reverse_line {		# reverse a whole line
+	    my($count, $key) = @_;	# ignored in this sample function
+    	
+	    $t->modifying(0, $a->{end}); # save undo information
+	    $a->{line_buffer} = reverse $a->{line_buffer};
+	}
+
+See the "Writing a New Function" section in the L<GNU Readline Library
+Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html> for
+further details.
+
+=head3 Readline Convenience Functions
+
+=head4 Naming a Function
 
 =over 4
 
-=item Readline Convenience Functions
+=item C<add_defun(NAME, FUNCTION [,KEY=-1])>
 
-=over 4
-
-=item Naming Function
-
-=over 4
-
-=item C<add_defun(NAME, FUNC [,KEY=-1])>
-
-Add name to the Perl function C<FUNC>.  If optional argument C<KEY> is
-specified, bind it to the C<FUNC>.  Returns reference to
+Add name to a Perl function C<FUNCTION>.  If optional argument C<KEY>
+is specified, bind it to the C<FUNCTION>.  Returns reference to
 C<FunctionPtr>.
 
   Example:
-	# name name `reverse-line' to a function reverse_line(),
+	# name `reverse-line' to a function reverse_line(),
 	# and bind it to "\C-t"
 	$term->add_defun('reverse-line', \&reverse_line, ord "\ct");
 
 =back
 
-=item Selecting a Keymap
+=head4 Selecting a Keymap
 
 =over 4
 
@@ -878,7 +934,7 @@ C<FunctionPtr>.
 
 =back
 
-=item Binding Keys
+=head4 Binding Keys
 
 =over 4
 
@@ -938,7 +994,7 @@ Bind C<KEY> to the null function.  Returns non-zero in case of error.
 	void	rl_parse_and_bind(str line)
 
 Parse C<LINE> as if it had been read from the F<~/.inputrc> file and
-perform any key bindings and variable assignments found.  For more
+perform any key bindings and variable assignments found.  For further
 detail see L<GNU Readline Library
 Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>.
 
@@ -948,7 +1004,7 @@ Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>.
 
 =back
 
-=item Associating Function Names and Bindings
+=head4 Associating Function Names and Bindings
 
 =over 4
 
@@ -989,7 +1045,7 @@ Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>.
 
 =back
 
-=item Allowing Undoing
+=head4 Allowing Undoing
 
 =over 4
 
@@ -1019,7 +1075,7 @@ Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>.
 
 =back
 
-=item Redisplay
+=head4 Redisplay
 
 =over 4
 
@@ -1047,7 +1103,7 @@ Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>.
 
 	int	rl_crlf()
 
-=item C<rl_show_char(C)>
+=item C<show_char(C)>
 
 	int	rl_show_char(int c)
 
@@ -1077,7 +1133,7 @@ Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>.
 
 =back
 
-=item Modifying Text
+=head4 Modifying Text
 
 =over 4
 
@@ -1103,7 +1159,7 @@ Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>.
 
 =back
 
-=item Character Input
+=head4 Character Input
 
 =over 4
 
@@ -1133,7 +1189,7 @@ Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>.
 
 =back
 
-=item Terminal Management
+=head4 Terminal Management
 
 =over 4
 
@@ -1159,7 +1215,7 @@ Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>.
 
 =back
 
-=item Utility Functions
+=head4 Utility Functions
 
 =over 4
 
@@ -1203,14 +1259,14 @@ Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>.
 
 	void	rl_display_match_list(\@matches, len = $#maches, max) # GRL 4.0
 
-Since the first element of an array @matches as treated as a possible
+Since the first element of an array C<@matches> as treated as a possible
 completion, it is not displayed.  See the descriptions of
 C<completion_matches()>.
-When C<MAX> is ommited, the max length of an item in @matches is used.
+When C<MAX> is omitted, the max length of an item in C<@matches> is used.
 
 =back
 
-=item Miscellaneous Functions
+=head4 Miscellaneous Functions
 
 =over 4
 
@@ -1248,7 +1304,7 @@ When C<MAX> is ommited, the max length of an item in @matches is used.
 
 =back
 
-=item Alternate Interface
+=head4 Alternate Interface
 
 =over 4
 
@@ -1266,9 +1322,7 @@ When C<MAX> is ommited, the max length of an item in @matches is used.
 
 =back
 
-=back
-
-=item Readline Signal Handling
+=head3 Readline Signal Handling
 
 =over 4
 
@@ -1314,7 +1368,7 @@ When C<MAX> is ommited, the max length of an item in @matches is used.
 
 =back
 
-=item Completion Functions
+=head3 Completion Functions
 
 =over 4
 
@@ -1345,11 +1399,9 @@ When C<MAX> is ommited, the max length of an item in @matches is used.
 
 =back
 
-=item History Functions
+=head3 History Functions
 
-=over 4
-
-=item Initializing History and State Management
+=head4 Initializing History and State Management
 
 =over 4
 
@@ -1369,7 +1421,7 @@ When C<MAX> is ommited, the max length of an item in @matches is used.
 
 =back
 
-=item History List Management
+=head4 History List Management
 
 =over 4
 
@@ -1405,13 +1457,13 @@ When C<MAX> is ommited, the max length of an item in @matches is used.
 
 stifles the history list, remembering only the last C<MAX> entries.
 If C<MAX> is undef, remembers all entries.  This is a replacement
-of unstifle_history().
+of C<unstifle_history()>.
 
 =item C<unstifle_history>
 
 	int	unstifle_history()
 
-This is equivalent with 'stifle_history(undef)'.
+This is equivalent with C<stifle_history(undef)>.
 
 =item C<SetHistory(LINE1 [, LINE2, ...])>
 
@@ -1424,7 +1476,7 @@ C<readline> is present.
 
 =back
 
-=item Information About the History List
+=head4 Information About the History List
 
 =over 4
 
@@ -1459,7 +1511,7 @@ returns the history of input as a list, if actual C<readline> is present.
 
 =back
 
-=item Moving Around the History List
+=head4 Moving Around the History List
 
 =over 4
 
@@ -1477,7 +1529,7 @@ returns the history of input as a list, if actual C<readline> is present.
 
 =back
 
-=item Searching the History List
+=head4 Searching the History List
 
 =over 4
 
@@ -1497,7 +1549,7 @@ returns the history of input as a list, if actual C<readline> is present.
 
 =back
 
-=item Managing the History File
+=head4 Managing the History File
 
 =over 4
 
@@ -1514,7 +1566,7 @@ time.  If C<FILENAME> is false, then read from F<~/.history>.  Start
 reading at line C<FROM> and end at C<TO>.  If C<FROM> is omitted or
 zero, start at the beginning.  If C<TO> is omitted or less than
 C<FROM>, then read until the end of the file.  Returns true if
-successful, or false if not.  C<read_history()> is an aliase of
+successful, or false if not.  C<read_history()> is an alias of
 C<read_history_range()>.
 
 =item C<WriteHistory([FILENAME])>
@@ -1537,7 +1589,7 @@ F<~/.history>.  Returns true if successful, or false if not.
 
 =back
 
-=item History Expansion
+=head4 History Expansion
 
 =over 4
 
@@ -1545,7 +1597,7 @@ F<~/.history>.  Returns true if successful, or false if not.
 
 	(int result, str expansion) history_expand(str line)
 
-Note that this function returns C<expansion> in scalar context.
+Note that this function returns C<expansion> in the scalar context.
 
 =item C<get_history_event(STRING, CINDEX [,QCHAR])>
 
@@ -1563,10 +1615,6 @@ Note that this function returns C<expansion> in scalar context.
 
 =back
 
-=back
-
-=back
-
 =head2 C<Term::ReadLine::Gnu> Variables
 
 Following GNU Readline/History Library variables can be accessed by a
@@ -1574,7 +1622,7 @@ Perl program.  See L<GNU Readline Library
 Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html> and
 L<GNU History Library
 Manual|http://cnswww.cns.cwru.edu/php/chet/readline/history.html> for
-details of each variable.  You can access them with C<Attribs>
+details of each variable.  You can access them by using C<Attribs>
 methods.  Names of keys in this hash conform to standard conventions
 with the leading C<rl_> stripped.
 
@@ -1584,9 +1632,7 @@ Examples:
     $v = $attribs->{library_version};	# rl_library_version
     $v = $attribs->{history_base};	# history_base
 
-=over 4
-
-=item Readline Variables
+=head3 Readline Variables
 
 	str rl_line_buffer
 	int rl_point
@@ -1629,13 +1675,13 @@ Examples:
 	int rl_numeric_arg (read only)
 	int rl_editing_mode (read only)
 
-=item Signal Handling Variables
+=head3 Signal Handling Variables
 
 	int rl_catch_signals (GRL 4.0)
 	int rl_catch_sigwinch (GRL 4.0)
 	int rl_change_environment (GRL 6.3)
 
-=item Completion Variables
+=head3 Completion Variables
 
 	pfunc rl_completion_entry_function
 	pfunc rl_attempted_completion_function
@@ -1671,7 +1717,7 @@ Examples:
 	int rl_completion_invoking_key (GRL 6.0, read only)
 	int rl_inhibit_completion
 
-=item History Variables
+=head3 History Variables
 
 	int history_base (read only)
 	int history_length (read only)
@@ -1686,7 +1732,7 @@ Examples:
 	int history_quotes_inhibit_expansion
 	pfunc history_inhibit_expansion_function
 
-=item Function References
+=head3 Function References
 
 	rl_getc
 	rl_redisplay
@@ -1698,20 +1744,18 @@ Examples:
 	shadow_redisplay
 	Tk_getc
 
-=back
-
 =head2 Custom Completion
 
 In this section variables and functions for custom completion are
-described with examples.
+described along with examples.
 
-Most of descriptions in this section are cited from L<GNU Readline
+Most of descriptions in this section came from L<GNU Readline
 Library
 Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>.
 
 =over 4
 
-=item C<rl_completion_entry_function>
+=item C<completion_entry_function>
 
 This variable holds reference refers to a generator function for
 C<completion_matches()>.
@@ -1725,7 +1769,7 @@ initialization, and a positive non-zero integer for each subsequent
 call.  When the generator function returns C<undef> this signals
 C<completion_matches()> that there are no more possibilities left.
 
-If the value is undef, built-in C<filename_completion_function> is
+If this variable set to undef, built-in C<filename_completion_function> is
 used.
 
 A sample generator function, C<list_completion_function>, is defined
@@ -1745,7 +1789,7 @@ in Gnu.pm.  You can use it as follows;
 
 See also C<completion_matches>.
 
-=item C<rl_attempted_completion_function>
+=item C<attempted_completion_function>
 
 A reference to an alternative function to create matches.
 
@@ -1757,7 +1801,7 @@ C<TEXT> are.
 If this function exists and returns null list or C<undef>, or if this
 variable is set to C<undef>, then an internal function
 C<rl_complete()> will call the value of
-C<$rl_completion_entry_function> to generate matches, otherwise the
+C<completion_entry_function> to generate matches, otherwise the
 array of strings returned will be used.
 
 The default value of this variable is C<undef>.  You can use it as follows;
@@ -1790,7 +1834,7 @@ remaining entries are the possible completions.
 C<ENTRY_FUNC> is a generator function which has two arguments, and
 returns a string.  The first argument is C<TEXT>.  The second is a
 state argument; it is zero on the first call, and non-zero on
-subsequent calls.  C<ENTRY_FUNC> returns a C<undef> to the caller when
+subsequent calls.  C<ENTRY_FUNC> returns C<undef> to the caller when
 there are no more matches.
 
 If the value of C<ENTRY_FUNC> is undef, built-in
@@ -1798,14 +1842,14 @@ C<filename_completion_function> is used.
 
 C<completion_matches> is a Perl wrapper function of an internal
 function C<completion_matches()>.  See also
-C<$rl_completion_entry_function>.
+C<completion_entry_function>.
 
 =item C<completion_function>
 
 A variable whose content is a reference to a function which returns a
 list of candidates to complete.
 
-This variable is compatible with C<Term::ReadLine::Perl> and very easy
+This variable is compatible with L<Term::ReadLine::Perl|http://search.cpan.org/dist/Term-ReadLine-Perl/> and very easy
 to use.
 
     use Term::ReadLine;
@@ -1821,32 +1865,30 @@ to use.
 =item C<list_completion_function(TEXT, STATE)>
 
 A sample generator function defined by C<Term::ReadLine::Gnu>.
-Example code at C<rl_completion_entry_function> shows how to use this
+Example code at C<completion_entry_function> shows how to use this
 function.
 
 =back
 
 =head2 C<Term::ReadLine::Gnu> Specific Features
 
-=over 4
-
-=item C<Term::ReadLine::Gnu> Specific Functions
+=head3 C<Term::ReadLine::Gnu> Specific Functions
 
 =over 4
 
 =item C<CallbackHandlerInstall(PROMPT, LHANDLER)>
 
 This method provides the function C<rl_callback_handler_install()>
-with the following addtional feature compatible with C<readline>
-method; ornament feature, C<Term::ReadLine::Perl> compatible
-completion function, histroy expansion, and addition to history
+with the following additional feature compatible with C<readline>
+method; ornament feature, L<Term::ReadLine::Perl|http://search.cpan.org/dist/Term-ReadLine-Perl/> compatible
+completion function, history expansion, and addition to history
 buffer.
 
 =item C<call_function(FUNCTION, [COUNT [,KEY]])>
 
 	int	rl_call_function(FunctionPtr|str function, count = 1, key = -1)
 
-=item C<rl_get_all_function_names>
+=item C<get_all_function_names>
 
 Returns a list of all function names.
 
@@ -1857,11 +1899,11 @@ A redisplay function for password input.  You can use it as follows;
 	$attribs->{redisplay_function} = $attribs->{shadow_redisplay};
 	$line = $term->readline("password> ");
 
-=item C<rl_filename_list>
+=item C<filename_list>
 
-Returns candidates of filename to complete.  This function can be used
+Returns candidates of filenames to complete.  This function can be used
 with C<completion_function> and is implemented for the compatibility
-with C<Term::ReadLine::Perl>.
+with L<Term::ReadLine::Perl|http://search.cpan.org/dist/Term-ReadLine-Perl/>.
 
 =item C<list_completion_function>
 
@@ -1869,7 +1911,7 @@ See the description of section L<"Custom Completion"|"Custom Completion">.
 
 =back
 
-=item C<Term::ReadLine::Gnu> Specific Variables
+=head3 C<Term::ReadLine::Gnu> Specific Variables
 
 =over 4
 
@@ -1888,7 +1930,7 @@ C<list_completion_function>.
 
 =back
 
-=item C<Term::ReadLine::Gnu> Specific Commands
+=head3 C<Term::ReadLine::Gnu> Specific Commands
 
 =over 4
 
@@ -1902,7 +1944,7 @@ The equivalent of the Korn shell C<operate-and-get-next-history-line>
 editing command and the Bash C<operate-and-get-next>.
 
 This command is bound to C<\C-o> by default for the compatibility with
-the Bash and C<Term::ReadLine::Perl>.
+the Bash and L<Term::ReadLine::Perl|http://search.cpan.org/dist/Term-ReadLine-Perl/>.
 
 =item C<display-readline-version>
 
@@ -1912,8 +1954,6 @@ Readline Library.
 =item C<change-ornaments>
 
 Change ornaments interactively.
-
-=back
 
 =back
 
@@ -1928,17 +1968,18 @@ like to use a different set of key bindings.  When a program which
 uses the GNU Readline library starts up, the init file is read, and
 the key bindings are set.
 
-Conditional key binding is also available.  The program name which is
+The conditional init constructs is supported.  The program name which is
 specified by the first argument of C<new> method is used as the
 application construct.
 
-For example, when your program call C<new> method like this;
+For example, when your program calls C<new> method as follows;
 
 	...
 	$term = new Term::ReadLine 'PerlSh';
 	...
 
-your F<~/.inputrc> can define key bindings only for it as follows;
+your F<~/.inputrc> can define key bindings only for the program as
+follows;
 
 	...
 	$if PerlSh
@@ -1948,11 +1989,22 @@ your F<~/.inputrc> can define key bindings only for it as follows;
 	$endif
 	...
 
+For further details, see the section "Readline Init File" in the L<GNU
+Readline Library
+Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>
+
 =back
 
 =head1 EXPORTS
 
 None.
+
+=head1 ENVIRONMENT
+
+The environment variable C<PERL_RL> governs which ReadLine clone is
+loaded.  See the ENVIRONMENT section on
+L<Term::ReadLine|http://search.cpan.org/dist/Term-ReadLine/> for
+further details.
 
 =head1 SEE ALSO
 
@@ -1971,6 +2023,10 @@ None.
 =item Works which use Term::ReadLine::Gnu
 
 =over 4
+
+=item Distributions which depend on Term::ReadLine::Gnu on L<CPAN|http://www.cpan.org/>
+
+L<https://metacpan.org/requires/distribution/Term-ReadLine-Gnu>
 
 =item L<Perl Debugger|http://perldoc.perl.org/perldebug.html>
 
@@ -2020,14 +2076,9 @@ interface to the DBD modules.
 
 A visual shell and CLI shell supplement.
 
-=item Distributions which depend on Term::ReadLine::Gnu on L<CPAN|http://www.cpan.org/>
-
-L<https://metacpan.org/requires/distribution/Term-ReadLine-Gnu>
-
 =back
 
-If you know any other works which can be listed here, please let me
-know.
+If you know any other works you recommend, please let me know.
 
 =back
 
@@ -2043,18 +2094,25 @@ GTK+ support in addition to Tk.
 
 =head1 BUGS
 
-C<rl_add_defun()> can define up to 16 functions.
+=over 4
 
-Some functions and variables do not have test code yet.  Your
+=item Submit a bug report to
+L<rt.cpan.org|https://rt.cpan.org/Dist/Display.html?Name=Term-ReadLine-Gnu>.
+
+=item C<add_defun()> can define up to 16 functions.
+
+=item Some functions and variables do not have test code yet.  Your
 contribution is welcome.  See F<t/readline.t> for details.
 
-If the pager command (| or ||) in Perl debugger causes segmentation
+=item If the pager command (| or ||) in Perl debugger causes segmentation
 fault, you need to fix F<perl5db.pl>.  See
 L<https://rt.perl.org/Public/Bug/Display.html?id=121456> for details.
 
+=back
+
 =head1 LICENSE
 
-Copyright (c) 2014 Hiroo Hayashi.  All rights reserved.
+Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
 
 This program is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
