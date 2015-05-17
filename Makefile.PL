@@ -57,6 +57,18 @@ if ($Config{osname} eq 'os2') {
     $defs .= ' -DOS2_USEDLL';
     $lddflags = '';
 } else {
+    # if user hasn't provided RLLIB or RLINC....
+    # OS X uses libedit, but they've named it libreadline...
+    # see if user has installed gnu readline via homebrew
+    if ($Config{osname} eq 'darwin' && !($RLLIB || $RLINC)) {
+        my $homebrew_prefix = `brew --prefix readline`;
+        if ($homebrew_prefix) {
+            chomp $homebrew_prefix;
+            $RLLIB = "-L$homebrew_prefix/lib";
+            $RLINC = "-I$homebrew_prefix/include";
+        }
+    }
+
     # Search libtermcap, libncurses, or libcurses in this order.
     # I emulate the behavior of the configure script for bash, and don't
     # know why AIX prefers curses.
@@ -192,7 +204,7 @@ sub check_readline_version {
 /* used by Makefile.pl to check the version of the GNU Readline Library */
 #include <stdio.h>
 #include <readline/readline.h>
-main() { puts(rl_library_version); }
+int main() { puts(rl_library_version); return 0; }
 EOF
     close(F);
 
