@@ -124,11 +124,42 @@
 
 2.2. Using Package
 
+2.2.1. RPM on Linux
+
 	On Linux you need to install 'ncurses-devel' package in
 	addition to 'readline-devel' package.  On distributions using
 	RPM do follows;
 
 	% sudo yum install ncurses-devel
 	% sudo yum install readline-devel
+
+2.2.2. homebrew on Mac OS X
+
+       1. Install homebrew
+	See http://brew.sh/.
+
+       2. Use homebrew to install the GNU Readline Library:
+       		% brew install readline
+
+	Because the GNU Readline library conflicts with the the
+	similarly-named-but-different library installed in the base
+	OS, homebrew does not link readline into /usr/local (it is
+	"keg-only").
+
+	Makefile.PL uses `brew prefix readline' to find and use the
+	"keg" directory so things work seamlessly.
+
+	3. Build Term::ReadLine::Gnu as described above:
+		% perl Makefile.PL
+		% make
+		% make test
+		% make install
+
+	`brew cleanup' will not remove keg-only formula, to avoid
+	breaking things that have been linked against it.  However, if
+	you force it, `brew cleanup --force', then it will remove the
+	keg-only formula and Term::ReadLine::Gnu will cease to work.
+	You'll need to rebuild Term::ReadLine::GNU so that it links
+	against whichever newer version you have installed.
 
 EOF
