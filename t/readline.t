@@ -882,11 +882,16 @@ print "ok $n\n"; $n++;
 print "# test rl_display_match_list\n";
 
 if ($version >= 0x0400) {
-    my @match_list = @{$a->{completion_word}};
+#    my @match_list = @{$a->{completion_word}};
+    my @match_list = qw(possible_completion one two three four five six);
     $t->display_match_list(\@match_list);
     $t->parse_and_bind('set print-completions-horizontally on');
     $t->display_match_list(\@match_list);
     $t->parse_and_bind('set print-completions-horizontally off');
+    @match_list = qw(foo/ foo/bar1 foo/bar2 foo/bar3);
+    $t->display_match_list(\@match_list);
+    @match_list = qw(foo/bar foo/bar1 foo/bar2 foo/bar3);
+    $t->display_match_list(\@match_list);
     print "ok $n\n"; $n++;
 } else {
     print "ok $n # skipped because GNU Readline Library is older than 4.0.\n";
