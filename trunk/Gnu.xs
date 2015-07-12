@@ -2429,16 +2429,16 @@ rl_display_match_list(pmatches, plen = -1, pmax = -1)
 	  SV **pvp;
 
 	  if (SvTYPE(SvRV(pmatches)) != SVt_PVAV) {
-	    warn("Gnu.xs:_rl_display_match_list: the 1st arguments must be a reference of an array\n");
+	    warn("Gnu.xs:_rl_display_match_list: the 1st arguments must be a reference to an array\n");
 	    return;
 	  }
 	  av_matches = (AV *)SvRV(ST(0));
-	  /* index zero contains possible match and is ignored */
+	  /* index zero contains a possible match and is not counted */
 	  if ((len = av_len(av_matches) + 1 - 1) == 0)
 	    return;
 	  matches = (char **)xmalloc (sizeof(char *) * (len + 2));
 	  max = 0;
-	  for (i = 1; i <= len; i++) {
+	  for (i = 0; i <= len; i++) {
 	    pvp = av_fetch(av_matches, i, 0);
 	    if (SvPOKp(*pvp)) {
 	      matches[i] = dupstr(SvPV(*pvp, l));
