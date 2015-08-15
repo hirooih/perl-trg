@@ -82,21 +82,18 @@ typedef void rl_vcpfunc_t PARAMS((char *));
 typedef void rl_vcppfunc_t PARAMS((char **));
 
 /* rl_last_func() is defined in rlprivate.h */
-extern Function *rl_last_func;
+extern rl_command_func_t *rl_last_func;
 #endif /* (RL_READLINE_VERSION < 0x0402) */
 
-#if (RL_READLINE_VERSION >= 0x0603)
-/* obsoleted by Readline 6.3 */
-typedef int Function ();
-typedef void VFunction ();
-typedef char *CPFunction ();
-typedef char **CPPFunction ();
-#endif /* (RL_READLINE_VERSION >= 0x0603) */
+#if (RL_READLINE_VERSION < 0x0500)
+typedef char *rl_cpvfunc_t PARAMS((void));
+#endif /* (RL_READLINE_VERSION < 0x0500) */
+
 
 #if (RL_READLINE_VERSION < 0x0201)
 /* features introduced by GNU Readline 2.1 */
-static VFunction *rl_prep_term_function;
-static VFunction *rl_deprep_term_function;
+static rl_vintfunc_t *rl_prep_term_function;
+static rl_voidfunc_t *rl_deprep_term_function;
 #endif /* (RL_READLINE_VERSION < 0x0201) */
 
 #if (RL_READLINE_VERSION < 0x0202)
@@ -137,7 +134,7 @@ rl_unbind_command_in_map (command, map)
 /* documented by Readline 4.0 but already implemented since 2.0 or 2.1. */
 extern void rl_extend_line_buffer PARAMS((int));
 extern char **rl_funmap_names PARAMS((void));
-extern int rl_add_funmap_entry PARAMS((CONST char *, Function *));
+extern int rl_add_funmap_entry PARAMS((CONST char *, rl_command_func_t *));
 extern void rl_prep_terminal PARAMS((int));
 extern void rl_deprep_terminal PARAMS((void));
 extern int rl_execute_next PARAMS((int));
@@ -145,10 +142,10 @@ extern int rl_execute_next PARAMS((int));
 /* features introduced by GNU Readline 4.0 */
 /* dummy variable/function definition */
 static int rl_erase_empty_line = 0;
-static Function *rl_pre_input_hook;
+static rl_hook_func_t *rl_pre_input_hook;
 static int rl_catch_signals = 1;
 static int rl_catch_sigwinch = 1;
-static VFunction *rl_completion_display_matches_hook;
+static rl_compdisp_func_t *rl_completion_display_matches_hook;
 
 static void rl_display_match_list(){}
 static void rl_cleanup_after_signal(){}
@@ -187,11 +184,13 @@ static int rl_set_keyboard_input_timeout(){ return 0; }
 static int rl_alphabetic(){ return 0; }
 static int rl_set_paren_blink_timeout(){ return 0; }
 static void rl_set_screen_size(int row, int col){}
-static void rl_get_screen_size(int *row, int *col){}
+static void rl_get_screen_size(int *row, int *col){
+  *row = *col = 0;
+}
 
 static char *rl_executing_macro = NULL; /* was _rl_executing_macro */
 static int rl_readline_state = 2; /* RL_STATE_INITIALIZED */
-static Function *rl_directory_rewrite_hook = NULL;
+static rl_icppfunc_t *rl_directory_rewrite_hook = NULL;
 static char *history_word_delimiters = " \t\n;&()|<>";
 
 /* documented by 4.2a but implemented since 2.1 */
@@ -234,7 +233,7 @@ rl_completion_matches (s, f)
      char *s;
      rl_compentry_func_t *f;
 {
-  return completion_matches (s, (CPFunction *)f);
+  return completion_matches (s, f);
 }
 
 static char *
@@ -264,7 +263,7 @@ static int rl_completion_mode(){ return 0; }
 
 #if (RL_VERSION_MAJOR < 5)
 /* features introduced by GNU Readline 5.0 */
-static Function *rl_completion_word_break_hook = NULL;
+static rl_cpvfunc_t *rl_completion_word_break_hook = NULL;
 static int rl_completion_quote_character = 0;
 static int rl_completion_suppress_quote = 0;
 static int rl_completion_found_quote = 0;
@@ -577,122 +576,123 @@ enum { STARTUP_HOOK, EVENT_HOOK, GETC_FN, REDISPLAY_FN,
        SIG_EVT, INP_AVL, FN_STAT
 };
 
+typedef int XFunction ();
 static struct fn_vars {
-  Function **rlfuncp;		/* GNU Readline Library variable */
-  Function *defaultfn;		/* default function */
-  Function *wrapper;		/* wrapper function */
+  XFunction **rlfuncp;		/* GNU Readline Library variable */
+  XFunction *defaultfn;		/* default function */
+  XFunction *wrapper;		/* wrapper function */
   SV *callback;			/* Perl function */
 } fn_tbl[] = {
   { &rl_startup_hook,	NULL,	startup_hook_wrapper,	NULL },	/* 0 */
   { &rl_event_hook,	NULL,	event_hook_wrapper,	NULL },	/* 1 */
   { &rl_getc_function,	rl_getc, getc_function_wrapper,	NULL },	/* 2 */
   {								
-    (Function **)&rl_redisplay_function,			/* 3 */
-    (Function *)rl_redisplay,
-    (Function *)redisplay_function_wrapper,
+    (XFunction **)&rl_redisplay_function,			/* 3 */
+    (XFunction *)rl_redisplay,
+    (XFunction *)redisplay_function_wrapper,
     NULL
   },
   {
-    (Function **)&rl_completion_entry_function,			/* 4 */
+    (XFunction **)&rl_completion_entry_function,			/* 4 */
     NULL,
-    (Function *)completion_entry_function_wrapper,		
+    (XFunction *)completion_entry_function_wrapper,		
     NULL
   },
   {
-    (Function **)&rl_attempted_completion_function,		/* 5 */
+    (XFunction **)&rl_attempted_completion_function,		/* 5 */
     NULL,
-    (Function *)attempted_completion_function_wrapper,
+    (XFunction *)attempted_completion_function_wrapper,
     NULL
   },
   {
-    (Function **)&rl_filename_quoting_function,			/* 6 */
-    (Function *)rl_quote_filename,
-    (Function *)filename_quoting_function_wrapper,
+    (XFunction **)&rl_filename_quoting_function,			/* 6 */
+    (XFunction *)rl_quote_filename,
+    (XFunction *)filename_quoting_function_wrapper,
     NULL
   },
   {
-    (Function **)&rl_filename_dequoting_function,		/* 7 */
+    (XFunction **)&rl_filename_dequoting_function,		/* 7 */
     NULL,
-    (Function *)filename_dequoting_function_wrapper,
+    (XFunction *)filename_dequoting_function_wrapper,
     NULL
   },
   {
-    (Function **)&rl_char_is_quoted_p,				/* 8 */
+    (XFunction **)&rl_char_is_quoted_p,				/* 8 */
     NULL,
-    (Function *)char_is_quoted_p_wrapper,
+    (XFunction *)char_is_quoted_p_wrapper,
     NULL
   },
   {
-    (Function **)&rl_ignore_some_completions_function,		/* 9 */
+    (XFunction **)&rl_ignore_some_completions_function,		/* 9 */
     NULL,
-    (Function *)ignore_some_completions_function_wrapper,
+    (XFunction *)ignore_some_completions_function_wrapper,
     NULL
   },
   {
-    (Function **)&rl_directory_completion_hook,			/* 10 */
+    (XFunction **)&rl_directory_completion_hook,			/* 10 */
     NULL,
-    (Function *)directory_completion_hook_wrapper,
+    (XFunction *)directory_completion_hook_wrapper,
     NULL
   },
   {
-    (Function **)&history_inhibit_expansion_function,		/* 11 */
+    (XFunction **)&history_inhibit_expansion_function,		/* 11 */
     NULL,
-    (Function *)history_inhibit_expansion_function_wrapper,
+    (XFunction *)history_inhibit_expansion_function_wrapper,
     NULL
   },
   { &rl_pre_input_hook,	NULL,	pre_input_hook_wrapper,	NULL },	/* 12 */
   {
-    (Function **)&rl_completion_display_matches_hook,		/* 13 */
+    (XFunction **)&rl_completion_display_matches_hook,		/* 13 */
     NULL,
-    (Function *)completion_display_matches_hook_wrapper,
+    (XFunction *)completion_display_matches_hook_wrapper,
     NULL
   },
   {
-    (Function **)&rl_completion_word_break_hook,		/* 14 */
+    (XFunction **)&rl_completion_word_break_hook,		/* 14 */
     NULL,
-    (Function *)completion_word_break_hook_wrapper,
+    (XFunction *)completion_word_break_hook_wrapper,
     NULL
   },
   {
-    (Function **)&rl_prep_term_function,			/* 15 */
-    (Function *)rl_prep_terminal,
-    (Function *)prep_term_function_wrapper,
+    (XFunction **)&rl_prep_term_function,			/* 15 */
+    (XFunction *)rl_prep_terminal,
+    (XFunction *)prep_term_function_wrapper,
     NULL
   },
   {
-    (Function **)&rl_deprep_term_function,			/* 16 */
-    (Function *)rl_deprep_terminal,
-    (Function *)deprep_term_function_wrapper,
+    (XFunction **)&rl_deprep_term_function,			/* 16 */
+    (XFunction *)rl_deprep_terminal,
+    (XFunction *)deprep_term_function_wrapper,
     NULL
   },
   {
-    (Function **)&rl_directory_rewrite_hook,			/* 17 */
+    (XFunction **)&rl_directory_rewrite_hook,			/* 17 */
     NULL,
-    (Function *)directory_rewrite_hook_wrapper,
+    (XFunction *)directory_rewrite_hook_wrapper,
     NULL
   },
   {
-    (Function **)&rl_filename_rewrite_hook,			/* 18 */
+    (XFunction **)&rl_filename_rewrite_hook,			/* 18 */
     NULL,
-    (Function *)filename_rewrite_hook_wrapper,
+    (XFunction *)filename_rewrite_hook_wrapper,
     NULL
   },
   {
-    (Function **)&rl_signal_event_hook,				/* 19 */
+    (XFunction **)&rl_signal_event_hook,				/* 19 */
     NULL,
-    (Function *)signal_event_hook_wrapper,
+    (XFunction *)signal_event_hook_wrapper,
     NULL
   },
   {
-    (Function **)&rl_input_available_hook,			/* 20 */
+    (XFunction **)&rl_input_available_hook,			/* 20 */
     NULL,
-    (Function *)input_available_hook_wrapper,
+    (XFunction *)input_available_hook_wrapper,
     NULL
   },
   {
-    (Function **)&rl_filename_stat_hook,			/* 21 */
+    (XFunction **)&rl_filename_stat_hook,			/* 21 */
     NULL,
-    (Function *)filename_stat_hook_wrapper,
+    (XFunction *)filename_stat_hook_wrapper,
     NULL
   }
 };
@@ -1664,7 +1664,7 @@ static int fw_14(c, k) int c; int k; { return function_wrapper(c, k, 14); }
 static int fw_15(c, k) int c; int k; { return function_wrapper(c, k, 15); }
 
 static struct fnnode {
-  Function *wrapper;		/* C wrapper function */
+  rl_command_func_t *wrapper;	/* C wrapper function */
   SV *pfn;			/* Perl function */
 } fntbl[] = {
   { fw_00,	NULL },
@@ -2656,7 +2656,7 @@ rl_completion_matches(text, fn = NULL)
 
 	  if (SvTRUE(fn)) {
 	    /* use completion_entry_function temporarily */
-	    Function *rlfunc_save = *(fn_tbl[CMP_ENT].rlfuncp);
+	    XFunction *rlfunc_save = *(fn_tbl[CMP_ENT].rlfuncp); /* ??? */
 	    SV *callback_save = fn_tbl[CMP_ENT].callback;
 	    fn_tbl[CMP_ENT].callback = newSVsv(fn);
 
@@ -2665,7 +2665,7 @@ rl_completion_matches(text, fn = NULL)
 
 	    SvREFCNT_dec(fn_tbl[CMP_ENT].callback);
 	    fn_tbl[CMP_ENT].callback = callback_save;
-	    *(fn_tbl[CMP_ENT].rlfuncp) = rlfunc_save;
+	    *(fn_tbl[CMP_ENT].rlfuncp) = rlfunc_save; /* ??? */
 	  } else
 	    matches = rl_completion_matches(text, NULL);
 
@@ -3297,7 +3297,7 @@ _rl_fetch_function(id)
 	  }
 	}
 
-Function *
+rl_command_func_t *
 _rl_fetch_last_func()
     PROTOTYPE:
     CODE:
