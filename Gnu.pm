@@ -1316,6 +1316,10 @@ When C<MAX> is omitted, the max length of an item in C<@matches> is used.
 
 	void	rl_callback_read_char()
 
+=item C<callback_sigcleanup>					# GRL 7.0
+
+	void	rl_callback_sigcleanup()
+
 =item C<callback_handler_remove>
 
 	void	rl_callback_handler_remove()
