@@ -340,6 +340,11 @@ static void	*history_set_hitory_state(HISTORY_STATE *state)
  */
 #endif /* (RL_READLINE_VERSION < 0x0603) */
 
+#if (RL_READLINE_VERSION < 0x0700)
+/* features introduced by GNU Readline 7.0 */
+static void rl_callback_sigcleanup (void) {}
+#endif /* (RL_READLINE_VERSION < 0x0700) */
+
 /*
  * utility/dummy functions
  */                                                                                
@@ -2557,6 +2562,10 @@ rl_callback_handler_install(prompt, lhandler)
 
 void
 rl_callback_read_char()
+    PROTOTYPE:
+
+void
+rl_callback_sigcleanup()
     PROTOTYPE:
 
 void
