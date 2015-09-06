@@ -1,13 +1,30 @@
 	-*- Indented-text -*-
 	$Id$
 
+1.27  2015-09-06
+	- readline-7.0 support
+	    new function
+		rl_callback_sigcleanup
+	- improve POD documents
+	- Gnu.xs: not to use obsoleted typedefs which were obsoleted
+          by ReadLine 6.3
+	- fix a wrong fix on 1.21 to let completion_function do case
+          insensitive match. [rt.cpan.org #72378]
+	- fix rl_display_match_list to show the first entry of the
+          array.  The bug caused segmentation fault with readline-7.0.
+	- some improvement of Makefile.PL:
+	  - add support homebrew on Mac OS X. [rt.cpan.org #104389]
+	  - print an error string when system() fails.
+	  - specify 'int' on 'main()'.
+	  - use -O when -D_FORTIFY_SOURCE is defined.
+
 1.26  2015-01-31
-	- Call ornaments() after rl_initialize() to set tty before
+	- call ornaments() after rl_initialize() to set tty before
           calling rl_initialize() not to output some charactores to
           STDIO. [rt.cpan.org #96569, #101196]
 	- make handling of iostreams simple (make _rl_store_iostream()
           return void and remove _rl_fetch_iostream()) [rt.cpan.org #101078]
-	- Fix the Prerequisites section to require Perl 5.8 (it was
+	- fix the Prerequisites section to require Perl 5.8 (it was
           required since TRG 1.23.).
 	- t/callback.t: add some new Tk-tests from CPAN Testers' site.
 
@@ -19,7 +36,7 @@
           section names in the manuals of the libraries.
 	- eg/perlsh: use 'IO' instead of 'FILEHANDLE' which Perl 5.20
 	  warns. [rt.cpan.org #100883]
-	- Fix copyright notices to use the year of first publication.
+	- fix copyright notices to use the year of first publication.
 
 1.24  2014-03-23
 	- fix not to make the PerlIO layer empty for Perl 5.8.9 or

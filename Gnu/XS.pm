@@ -17,7 +17,7 @@ use warnings;
 use AutoLoader 'AUTOLOAD';
 
 use vars qw($VERSION);
-$VERSION='1.26';	# added for CPAN
+$VERSION='1.27';	# added for CPAN
 
 # make aliases
 use vars qw(%Attribs);
