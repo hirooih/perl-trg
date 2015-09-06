@@ -39,6 +39,11 @@ if ($ENV{AUTOMATED_TESTING} && ($Config{osname} eq 'openbsd')) {
 
 $defs = ($Config{strings} =~ m|/string.h$|) ? '-DHAVE_STRING_H' : '';
 
+# pacify warnings for -D_FORTIFY_SOURCE which perl 5.20.0 started using
+if ($Config{ccflags} =~ /-D_FORTIFY_SOURCE=/) {
+    $defs .= ' -O';
+}
+
 # Parse command line to specify paths for the GNU Readline Library
 {
     my ($prefix, $libdir, $incdir);
@@ -217,6 +222,8 @@ EOF
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Could not compile $frlver.
 
+system(): $!
+
 If you have installed the GNU Readline Library (libreadline.{a,so} and
 readline/readline.h, etc.) on directories for which your perl is not
 configured to search (refer the value of `ccflags' and `libpath' in
@@ -247,8 +254,8 @@ The libreadline you are using is the libedit library.  Use the GNU Readline Libr
 EOM
 	exit $err;
     }
-    print "It seems that you have the GNU Readline Library version $rlver.\n";
-    # $rlver may be '8.21-beta3' or '4.2a'
+    print "!!!It seems that you have the GNU Readline Library version $rlver.!!!\n";
+    # $rlver may be '8.21-beta3', '4.2a', or etc.
     return $rlver =~ /(\d+)\.(\d+)/;
 }
 
@@ -308,7 +315,11 @@ EOF
 	my $comp_cmd = "$Config{cc} $RLINC $Config{ccflags} $defs $xdef $frlmalloc -o rlmalloc $RLLIB $lddflags $Config{ldflags} $libs";
 	print $comp_cmd, "\n";
 	system($comp_cmd);
-	unless (system($comp_cmd) || `./rlmalloc` !~ /^ok$/ || $?) {
+	if ($?) {
+	    warn "\nsystem(): $!";
+	    exit $err;
+	}
+	unless (`./rlmalloc` !~ /^ok$/ || $?) {
 	    $extra_defs = $xdef;
 	    last;
 	}
