@@ -47,7 +47,7 @@ sub ok {
 	print "ok $n\t$what\n";
     } else {
 	print "not ok $n\t$what";
-	print @_ ? "\t@_\n" : "\n";
+	print @_ ? "\t[@_]\n" : "\n";
 	$ok = 0;
     }
     $n++;
@@ -550,6 +550,9 @@ $res = $a->{inhibit_completion} == 0;			ok;
 ########################################################################
 
 $t->parse_and_bind('set bell-style none'); # make readline quiet
+#$t->parse_and_bind('set enable-bracketed-paste on');
+#$t->parse_and_bind('set blink-matching-paren on');
+#$t->parse_and_bind('set colored-completion-prefix off');
 
 my ($INSTR, $line);
 # simulate key input by using a variable 'rl_getc_function'
