@@ -1,9 +1,10 @@
 	-*- Indented-text -*-
 	$Id$
 
-1.28  2015-09-06
+1.28  2015-09-21
 	- Makefile.PL: revert a change on 1.27 which causes fail on
           the rlmalloc test. [rt.cpan.org #107201]
+	- t/readline.t, t/history.t: use LC_ALL instead of LANG.
 
 1.27  2015-09-06
 	- readline-7.0 support
