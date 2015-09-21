@@ -14,7 +14,7 @@
 BEGIN {
     print "1..140\n"; $n = 1;
     $ENV{PERL_RL} = 'Gnu';	# force to use Term::ReadLine::Gnu
-    $ENV{LANG} = 'C';
+    $ENV{LC_ALL} = 'C';		# LC_ALL is stronger than LANG
 }
 END {print "not ok 1\tfail to loading\n" unless $loaded;}
 

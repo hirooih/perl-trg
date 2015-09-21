@@ -14,7 +14,7 @@
 BEGIN {
     print "1..84\n"; $n = 1;
     $ENV{PERL_RL} = 'Gnu';	# force to use Term::ReadLine::Gnu
-    $ENV{LANG} = 'C';
+    $ENV{LC_ALL} = 'C';
 }
 END {print "not ok $n\n" unless $loaded;}
 
