@@ -263,7 +263,11 @@ EOM
 # Check whether the xmalloc exported by readline is indeed called
 # 'xmalloc' or whether it has been renamed to '_rl_malloc'.
 # Contributed by KENTNL at cpan.org
+
+# Gentoo Linux requires this hack, because it renames xmalloc,
+# xrealloc, and xfree. It is not a good idea.  Yes, I agree with Chet.
 # https://rt.cpan.org/Ticket/Display.html?id=65973
+
 sub guess_malloc_names {
     my ($RLINC, $RLLIB, $defs, $lddflags, $libs) = @_;
     my $frlmalloc = 'rlmalloc.c';
