@@ -254,7 +254,7 @@ The libreadline you are using is the libedit library.  Use the GNU Readline Libr
 EOM
 	exit $err;
     }
-    print "!!!It seems that you have the GNU Readline Library version $rlver.!!!\n";
+    print "<<<It seems that you have the GNU Readline Library version $rlver.>>>\n";
     # $rlver may be '8.21-beta3', '4.2a', or etc.
     return $rlver =~ /(\d+)\.(\d+)/;
 }
@@ -314,12 +314,7 @@ EOF
 	# compile it
 	my $comp_cmd = "$Config{cc} $RLINC $Config{ccflags} $defs $xdef $frlmalloc -o rlmalloc $RLLIB $lddflags $Config{ldflags} $libs";
 	print $comp_cmd, "\n";
-	system($comp_cmd);
-	if ($?) {
-	    warn "\nsystem(): $!";
-	    exit $err;
-	}
-	unless (`./rlmalloc` !~ /^ok$/ || $?) {
+	unless (system($comp_cmd) || `./rlmalloc` !~ /^ok$/ || $?) {
 	    $extra_defs = $xdef;
 	    last;
 	}
