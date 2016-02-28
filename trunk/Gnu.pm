@@ -68,8 +68,8 @@ L<Term::ReadLine|http://search.cpan.org/dist/Term-ReadLine/>.
 use strict;
 use warnings;
 use Carp;
-# use version 1.22 for perl 5.7.x, or 1.09 for older Perl
-use 5.008; use 5.8.0;
+# use version TRG-1.22 for perl 5.7.x, or TRG-1.09 for older Perl
+use 5.8.1; use 5.008;
 
 # This module can't be loaded directly.
 BEGIN {
@@ -84,9 +84,9 @@ END
 {
     use Exporter ();
     use DynaLoader;
-    use vars qw($VERSION @ISA @EXPORT_OK);
+    our ($VERSION, @ISA, @EXPORT_OK);
 
-    $VERSION = '1.28';		# update Gnu::XS::VERSION also.
+    $VERSION = '1.29';		# update Gnu::XS::VERSION also.
 
     # Term::ReadLine::Gnu::AU makes a function in
     # `Term::ReadLine::Gnu::XS' as a method.
@@ -119,7 +119,7 @@ require Term::ReadLine::Gnu::XS;
 
 #	Global Variables
 
-use vars qw(%Attribs %Features);
+our(%Attribs, %Features, $readline_version, $utf8_in);
 
 # Each variable in the GNU Readline Library is tied to an entry of
 # this hash (%Attribs).  By accessing the hash entry, you can read
@@ -143,9 +143,6 @@ use vars qw(%Attribs %Features);
 	     ornaments => Term::ReadLine::Stub->Features->{'ornaments'},
 	     stiflehistory => 1,
 	    );
-
-# keep rl_readline_version value for efficiency
-my $readline_version;
 
 #
 #	GNU Readline/History Library constant definition
@@ -257,15 +254,9 @@ sub new {
 	my ($IN,$OUT) = $self->findConsole();
 	open(IN,"<$IN")   || croak "Cannot open $IN for read";
 	open(OUT,">$OUT") || croak "Cannot open $OUT for write";
-	# borrowed from Term/ReadLine.pm
-	my $sel = select(OUT);
-	$| = 1;				# for DB::OUT
-	select($sel);
-	$Attribs{instream} = \*IN;
-	$Attribs{outstream} = \*OUT;
+	$self->newTTY(\*IN, \*OUT);
     } else {
-	$Attribs{instream} = shift;
-	$Attribs{outstream} = shift;
+	$self->newTTY(@_);
     }
 
     # initialize the GNU Readline Library and termcap library
@@ -276,6 +267,7 @@ sub new {
     # This calls tgetstr().
     $self->ornaments(1) unless ($ENV{PERL_RL} and $ENV{PERL_RL} =~ /\bo\w*=0/);
 
+    # keep rl_readline_version value for efficiency
     $readline_version = $Attribs{readline_version};
 
     $self;
@@ -305,7 +297,7 @@ sub readline {			# should be ReadLine
     my $self = shift;
     my ($prompt, $preput) = @_;
 
-    # contributed fix for Perl debugger
+    # A contributed fix for Perl debugger
     # make sure the outstream fd inside the readline library is
     # in sync (see http://bugs.debian.org/236018)
     # This is not a real fix but left for system where this fix works.
@@ -350,10 +342,9 @@ sub readline {			# should be ReadLine
 
     # from ReadLine.pm: convert to the internal representation from UTF-8
     # see 'perldoc perlvar'
-    if ((${^UNICODE} & 1 || defined ${^ENCODING}) &&
-	utf8::valid($line)) {
-	#utf8::upgrade($line);
+    if (($utf8_in || ${^UNICODE} & 1 || defined ${^ENCODING}) && utf8::valid($line)) {
 	utf8::decode($line);
+	utf8::upgrade($line);
     }
 
     # history expansion
@@ -494,15 +485,44 @@ Switches to use these filehandles.
 
 =cut
 
-# used by a program who changes input/output stream.
-# perldb5.pl is an example.
+# used by a program (ex. perldb5.pl) who changes input/output stream.
 sub newTTY {
     my ($self, $in, $out) = @_;
-    $Attribs{instream}  = $in;
-    $Attribs{outstream} = $out;
+
+
+    # borrowed from Term/ReadLine.pm
     my $sel = select($out);
     $| = 1;			# for DB::OUT
     select($sel);
+
+
+    # my @layers;
+    # @layers = PerlIO::get_layers($in);  print '#in:  ', join(':', @layers), "\n";
+    # @layers = PerlIO::get_layers($out); print '#out: ', join(':', @layers), "\n";
+
+    # pop the stdio layer pushed by PerlIO_findFILE().
+    #   https://rt.cpan.org/Ticket/Display.html?id=59832
+    # pop the stdio PerlIO layer only when utf8 layer is included for
+    # remote debugging.
+    #   https://rt.cpan.org/Ticket/Display.html?id=110121
+    $utf8_in = 0;		# to call utf8::decode() for input lines
+    foreach my $layer(PerlIO::get_layers($in)) {
+	if ($layer eq 'utf8') {
+	    $utf8_in = 1;
+	    binmode($in,  ":pop");
+	    last;
+	}
+    }
+    $Attribs{outstream} = $out;
+    foreach my $layer(PerlIO::get_layers($out)) {
+	if ($layer eq 'utf8') {
+	    binmode($out, ":pop");
+	    last;
+	}
+    }
+    # This cause the "Wide character ..." warning
+    #$Attribs{outstream} = $out;
+    $Attribs{instream}  = $in;
 }
 
 =back
@@ -569,7 +589,7 @@ sub WriteHistory {
 package Term::ReadLine::Gnu::Var;
 use Carp;
 use strict;
-use vars qw(%_rl_vars);
+our %_rl_vars;
 
 %_rl_vars
     = (
@@ -734,16 +754,8 @@ sub STORE {
     } elsif ($type eq 'F') {
 	return _rl_store_function($value, $id);
     } elsif ($type eq 'IO') {
-	my $FH = $value;
-	# Pass filehandles to the GNU Readline Library
 	_rl_store_iostream($value, $id);
-	# pop stdio layer pushed by PerlIO_findFILE().
-	# https://rt.cpan.org/Ticket/Display.html?id=59832
-	my @layers = PerlIO::get_layers($FH);
-	#warn "$id<", join(':', @layers), "\n";
-	binmode($FH, ":pop") if @layers > 1;
-	#@layers = PerlIO::get_layers($FH); warn "$id>", join(':', @layers), "\n";
-	return $stream[$id] = $FH;
+	return $stream[$id] = $value;
     } elsif ($type eq 'K' || $type eq 'LF') {
 	carp "Term::ReadLine::Gnu::Var::STORE: read only variable `$name'\n";
 	return undef;
