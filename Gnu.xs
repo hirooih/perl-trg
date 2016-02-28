@@ -3149,17 +3149,17 @@ _rl_fetch_int(id)
 
 void
 _rl_store_iostream(stream, id)
-	PerlIO *stream
+	FILE *stream
 	int id
     PROTOTYPE: $$
     CODE:
 	{
 	  switch (id) {
 	  case 0:
-	    rl_instream = PerlIO_findFILE(stream);
+	    rl_instream = stream;
 	    break;
 	  case 1:
-	    rl_outstream = PerlIO_findFILE(stream);
+	    rl_outstream = stream;
 #ifdef __CYGWIN__
 	    {
 	      /* Cygwin b20.1 library converts NL to CR-NL
@@ -3179,7 +3179,7 @@ _rl_store_iostream(stream, id)
 	    break;
 	  }
 	  PerlIO_debug("TRG:store_iostream id %d fd %d\n",
-		       id, PerlIO_fileno(stream));
+		       id, fileno(stream));
 	}
 
 #if 0 /* not used since 1.26 */
