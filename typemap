@@ -7,26 +7,14 @@ CONST char *	T_PV
 Keymap		T_PTROBJ
 Function *	T_PTROBJ
 rl_command_func_t *	T_PTROBJ
-FILE *		T_STDIO
 HIST_ENTRY *	T_HIST_ENTRY
 t_xstr		T_XSTR
 
 ########################################################################
 INPUT
-T_STDIO
-	$var = PerlIO_findFILE(IoIFP(sv_2io($arg)))
 
 ########################################################################
 OUTPUT
-T_STDIO
-	{
-	    GV *gv = newGVgen("$Package");
-	    PerlIO *fp = PerlIO_importFILE($var,0);
-	    if ( fp && do_open(gv, "+<&", 3, FALSE, 0, 0, fp) )
-		sv_setsv($arg, sv_bless(newRV((SV*)gv), gv_stashpv("$Package",1)));
-	    else
-		$arg = &PL_sv_undef;
-	}
 T_XSTR
 	if ($var) {
 	  sv_setpv($arg, $var);
