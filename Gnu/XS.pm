@@ -16,11 +16,11 @@ use strict;
 use warnings;
 use AutoLoader 'AUTOLOAD';
 
-use vars qw($VERSION);
-$VERSION='1.28';	# added for CPAN
+our $VERSION;
+$VERSION='1.29';	# added for CPAN
 
 # make aliases
-use vars qw(%Attribs);
+our %Attribs;
 *Attribs = \%Term::ReadLine::Gnu::Attribs;
 
 use vars qw(*read_history);
@@ -361,8 +361,7 @@ sub get_history_event ( $$;$ ) {
 # Readline Library already uses, instead of Term::Caps.pm.
 
 # Some terminals do not support 'ue' (underline end).
-use vars qw(%term_no_ue);
-%term_no_ue = ( kterm => 1 );
+our %term_no_ue = ( kterm => 1 );
 
 sub ornaments {
     return $rl_term_set unless @_;
