@@ -1,6 +1,18 @@
 	-*- Indented-text -*-
 	$Id$
 
+1.29  2016-02-28
+	- pop the stdio PerlIO layer only when utf8 layer is included
+          for remote debugging. [rt.cpan.org #110121]
+	- call utf8::decode() for a UTF8-enabled input filehandle.
+          [rt.cpan.org #104239]
+	- call newTTY() any time to set filehandles.
+	- make use of 'our' instead of 'use vars'.
+	- add tests for UTF-8 handling.
+	- pass _rl_store_iostream 'FILE *' in stead of 'PerlIO *'.
+	- remove T_STDIO definition from typemap.
+	- requires 5.8.1
+
 1.28  2015-09-21
 	- Makefile.PL: revert a change on 1.27 which causes fail on
           the rlmalloc test. [rt.cpan.org #107201]

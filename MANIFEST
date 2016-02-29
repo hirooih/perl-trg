@@ -21,4 +21,7 @@ t/callback.t	A test script for the GNU Readline callback function
 t/history.t	A test script for the GNU History Library function
 t/inputrc	A file for t/readline.t
 t/readline.t	A test script for the GNU Readline Library function
+t/utf8_binary.t	A test script for UTF-8 binary string
+t/utf8_text.t	A test script for UTF-8 text string
+t/utf8.txt	A file for t/utf8_*.t
 typemap		The GNU Readline extension interface types
