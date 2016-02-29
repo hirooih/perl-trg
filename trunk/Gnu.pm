@@ -489,39 +489,12 @@ Switches to use these filehandles.
 sub newTTY {
     my ($self, $in, $out) = @_;
 
-
     # borrowed from Term/ReadLine.pm
     my $sel = select($out);
     $| = 1;			# for DB::OUT
     select($sel);
 
-
-    # my @layers;
-    # @layers = PerlIO::get_layers($in);  print '#in:  ', join(':', @layers), "\n";
-    # @layers = PerlIO::get_layers($out); print '#out: ', join(':', @layers), "\n";
-
-    # pop the stdio layer pushed by PerlIO_findFILE().
-    #   https://rt.cpan.org/Ticket/Display.html?id=59832
-    # pop the stdio PerlIO layer only when utf8 layer is included for
-    # remote debugging.
-    #   https://rt.cpan.org/Ticket/Display.html?id=110121
-    $utf8_in = 0;		# to call utf8::decode() for input lines
-    foreach my $layer(PerlIO::get_layers($in)) {
-	if ($layer eq 'utf8') {
-	    $utf8_in = 1;
-	    binmode($in,  ":pop");
-	    last;
-	}
-    }
     $Attribs{outstream} = $out;
-    foreach my $layer(PerlIO::get_layers($out)) {
-	if ($layer eq 'utf8') {
-	    binmode($out, ":pop");
-	    last;
-	}
-    }
-    # This cause the "Wide character ..." warning
-    #$Attribs{outstream} = $out;
     $Attribs{instream}  = $in;
 }
 
@@ -754,7 +727,24 @@ sub STORE {
     } elsif ($type eq 'F') {
 	return _rl_store_function($value, $id);
     } elsif ($type eq 'IO') {
+	# my @layers;
 	_rl_store_iostream($value, $id);
+	# @layers = PerlIO::get_layers($value);
+	# print "#$id: ", join(':', @layers), "\n";
+
+	# pop the stdio layer pushed by PerlIO_findFILE().
+	#   https://rt.cpan.org/Ticket/Display.html?id=59832
+	# pop the stdio layer only when utf8 layer is included for
+	# remote debugging.
+	#   https://rt.cpan.org/Ticket/Display.html?id=110121
+	$utf8_in = 0 if $id == 0;	# to call utf8::decode() for input lines
+	foreach my $layer (PerlIO::get_layers($value)) {
+	    if ($layer eq 'utf8') {
+		$utf8_in = 1 if $id == 0;
+		binmode($value,  ":pop");
+		last;
+	    }
+	}
 	return $stream[$id] = $value;
     } elsif ($type eq 'K' || $type eq 'LF') {
 	carp "Term::ReadLine::Gnu::Var::STORE: read only variable `$name'\n";
