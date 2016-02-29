@@ -21,7 +21,7 @@ use strict;
 use ExtUtils::MakeMaker;
 use Config;
 use Getopt::Long;
-use 5.008; use 5.8.0;
+use 5.008; use 5.8.1;
 my ($defs, $libs, $lddflags, $RLLIB, $RLINC);
 
 # exit 0 before creating the Makefile to be CPAN Testers friendly
@@ -136,7 +136,7 @@ WriteMakefile
 	 },
      },
      VERSION_FROM => 'Gnu.pm',
-     MIN_PERL_VERSION => '5.8.0',
+     MIN_PERL_VERSION => '5.8.1',
      LIBS	  => [ "$RLLIB $libs" ],
      LDDLFLAGS	  => "$RLLIB $Config{lddlflags}",
      dynamic_lib  => { OTHERLDFLAGS => $lddflags },
