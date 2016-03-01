@@ -45,6 +45,7 @@ ok($line eq "漢字1");
 @layers = PerlIO::get_layers($in);      print '#i: ', join(':', @layers), "\n";
 @layers = PerlIO::get_layers(\*STDOUT); print '#o: ', join(':', @layers), "\n";
 my $t = new Term::ReadLine 'ReadLineTest', $in, \*STDOUT;
+print "\n";	# rl_initialize() outputs some escape characters in Term-ReadLine-Gnu less than 6.3, 
 ok(1);
 
 @layers = PerlIO::get_layers($in);      print '#i: ', join(':', @layers), "\n";

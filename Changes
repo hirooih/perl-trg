@@ -1,6 +1,10 @@
 	-*- Indented-text -*-
 	$Id$
 
+1.30  2016-03-02
+	- t/utf8_binary.t: add a fix to handle escape sequences which
+	  rl_initialize may output.
+
 1.29  2016-02-28
 	- pop the stdio PerlIO layer only when utf8 layer is included
           for remote debugging. [rt.cpan.org #110121]
