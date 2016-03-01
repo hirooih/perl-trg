@@ -1,0 +1,26 @@
+#	typemap for Term::ReadLine::Gnu
+#
+#	$Id$
+
+const char *	T_PV
+CONST char *	T_PV
+Keymap		T_PTROBJ
+Function *	T_PTROBJ
+rl_command_func_t *	T_PTROBJ
+HIST_ENTRY *	T_HIST_ENTRY
+t_xstr		T_XSTR
+
+########################################################################
+INPUT
+
+########################################################################
+OUTPUT
+T_XSTR
+	if ($var) {
+	  sv_setpv($arg, $var);
+	  xfree($var);
+	}
+T_HIST_ENTRY
+	if ($var && $var->line) {
+	  sv_setpv($arg, $var->line);
+	}
