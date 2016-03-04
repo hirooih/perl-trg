@@ -1017,7 +1017,7 @@ Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>.
 
 =item C<get_function_name(FUNCTION)>
 
-	str	rl_get_function_name(FunctionPtr function)	# TRG orignal
+	str	rl_get_function_name(FunctionPtr function)	# TRG original
 
 =item C<function_of_keyseq(KEYMAP [,MAP])>
 
