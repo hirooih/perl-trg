@@ -1,7 +1,7 @@
 # -*- perl -*-
 #	utf8_binzry.t --- Term::ReadLine:GNU UTF-8 binary string test script
 #
-#	$Id: $
+#	$Id$
 #
 #	Copyright (c) 2016 Hiroo Hayashi.  All rights reserved.
 #
@@ -12,10 +12,16 @@ use strict;
 use warnings;
 use Test;
 use Data::Dumper;
+
+# http://perldoc.perl.org/perllocale.html
+use POSIX qw(locale_h);
+use locale;
+
 our ($loaded, $n);
 
 BEGIN {
 #    $ENV{PERL_RL} = 'Gnu';	# force to use Term::ReadLine::Gnu
+    $ENV{LC_ALL} = 'en_US.utf8';
 }
 BEGIN { plan tests => 5 }
 END {
@@ -32,6 +38,13 @@ print "# I'm testing Term::ReadLine::Gnu version $Term::ReadLine::Gnu::VERSION\n
 
 $loaded = 1;
 ok($loaded, 1);
+
+my $old_locale = setlocale(LC_ALL, 'en_US.utf8');
+if (!defined $old_locale) {
+    print "The locale 'en_US.utf8' is not supported. Skipped...\n";
+    ok(1); ok(1); ok(1); ok(1);
+    exit 0;
+}
 
 my $line;
 my @layers;
