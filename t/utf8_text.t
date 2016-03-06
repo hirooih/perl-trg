@@ -15,11 +15,6 @@ use utf8;
 use open ':encoding(utf8)';
 use open ':std';
 use Data::Dumper;
-
-# http://perldoc.perl.org/perllocale.html
-use POSIX qw(locale_h);
-use locale;
-
 our ($loaded, $n);
 
 BEGIN {
@@ -38,13 +33,22 @@ eval "use ExtUtils::testlib;" or eval "use lib './blib';";
 
 use Term::ReadLine;
 print "# I'm testing Term::ReadLine::Gnu version $Term::ReadLine::Gnu::VERSION\n";
-
 $loaded = 1;
 ok($loaded, 1);
 
+# check locale setting
+use Config;
+if (! $Config{d_setlocale}) {
+    warn "d_setlocale is not defined. Skipped...\n";
+    ok(1); ok(1); ok(1);
+    exit 0;
+}
+# http://perldoc.perl.org/perllocale.html
+use POSIX qw(locale_h);
+use locale;
 my $old_locale = setlocale(LC_ALL, 'en_US.utf8');
 if (!defined $old_locale) {
-    print "The locale 'en_US.utf8' is not supported. Skipped...\n";
+    warn "The locale 'en_US.utf8' is not supported. Skipped...\n";
     ok(1); ok(1); ok(1);
     exit 0;
 }
