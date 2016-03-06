@@ -17,7 +17,7 @@ use warnings;
 use AutoLoader 'AUTOLOAD';
 
 our $VERSION;
-$VERSION='1.30';	# added for CPAN
+$VERSION='1.31';	# added for CPAN
 
 # make aliases
 our %Attribs;
