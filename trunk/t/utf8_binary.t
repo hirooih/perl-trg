@@ -1,5 +1,5 @@
 # -*- perl -*-
-#	utf8_binzry.t --- Term::ReadLine:GNU UTF-8 binary string test script
+#	utf8_binary.t --- Term::ReadLine:GNU UTF-8 binary string test script
 #
 #	$Id$
 #
