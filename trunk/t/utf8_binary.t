@@ -33,6 +33,14 @@ print "# I'm testing Term::ReadLine::Gnu version $Term::ReadLine::Gnu::VERSION\n
 $loaded = 1;
 ok($loaded, 1);
 
+# skip when PERL_UNICODE is set
+# https://rt.cpan.org/Public/Bug/Display.html?id=114185
+if (${^UNICODE} != 0) {
+    warn "PERL_UNICODE is defined or -C option is specified. Skipped...\n";
+    ok(1); ok(1); ok(1); ok(1);
+    exit 0;
+}
+
 # check locale setting
 use Config;
 if (! $Config{d_setlocale}) {
