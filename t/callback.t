@@ -3,37 +3,31 @@
 #
 #	$Id$
 #
-#	Copyright (c) 1999 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 1999-2016 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
 
+use strict;
+use warnings;
+use Test::More tests => 7;
 BEGIN {
-    print "1..7\n"; $n = 1;
     $ENV{PERL_RL} = 'Gnu';	# force to use Term::ReadLine::Gnu
 }
-END {print "not ok 1\tfail to loading\n" unless $loaded;}
 
 # 'define @ARGV' is deprecated
 my $verbose = scalar @ARGV && ($ARGV[0] eq 'verbose');
 
-use strict;
-use warnings;
-use vars qw($loaded $n);
-eval "use ExtUtils::testlib;" or eval "use lib './blib';";
 use Term::ReadLine;
-
-$loaded = 1;
-print "ok 1\tloading\n"; $n++;
+ok(1, 'load done');
 
 ########################################################################
 # test new method
 
 my $term = new Term::ReadLine 'ReadLineTest';
-print defined $term ? "ok $n\n" : "not ok $n\n"; $n++;
-
+isa_ok($term, 'Term::ReadLine');
 my $attribs = $term->Attribs;
-print defined $attribs ? "ok $n\n" : "not ok $n\n"; $n++;
+isa_ok($attribs, 'Term::ReadLine', 'Attribs');
 
 my ($version) = $attribs->{library_version} =~ /(\d+\.\d+)/;
 
@@ -58,17 +52,14 @@ if ($verbose) {
 
 ########################################################################
 # check Tk is installed and X Window is available
-#disable the warning, "Too late to run INIT block at..."
-
+# disable the warning, "Too late to run INIT block at..."
 {
     no warnings 'uninitialized';
     if (eval "use Tk; 1" && $ENV{DISPLAY} ne '') {
-	print "ok $n\tuse Tk\n"; $n++;
+	ok(1, 'use Tk');
     } else {
-	print "ok $n\t# skipped since Tk is not available.\n"; $n++;
-	print "ok $n\t# skipped since Tk is not available.\n"; $n++;
-	print "ok $n\t# skipped since Tk is not available.\n"; $n++;
-	print "ok $n\t# skipped since Tk is not available.\n"; $n++;
+	diag 'skipped since Tk is not available.';
+	ok(1, 'skipped since Tk is not available') for 1..4;
 	exit 0;
     }
 }
@@ -76,17 +67,13 @@ if ($verbose) {
 ########################################################################
 my $mw;
 $mw = eval { MainWindow->new(); };
-if (!$mw) {
-    print "ok $n\t# skipped since Tk is not available.\n"; $n++;
-    print "ok $n\t# skipped since Tk is not available.\n"; $n++;
-    print "ok $n\t# skipped since Tk is not available.\n"; $n++;
-    exit 0;
-}
+ok(defined $mw, 'MainWindow->new()');
+
 $mw->protocol('WM_DELETE_WINDOW' => \&quit);
 
 $attribs->{instream} = $IN;
 $mw->fileevent($IN, 'readable', $attribs->{callback_read_char});
-print "ok $n\tcallback_read_char\n"; $n++;
+ok(1, 'callback_read_char');
 
 $term->callback_handler_install("> ", sub {
     my $line = shift;
@@ -94,7 +81,7 @@ $term->callback_handler_install("> ", sub {
     eval $line;
     print $OUT "$@\n" if $@;
 });
-print "ok $n\tcallback_handler_install\n"; $n++;
+ok(1, 'callback_handler_install');
 
 &MainLoop;
 
@@ -102,7 +89,7 @@ sub quit {
    $mw->fileevent($IN, 'readable', '');
    $term->callback_handler_remove();
    $mw->destroy;
-   print "ok $n\n"; $n++;
+   ok(1, 'callback_handler_remove and destroy');
    exit 0;
 }
 
