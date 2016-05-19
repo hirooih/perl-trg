@@ -34,9 +34,7 @@ my ($version) = $attribs->{library_version} =~ /(\d+\.\d+)/;
 ########################################################################
 # check Tk is installed and X Window is available
 {
-    # disable the warning, "Too late to run INIT block at..."
-    #no warnings 'uninitialized';
-    if (eval "use Tk; 1" && $ENV{DISPLAY} ne '') {
+    if (eval "use Tk; 1" && $ENV{DISPLAY} && $ENV{DISPLAY} ne '') {
 	ok(1, 'use Tk');
     } else {
 	diag 'skipped since Tk is not available.';
@@ -65,7 +63,7 @@ if ($verbose) {
 ########################################################################
 my $mw;
 $mw = eval { new MainWindow; };
-isa_ok($mw, 'MainWindow');
+isa_ok($mw, 'MainWindow') or die "Cannot continue...\n";
 
 # create file event handler
 $mw->fileevent($IN, 'readable', $attribs->{callback_read_char});
