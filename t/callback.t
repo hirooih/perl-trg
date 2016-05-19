@@ -11,6 +11,16 @@
 use strict;
 use warnings;
 use Test::More tests => 8;
+
+# redefine Test::Mode::note due to it requires Perl 5.10.1.
+no warnings 'redefine';
+sub note {
+    my $msg = join('', @_);
+    $msg =~ s{\n(?!\z)}{\n# }sg;
+    print "# $msg" . ($msg =~ /\n$/ ? '' : "\n");
+}
+use warnings 'redefine';
+
 BEGIN {
     $ENV{PERL_RL} = 'Gnu';	# force to use Term::ReadLine::Gnu
 }
@@ -73,11 +83,12 @@ $term->callback_handler_install("> ", sub {
     my $line = shift;
     quit() unless defined $line;
 
-    diag $line unless $verbose;
+    note $line unless $verbose;
     eval $line;
     print $OUT "$@\n" if $@;
 });
-ok(1, 'callback_handler_install');
+# skip not to overwrite command prompt in the verbose mode
+ok(1, 'callback_handler_install') unless $verbose;
 
 # create Window Manager Delete Window ClientMessage event handler
 $mw->protocol('WM_DELETE_WINDOW' => \&quit);
@@ -85,7 +96,10 @@ $mw->protocol('WM_DELETE_WINDOW' => \&quit);
 &MainLoop;
 
 sub quit {
-    diag 'quitting...';
+    note 'quitting...';
+
+    # delayed.  See above.
+    ok(1, 'callback_handler_install') if $verbose;
 
     # delete event handler
     $mw->fileevent($IN, 'readable', '');
