@@ -17,8 +17,8 @@ use open ':std', ':encoding(utf8)';
 
 # This must follow UTF-8 setting.
 # See 'CAVEATS and NOTES' in http://perldoc.perl.org/Test/More.html for details.
-use Test::More tests => 6;
-my $ntest = 6;
+use Test::More tests => 10;
+my $ntest = 10;
 use Data::Dumper;
 
 # redefine Test::Mode::note due to it requires Perl 5.10.1.
@@ -39,7 +39,7 @@ use Term::ReadLine;
 ok(1, 'load done');
 note "I'm testing Term::ReadLine::Gnu version $Term::ReadLine::Gnu::VERSION";
 
-# check locale setting
+# check locale setting because the following tests depend on locale feature.
 use Config;
 if (! $Config{d_setlocale}) {
     diag "d_setlocale is not defined. Skipped...";
@@ -70,14 +70,23 @@ if (0) {	# This may cause a fail.
     ok($line eq "漢字1", 'pre-read');
 }
 
-@layers = PerlIO::get_layers($in);      note 'i: ', join(':', @layers);
-@layers = PerlIO::get_layers(\*STDOUT); note 'o: ', join(':', @layers);
+@layers = PerlIO::get_layers($in);
+is_deeply(\@layers, ['unix', 'perlio', 'encoding(utf8)', 'utf8'], "input layers before 'new'");
+@layers = PerlIO::get_layers(\*STDOUT);
+is_deeply(\@layers, ['unix', 'perlio', 'encoding(utf8)', 'utf8'], "output layers before 'new'");
+
 my $t = new Term::ReadLine 'ReadLineTest', $in, \*STDOUT;
+# Note that the following line does not work.
+# It is because 'use open' is lexically scoped and it does not affect
+# the 'open /dev/tty' in Term::ReadLine::Gnu.
+#my $t = new Term::ReadLine 'ReadLineTest';
 print "\n";	# rl_initialize() outputs some escape characters in Term-ReadLine-Gnu less than 6.3, 
 isa_ok($t, 'Term::ReadLine');
 
-@layers = PerlIO::get_layers($in);      note 'i: ', join(':', @layers);
-@layers = PerlIO::get_layers(\*STDOUT); note 'o: ', join(':', @layers);
+@layers = PerlIO::get_layers($t->IN);
+is_deeply(\@layers, ['unix', 'perlio', 'encoding(utf8)', 'utf8'], "input layers after 'new'");
+@layers = PerlIO::get_layers($t->OUT);
+is_deeply(\@layers, ['unix', 'perlio', 'encoding(utf8)', 'utf8'], "output layers after 'new'");
 
 $line = $t->readline("漢字> ");
 note $line;
