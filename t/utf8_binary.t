@@ -11,8 +11,8 @@
 use strict;
 use warnings;
 
-use Test::More tests => 7;
-my $ntest = 7;
+use Test::More tests => 9;
+my $ntest = 9;
 use Data::Dumper;
 
 # redefine Test::Mode::note due to it requires Perl 5.10.1.
@@ -26,7 +26,6 @@ use warnings 'redefine';
 
 BEGIN {
     $ENV{PERL_RL} = 'Gnu';	# force to use Term::ReadLine::Gnu
-    $ENV{LC_ALL} = 'en_US.UTF-8';
 }
 
 use Term::ReadLine;
@@ -42,26 +41,6 @@ if (${^UNICODE} != 0) {
 }
 ok(1, 'PERL_UNICODE is not defined');
 
-# check locale setting
-use Config;
-if (! $Config{d_setlocale}) {
-    diag "d_setlocale is not defined. Skipped...";
-    ok(1, 'skip') for 1..$ntest-2;
-    exit 0;
-}
-ok(1, '$Config{d_setlocale}');
-
-# http://perldoc.perl.org/perllocale.html
-use POSIX qw(locale_h);
-use locale;
-my $old_locale = setlocale(LC_ALL, 'en_US.UTF-8');
-if (!defined $old_locale) {
-    diag "The locale 'en_US.UTF-8' is not supported. Skipped...";
-    ok(1, 'skip') for 1..$ntest-3;
-    exit 0;
-}
-ok(1, 'setlocale');
-
 my $line;
 my @layers;
 open (my $in, "<", "t/utf8.txt") or die "cannot open utf8.txt: $!";
@@ -73,14 +52,19 @@ if (0) {	# This may cause a fail.
     ok($line eq "漢字1", 'pre-read');
 }
 
-@layers = PerlIO::get_layers($in);      note 'i: ', join(':', @layers);
-@layers = PerlIO::get_layers(\*STDOUT); note 'o: ', join(':', @layers);
+@layers = PerlIO::get_layers($in);
+is_deeply(\@layers, ['unix', 'perlio'], "input layers before 'new'");
+@layers = PerlIO::get_layers(\*STDOUT);
+is_deeply(\@layers, ['unix', 'perlio'], "output layers before new'");
+
 my $t = new Term::ReadLine 'ReadLineTest', $in, \*STDOUT;
 print "\n";	# rl_initialize() outputs some escape characters in Term-ReadLine-Gnu less than 6.3, 
 isa_ok($t, 'Term::ReadLine');
 
-@layers = PerlIO::get_layers($in);      note 'i: ', join(':', @layers);
-@layers = PerlIO::get_layers(\*STDOUT); note 'o: ', join(':', @layers);
+@layers = PerlIO::get_layers($t->IN);
+is_deeply(\@layers, ['unix', 'perlio', 'stdio'], "input layers after 'new'");
+@layers = PerlIO::get_layers($t->OUT);
+is_deeply(\@layers, ['unix', 'perlio', 'stdio'], "output layers after 'new'");
 
 $line = $t->readline("漢字> ");
 note $line;
