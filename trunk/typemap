@@ -7,7 +7,9 @@ CONST char *	T_PV
 Keymap		T_PTROBJ
 Function *	T_PTROBJ
 rl_command_func_t *	T_PTROBJ
+readline_state_t *	T_PTROBJ
 HIST_ENTRY *	T_HIST_ENTRY
+HISTORY_STATE *	T_PTROBJ
 t_xstr		T_XSTR
 
 ########################################################################

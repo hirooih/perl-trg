@@ -259,7 +259,14 @@ static int rl_completion_suppress_append = 0;
 static int rl_completion_mark_symlink_dirs = 0;
 static void rl_replace_line(){}
 static int rl_completion_mode(){ return 0; }
+
+/* documented by 6.0 but implemented since 4.3 */
+struct readline_state { };
+static int rl_save_state(struct readline_state *sp){ return 0; }
+static int rl_restore_state(struct readline_state *sp){ return 0; }
 #endif /* (RL_READLINE_VERSION < 0x0403) */
+
+typedef struct readline_state readline_state_t; /* for typemap */
 
 #if (RL_VERSION_MAJOR < 5)
 /* features introduced by GNU Readline 5.0 */
@@ -289,12 +296,6 @@ extern char *rl_display_prompt;
 /* features introduced by GNU Readline 6.0 */
 static int rl_sort_completion_matches = 1;
 static int rl_completion_invoking_key = 0;
-/*
-  NOT IMPLEMENTED YET !!!FIXIT!!!
-  documented by 6.0 but implemented since 4.3
-static int rl_save_state(struct readline_state *sp){ return 0; }
-static int rl_restore_state(struct readline_state *sp){ return 0; }
- */
 static void rl_echo_signal_char(int sig){}
 #endif /* (RL_VERSION_MAJOR < 6) */
 
@@ -332,7 +333,6 @@ static rl_icppfunc_t *rl_filename_stat_hook = NULL;
 
 void rl_clear_history (void) {}
 /*
-  NOT IMPLEMENTED YET !!!FIXIT!!!
   documented by 6.3 but implemented since 2.1
 static HISTORY_STATE	*history_get_hitory_state();
 static void	*history_set_hitory_state(HISTORY_STATE *state)
@@ -500,7 +500,7 @@ static struct int_vars {
   { &rl_inhibit_completion,			0, 0 },	/* 10 */
 
   { &history_base,				0, 0 },	/* 11 */
-  { &history_length,				0, 1 },	/* 12 */
+  { &history_length,				0, 0 },	/* 12 */
 #if (RL_READLINE_VERSION >= 0x0402)
   { &history_max_entries,			0, 1 },	/* 13 */
 #else /* (RL_READLINE_VERSION < 0x0402) */
@@ -518,7 +518,8 @@ static struct int_vars {
   { &rl_num_chars_to_read,			0, 0 },	/* 23 */
   { &rl_dispatching,				0, 0 },	/* 24 */
   { &rl_gnu_readline_p,				0, 1 },	/* 25 */
-  { &rl_readline_state,				0, 1 },	/* 26 */
+  /* rl_readline_state becomes unsigned long on RL 7.0 */
+  { (int *)&rl_readline_state,			0, 1 },	/* 26 */
   { &rl_explicit_arg,				0, 1 },	/* 27 */
   { &rl_numeric_arg,				0, 1 },	/* 28 */
   { &rl_editing_mode,				0, 1 },	/* 29 */
@@ -2345,11 +2346,41 @@ rl_reset_terminal(terminal_name = NULL)
  #
  #	2.4.10 Utility Functions
  #
+readline_state_t *
+rl_save_state()
+    PROTOTYPE:
+    CODE:
+    {
+      readline_state_t *state;
+      Newx(state, 1, readline_state_t);
+      rl_save_state(state);
+      RETVAL = state;
+    }
+    OUTPUT:
+	RETVAL
+
+int
+rl_restore_state(state)
+	readline_state_t *	state
+
+MODULE = Term::ReadLine::Gnu	PACKAGE = readline_state_tPtr	PREFIX = my_
+
+void
+my_DESTROY(state)
+	readline_state_t *	state
+    CODE:
+    {
+      #warn("readline_state_tPtr::DESTROY\n");
+      Safefree(state);
+    }
+
+MODULE = Term::ReadLine::Gnu	PACKAGE = Term::ReadLine::Gnu::XS
+
 void
 rl_replace_line(text, clear_undo = 0)
 	const char *text
 	int clear_undo
-    PROTOTYPE: $$
+    PROTOTYPE: $;$
 
 int
 rl_initialize()
@@ -2720,23 +2751,26 @@ void
 using_history()
     PROTOTYPE:
 
- #  history_get_history_state() and history_set_history_state() are useless
- #  and too dangerous to be used in Perl code
- # void
- # history_get_history_state()
- #     PROTOTYPE:
- #     PPCODE:
- # 	{
- # 	  HISTORY_STATE *state;
- #
- # 	  state = history_get_history_state();
- # 	  EXTEND(sp, 4);
- # 	  PUSHs(sv_2mortal(newSViv(state->offset)));
- # 	  PUSHs(sv_2mortal(newSViv(state->length)));
- # 	  PUSHs(sv_2mortal(newSViv(state->size)));
- # 	  PUSHs(sv_2mortal(newSViv(state->flags)));
- # 	  xfree((char *)state);
- # 	}
+HISTORY_STATE *
+history_get_history_state()
+    PROTOTYPE:
+
+void
+history_set_history_state(state)
+	HISTORY_STATE *	state
+
+MODULE = Term::ReadLine::Gnu	PACKAGE = HISTORY_STATEPtr	PREFIX = my_
+
+void
+my_DESTROY(state)
+	HISTORY_STATE *	state
+    CODE:
+    {
+      #warn("HISTORY_STATEPtr::DESTROY\n");
+      xfree(state);
+    }
+
+MODULE = Term::ReadLine::Gnu	PACKAGE = Term::ReadLine::Gnu::XS
 
  #
  #	2.3.2 History List Management
