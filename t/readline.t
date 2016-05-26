@@ -13,7 +13,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 140;
+use Test::More tests => 146;
 use Data::Dumper;
 
 # redefine Test::Mode::note due to it requires Perl 5.10.1.
@@ -71,6 +71,7 @@ ok($t->ReadLine eq 'Term::ReadLine::Gnu', '$t->ReadLine');
 ########################################################################
 # test Features method
 ok(%{ $t->Features }, 'Features method');
+#isa_ok($t->Features, 'Term::ReadLine', 'Features');
 
 ########################################################################
 # test Attribs method
@@ -131,7 +132,7 @@ ok(! defined($a->{redisplay_function}), 'redisplay_function');
 ok(! defined($a->{prep_term_function}), 'prep_term_function');   # not tested!!!
 ok(! defined($a->{deprep_term_function}), 'deprep_term_function'); # not tested!!!
 
-# not defined here
+# not defined here yet
 ok(! defined($a->{executing_keymap}), 'executing_keymap');
 # anonymous keymap
 ok(defined($a->{binding_keymap}), 'binding_keymap');
@@ -213,7 +214,7 @@ ok(! defined($t->named_function('reverse-line'))
    && ! defined($t->named_function('invert-case-line'))
    && defined($t->named_function('operate-and-get-next'))
    && defined($t->named_function('display-readline-version'))
-   && defined($t->named_function('change-ornaments')), 'add_defun, named_function');
+   && defined($t->named_function('change-ornaments')), 'add_defun: before');
 
 ($func, $type) = $t->function_of_keyseq("\ct");
 ok($type == ISFUNC && $t->get_function_name($func) eq 'transpose-chars', 'add_defun, function_of_keyseq');
@@ -225,7 +226,7 @@ ok(defined($t->named_function('reverse-line'))
    && defined($t->named_function('invert-case-line'))
    && defined($t->named_function('operate-and-get-next'))
    && defined($t->named_function('display-readline-version'))
-   && defined($t->named_function('change-ornaments')), 'add_defun, named_function');
+   && defined($t->named_function('change-ornaments')), 'add_defun: after');
 
 ($func, $type) = $t->function_of_keyseq("\ct");
 ok($type == ISFUNC && $t->get_function_name($func) eq 'reverse-line', 'add_defun, function_of_keyseq');
@@ -233,7 +234,7 @@ ok($type == ISFUNC && $t->get_function_name($func) eq 'reverse-line', 'add_defun
 ########################################################################
 note "2.4.2 Selecting a Keymap";
 
-# test rl_make_bare_keymap, rl_copy_keymap, rl_make_keymap, rl_discard_keymap
+# test rl_make_bare_keymap, rl_copy_keymap, rl_make_keymap, rl_discard_keymap, rl_free_keymap
 my $baremap = $t->make_bare_keymap;
 $t->bind_key(ord "a", 'abort', $baremap);
 my $copymap = $t->copy_keymap($baremap);
@@ -250,6 +251,12 @@ ok(($t->get_function_name(($t->function_of_keyseq('a', $baremap))[0]) eq 'abort'
 $t->discard_keymap($baremap);
 $t->discard_keymap($copymap);
 $t->discard_keymap($normmap);
+ok(1, 'discard_keymap');
+
+$t->free_keymap($baremap);
+$t->free_keymap($copymap);
+$t->free_keymap($normmap);
+ok(1, 'free_keymap');
 
 # test rl_get_keymap, rl_set_keymap, rl_get_keymap_by_name, rl_get_keymap_name
 ok($t->get_keymap_name($t->get_keymap) eq 'emacs', 'get_keymap_name, get_keymap');
@@ -267,8 +274,9 @@ note "2.4.3 Binding Keys";
 #print $t->get_keymap_name($a->{executing_keymap}), "\n";
 #print $t->get_keymap_name($a->{binding_keymap}), "\n";
 
-# test rl_bind_key (rl_bind_key_in_map), rl_bind_key_if_unbound!!!,
-# rl_bind_keyseq!!!, rl_set_key, rl_bind_keyseq_if_unbound!!!, 
+# test rl_bind_key[_in_map], rl_bind_key_if_unbound[_in_map]!!!,
+# rl_unbind_key[_in_map] (below), rl_unbind_function_in_map (below), rl_unbind_command_in_map (below),
+# rl_bind_keyseq[_in_map]!!!, rl_set_key, rl_bind_keyseq_if_unbound[_in_map]!!!, 
 # rl_generic_bind, rl_parse_and_bind
 
 # define subroutine to use again later
@@ -383,9 +391,10 @@ note "2.4.4 Associating Function Names and Bindings";
 bind_my_function;		# do bind
 
 # rl_named_function, get_function_name, rl_function_of_keyseq,
-# rl_invoking_keyseqs, and rl_add_funmap_entry, are tested above.
+# rl_invoking_keyseqs[_in_map]
 # rl_function_dumper!!!, rl_list_funmap_names!!!, rl_funmap_names!!!
-
+# rl_add_funmap_entry (above)
+    
 # test rl_invoking_keyseqs
 @keyseqs = $t->invoking_keyseqs('abort', 'emacs-ctlx');
 ok("\\C-g" eq "@keyseqs", 'invoking_keyseqs');
@@ -397,7 +406,7 @@ note "2.4.5 Allowing Undoing";
 
 ########################################################################
 note "2.4.6 Redisplay";
-# rl_redisplay!!!, rl_forced_update_display, rl_on_new_line!!!,
+# rl_redisplay!!!, rl_forced_update_display (below), rl_on_new_line!!!,
 # rl_on_new_line_with_prompt!!!, rl_reset_line_state!!!, rl_crlf!!!,
 # rl_show_char!!!,
 # rl_message, rl_clear_message, rl_save_prompt, rl_restore_prompt:
@@ -422,9 +431,21 @@ note "2.4.9 Terminal Management";
 
 ########################################################################
 note "2.4.10 Utility Functions";
-# rl_save_state!!!, rl_restore_state!!!, rl_replace_line!!!,
+# rl_save_state, rl_restore_state, -rl_free-, rl_replace_line!!!,
+# -rl_extend_line_buffer-,
 # rl_initialize, rl_ding!!!, rl_alphabetic!!!,
-# rl_display_match_list
+# rl_display_match_list (below)
+SKIP:
+{
+    skip "GNU Readline Library is older than 4.3.", 4 unless ($version >= 0x0403);
+    ok($a->{point} == 0, 'save_state, restore_state');
+    my $state = $t->save_state();
+    isa_ok($state, 'readline_state_tPtr');
+    $a->{point} = 10;
+    ok($a->{point} == 10, 'save_state, restore_state');
+    $t->restore_state($state);
+    ok($a->{point} == 0, 'save_state, restore_state');
+}
 
 ########################################################################
 note "2.4.11 Miscellaneous Functions";
@@ -436,7 +457,7 @@ note "2.4.11 Miscellaneous Functions";
 note "2.4.12 Alternate Interface";
 # tested in callback.t
 # rl_callback_handler_install, rl_callback_read_char,
-# rl_callback_handler_remove,
+# rl_callback_sigcleanup!!!, rl_callback_handler_remove,
 
 ########################################################################
 note "2.5 Readline Signal Handling";
@@ -463,8 +484,10 @@ SKIP: {
 ########################################################################
 note "2.6 Custom Completers";
 note "2.6.1 How Completing Works";
+# rl_complete, rl_completion_entry_function (below)
 note "2.6.2 Completion Functions";
-# rl_complete_internal!!!, rl_completion_mode!!!, rl_completion_matches,
+# rl_complete_internal!!!, rl_complete, rl_possible_completions, rl_insert_completions,
+# rl_completion_mode!!!, rl_completion_matches,
 # rl_filename_completion_function, rl_username_completion_function,
 # list_completion_function
 
@@ -574,8 +597,12 @@ ok($line eq 'abcdefgh', "self insert\t[$line]");
 
 $INSTR = "\cAe\cFf\cBg\cEh\cH ij kl\eb\ebm\cDn\cM";
 $line = $t->readline("cursor move> ", 'abcd'); # default string
-# skip on CPAN Testers test. This test fails on an active tester's environment.
-ok($ENV{AUTOMATED_TESTING} || $line eq 'eagfbcd mnj kl', "cursor move\t[$line]");
+SKIP: {
+    # skip on CPAN Testers test. 
+    skip "This 'cursor move' test fails on an active tester's environment, but we could not solve the issue.", 1 
+	if $ENV{AUTOMATED_TESTING} || defined $ENV{PERL_CPAN_REPORTER_CONFIG};
+    ok($line eq 'eagfbcd mnj kl', "cursor move\t[$line]");
+}
 
 # test reverse_line, display_readline_version, invert_case_line
 $INSTR = "\cXvabcdefgh XYZ\e6\cB\e4\ec\cT\cM";

@@ -3,7 +3,7 @@
 #
 #	$Id$
 #
-#	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 1996-2016 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -111,6 +111,7 @@ END
 		    RL_STATE_INPUTPENDING RL_STATE_TTYCSAVED
 		    RL_STATE_CALLBACK RL_STATE_VIMOTION
 		    RL_STATE_MULTIKEY RL_STATE_VICMDONCE
+		    RL_STATE_CHARSEARCH RL_STATE_REDISPLAYING
 		    RL_STATE_DONE);
 
     bootstrap Term::ReadLine::Gnu $VERSION; # DynaLoader
@@ -173,7 +174,7 @@ sub UNDO_INSERT	{ 1; }
 sub UNDO_BEGIN	{ 2; }
 sub UNDO_END	{ 3; }
 
-# for rl_readline_state
+# for rl_readline_state which was implemented since 4.2
 sub RL_STATE_NONE		{ 0x00000; } # no state; before first call
 sub RL_STATE_INITIALIZING	{ 0x00001; } # initializing
 sub RL_STATE_INITIALIZED	{ 0x00002; } # initialization done
@@ -192,19 +193,21 @@ sub RL_STATE_OVERWRITE		{ 0x02000; } # overwrite mode
 sub RL_STATE_COMPLETING		{ 0x04000; } # doing completion
 sub RL_STATE_SIGHANDLER		{ 0x08000; } # in readline sighandler
 sub RL_STATE_UNDOING		{ 0x10000; } # doing an undo
-# The following RL_STATE_* are defined since TRL 6.0
-sub RL_STATE_INPUTPENDING	{ 0x020000; } #	rl_execute_next called
-sub RL_STATE_TTYCSAVED		{ 0x040000; } #	tty special chars saved
-sub RL_STATE_CALLBACK		{ 0x080000; } #	using the callback interface
-sub RL_STATE_VIMOTION		{ 0x100000; } #	reading vi motion arg
-sub RL_STATE_MULTIKEY		{ 0x200000; } #	reading multiple-key command
-sub RL_STATE_VICMDONCE		{ 0x400000; } #	entered vi command mode at least once
-# The following RL_STATE_* is defined since TRL 6.1
-sub RL_STATE_REDISPLAYING	{ 0x800000; } #	updating terminal display
-# The value was changed since TRL 6.0 and 6.1
-# done; accepted line
-sub RL_STATE_DONE { $readline_version < 0x0600 ? 0x80000 : 
-			($readline_version < 0x0601 ? 0x800000 : 0x1000000); }
+sub RL_STATE_INPUTPENDING	{ 0x02_0000; } # rl_execute_next called
+sub RL_STATE_TTYCSAVED		{ 0x04_0000; } # tty special chars saved [5.0]
+sub RL_STATE_CALLBACK		{ 0x08_0000; } # using the callback interface [5.1]
+sub RL_STATE_VIMOTION		{ 0x10_0000; } # reading vi motion arg [5.1]
+sub RL_STATE_MULTIKEY		{ 0x20_0000; } # reading multiple-key command [5.1]
+sub RL_STATE_VICMDONCE		{ 0x40_0000; } # entered vi command mode at least once [5.1]
+sub RL_STATE_CHARSEARCH		{ 0x80_0000; } # vi mode char search [7.0]
+sub RL_STATE_REDISPLAYING	{	       # updating terminal display [6.1]
+    $readline_version < 0x0700 ? 0x80_0000 : 0x100_0000;
+}
+sub RL_STATE_DONE {			       # done; accepted line
+    $readline_version < 0x0501 ? 0x8_0000 : 
+	($readline_version < 0x0601 ? 0x80_0000 :
+	 ($readline_version < 0x0700 ? 0x100_0000 : 0x200_0000));
+}
 
 #
 #	Methods Definition
@@ -251,7 +254,7 @@ sub new {
     # charactores to STDIO.
     # https://rt.cpan.org/Ticket/Display.html?id=96569
     if (!@_) {
-	my ($IN,$OUT) = $self->findConsole();
+	my ($IN, $OUT) = $self->findConsole();
 	open(IN,"<$IN")   || croak "Cannot open $IN for read";
 	open(OUT,">$OUT") || croak "Cannot open $OUT for write";
 	$self->newTTY(\*IN, \*OUT);
@@ -1224,12 +1227,10 @@ Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>.
 
 =item C<save_state(READLINE_STATE)>
 
-	NOT IMPLEMENTED YET!
 	int	rl_save_state(struct readline_state *sp)	# GRL 6.0
 
 =item C<restore_state(READLINE_STATE)>
 
-	NOT IMPLEMENTED YET!
 	int	rl_restore_state(struct readline_state *sp)	# GRL 6.0
 
 =item C<free(MEM)>
@@ -1418,12 +1419,10 @@ When C<MAX> is omitted, the max length of an item in C<@matches> is used.
 
 =item C<history_get_history_state>
 
-	NOT IMPLEMENTED YET!
 	HISTORY_STATE	*history_get_hitory_state()		# GRL 6.3
 
 =item C<history_set_history_state>
 
-	NOT IMPLEMENTED YET!
 	void	*history_set_hitory_state(HISTORY_STATE *state)	# GRL 6.3
 
 =back
@@ -1726,8 +1725,8 @@ Examples:
 
 =head3 History Variables
 
-	int history_base (read only)
-	int history_length (read only)
+	int history_base
+	int history_length
 	int history_max_entries (called `max_input_history', read only)
 	int history_write_timestamps (GRL 5.0)
 	char history_expansion_char
@@ -2119,7 +2118,7 @@ L<https://rt.perl.org/Public/Bug/Display.html?id=121456> for details.
 
 =head1 LICENSE
 
-Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
+Copyright (c) 1996-2016 Hiroo Hayashi.  All rights reserved.
 
 This program is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.

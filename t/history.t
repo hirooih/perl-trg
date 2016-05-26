@@ -13,7 +13,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 84;
+use Test::More tests => 88;
 
 # redefine Test::Mode::note due to it requires Perl 5.10.1.
 no warnings 'redefine';
@@ -63,7 +63,16 @@ note "2.3.1 Initializing History and State Management";
 # This is verbose since 'new' has already initialized the GNU history library.
 $t->using_history;
 
-# history_get_history_state!!!, history_set_history_state!!!
+# history_get_history_state, history_set_history_state
+{
+    ok($attribs->{history_length} == 0, 'history_get/set_history_state');
+    my $state = $t->history_get_history_state();
+    isa_ok($state, 'HISTORY_STATEPtr');
+    $attribs->{history_length} = 10;
+    ok($attribs->{history_length} == 10, 'history_get/set_history_state');
+    $t->history_set_history_state($state);
+    ok($attribs->{history_length} == 0, 'history_get/set_history_state');
+}
 
 # check the values of initialized variables
 ok($attribs->{history_base} == 1, 'history_base');
