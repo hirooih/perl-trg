@@ -54,9 +54,9 @@ if (0) {
     my $t = new Term::ReadLine 'ReadLineTest', $in, \*STDOUT;
 } else {
     Term::ReadLine::Gnu::Var::_rl_store_iostream($in, 0);
-    binmode($in, ":pop");
+    binmode($in, ":pop") if $] > 5.010;
     Term::ReadLine::Gnu::Var::_rl_store_iostream(\*STDOUT, 1);
-    binmode(\*STDOUT, ":pop");
+    binmode(\*STDOUT, ":pop") if $] > 5.010;
 }
 ok(1, 'rl_store_iostream');
 
