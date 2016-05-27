@@ -730,23 +730,25 @@ sub STORE {
     } elsif ($type eq 'F') {
 	return _rl_store_function($value, $id);
     } elsif ($type eq 'IO') {
-	# my @layers;
+	my @layers = PerlIO::get_layers($value);
+#	print "#$id: ", join(':', @layers), "\n";
+	# check if the last layer is utf8 or not.
+	my $utf8stream = ($layers[$#layers] eq 'utf8');
 	_rl_store_iostream($value, $id);
-	# @layers = PerlIO::get_layers($value);
-	# print "#$id: ", join(':', @layers), "\n";
 
-	# pop the stdio layer pushed by PerlIO_findFILE().
+	# PerlIO_findFILE() push a stdio layer on perl 5.10 and later.
+	# pop the stdio layer
 	#   https://rt.cpan.org/Ticket/Display.html?id=59832
 	# pop the stdio layer only when utf8 layer is included for
 	# remote debugging.
 	#   https://rt.cpan.org/Ticket/Display.html?id=110121
-	$utf8_in = 0 if $id == 0;	# to call utf8::decode() for input lines
-	foreach my $layer (PerlIO::get_layers($value)) {
-	    if ($layer eq 'utf8') {
-		$utf8_in = 1 if $id == 0;
-		binmode($value,  ":pop");
-		last;
-	    }
+	@layers = PerlIO::get_layers($value);
+#	print "#$id: ", join(':', @layers), "\n";
+	if ($utf8stream) {
+	    binmode($value,  ":pop") if $layers[$#layers] eq 'stdio';
+	    $utf8_in = 1 if ($id == 0);	# to call utf8::decode() for input lines
+#	    @layers = PerlIO::get_layers($value);
+#	    print "#$id: ", join(':', @layers), "\n";
 	}
 	return $stream[$id] = $value;
     } elsif ($type eq 'K' || $type eq 'LF') {
