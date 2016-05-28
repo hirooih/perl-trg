@@ -18,7 +18,7 @@ use warnings;
 use utf8;
 use open ':std', ':encoding(utf8)';
 
-use Test::More tests => 4;
+use Test::More tests => 13;
 use Data::Dumper;
 
 # redefine Test::Mode::note due to it requires Perl 5.10.1.
@@ -38,12 +38,16 @@ use Term::ReadLine;
 ok(1, 'load done');
 note "I'm testing Term::ReadLine::Gnu version $Term::ReadLine::Gnu::VERSION";
 
+my @expected = $] > 5.010 ? ('unix', 'perlio', 'encoding(utf8)', 'utf8') : ('stdio', 'encoding(utf8)', 'utf8');
 my $line;
 my @layers;
 open (my $in, "<", "t/utf8.txt") or die "cannot open utf8.txt: $!";
 @layers = PerlIO::get_layers(\*STDIN);  note 'STDIN:  ', join(':', @layers);
+is_deeply(\@layers, , \@expected, '\*STDIN layers before _rl_store_iostream');
 @layers = PerlIO::get_layers($in);      note '$in:    ', join(':', @layers);
+is_deeply(\@layers, , \@expected, '$in layers before _rl_store_iostream');
 @layers = PerlIO::get_layers(\*STDOUT); note 'STDOUT: ', join(':', @layers);
+is_deeply(\@layers, , \@expected, '\*STDOUT layers before _rl_store_iostream');
 
 $line = <$in>; chomp($line);
 note $line;
@@ -61,8 +65,11 @@ if (0) {
 ok(1, 'rl_store_iostream');
 
 @layers = PerlIO::get_layers(\*STDIN);  note 'STDIN:  ', join(':', @layers);
+is_deeply(\@layers, , \@expected, '\*STDIN layers after _rl_store_iostream 1');
 @layers = PerlIO::get_layers($in);      note '$in:    ', join(':', @layers);
+is_deeply(\@layers, , \@expected, '$in layers after _rl_store_iostream 1');
 @layers = PerlIO::get_layers(\*STDOUT); note 'STDOUT: ', join(':', @layers);
+is_deeply(\@layers, , \@expected, '\*STDOUT layers after _rl_store_iostream 1');
 
 $line = <$in>; chomp($line);
 note $line;
@@ -70,7 +77,10 @@ note Dumper($line, "漢字2");
 ok($line eq "漢字2", 'post-read');
 
 @layers = PerlIO::get_layers(\*STDIN);  note 'STDIN:  ', join(':', @layers);
+is_deeply(\@layers, , \@expected, '\*STDIN layers after _rl_store_iostream 2');
 @layers = PerlIO::get_layers($in);      note '$in:    ', join(':', @layers);
+is_deeply(\@layers, , \@expected, '$in layers after _rl_store_iostream 2');
 @layers = PerlIO::get_layers(\*STDOUT); note 'STDOUT: ', join(':', @layers);
+is_deeply(\@layers, , \@expected, '\*STDOUT layers after _rl_store_iostream 2');
 
 exit 0;

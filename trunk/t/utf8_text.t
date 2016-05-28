@@ -17,8 +17,8 @@ use open ':std', ':encoding(utf8)';
 
 # This must follow UTF-8 setting.
 # See 'CAVEATS and NOTES' in http://perldoc.perl.org/Test/More.html for details.
-use Test::More tests => 6;
-my $ntest = 6;
+use Test::More tests => 10;
+my $ntest = 10;
 use Data::Dumper;
 
 # redefine Test::Mode::note due to it requires Perl 5.10.1.
@@ -70,12 +70,13 @@ if (0) {	# This may cause a fail.
     ok($line eq "漢字1", 'pre-read');
 }
 
+my @expected = $] > 5.010 ? ('unix', 'perlio', 'encoding(utf8)', 'utf8') : ('stdio', 'encoding(utf8)', 'utf8');
 @layers = PerlIO::get_layers($in);
 note 'i: ', join(':', @layers);
-#is_deeply(\@layers, ['unix', 'perlio', 'encoding(utf8)', 'utf8'], "input layers before 'new'");
+is_deeply(\@layers, , \@expected, "input layers before 'new'");
 @layers = PerlIO::get_layers(\*STDOUT);
 note 'o: ', join(':', @layers);
-#is_deeply(\@layers, ['unix', 'perlio', 'encoding(utf8)', 'utf8'], "output layers before 'new'");
+is_deeply(\@layers, \@expected, "output layers before 'new'");
 
 my $t = new Term::ReadLine 'ReadLineTest', $in, \*STDOUT;
 # Note that the following line does not work.
@@ -87,10 +88,10 @@ isa_ok($t, 'Term::ReadLine');
 
 @layers = PerlIO::get_layers($t->IN);
 note 'i: ', join(':', @layers);
-#is_deeply(\@layers, ['unix', 'perlio', 'encoding(utf8)', 'utf8'], "input layers after 'new'");
+is_deeply(\@layers, \@expected, "input layers after 'new'");
 @layers = PerlIO::get_layers($t->OUT);
 note 'o: ', join(':', @layers);
-#is_deeply(\@layers, ['unix', 'perlio', 'encoding(utf8)', 'utf8'], "output layers after 'new'");
+is_deeply(\@layers, \@expected, "output layers after 'new'");
 
 # make the GNU Readline 8 bit through
 $t->parse_and_bind('set input-meta on');

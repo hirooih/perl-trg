@@ -11,8 +11,8 @@
 use strict;
 use warnings;
 
-use Test::More tests => 5;
-my $ntest = 5;
+use Test::More tests => 9;
+my $ntest = 9;
 use Data::Dumper;
 
 # redefine Test::Mode::note due to it requires Perl 5.10.1.
@@ -54,10 +54,12 @@ if (0) {	# This may cause a fail.
 
 @layers = PerlIO::get_layers($in);
 note 'i: ', join(':', @layers);
-#is_deeply(\@layers, ['unix', 'perlio'], "input layers before 'new'");
+is_deeply(\@layers, $] > 5.010 ? ['unix', 'perlio'] : ['stdio'],
+	  "input layers before 'new'");
 @layers = PerlIO::get_layers(\*STDOUT);
 note 'o: ', join(':', @layers);
-#is_deeply(\@layers, ['unix', 'perlio'], "output layers before new'");
+is_deeply(\@layers, $] > 5.010 ? ['unix', 'perlio'] : ['stdio'],
+	  "output layers before 'new'");
 
 my $t = new Term::ReadLine 'ReadLineTest', $in, \*STDOUT;
 print "\n";	# rl_initialize() outputs some escape characters in Term-ReadLine-Gnu less than 6.3, 
@@ -65,10 +67,12 @@ isa_ok($t, 'Term::ReadLine');
 
 @layers = PerlIO::get_layers($t->IN);
 note 'i: ', join(':', @layers);
-#is_deeply(\@layers, ['unix', 'perlio', 'stdio'], "input layers after 'new'");
+is_deeply(\@layers, $] > 5.010 ? ['unix', 'perlio', 'stdio'] : ['stdio'],
+	  "input layers after 'new'");
 @layers = PerlIO::get_layers($t->OUT);
 note 'o: ', join(':', @layers);
-#is_deeply(\@layers, ['unix', 'perlio', 'stdio'], "output layers after 'new'");
+is_deeply(\@layers, $] > 5.010 ? ['unix', 'perlio', 'stdio'] : ['stdio'],
+	  "output layers after 'new'");
 
 # make the GNU Readline 8 bit through
 $t->parse_and_bind('set input-meta on');
