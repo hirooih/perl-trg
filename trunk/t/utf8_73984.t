@@ -51,12 +51,13 @@ is_deeply(\@layers, , \@expected, '\*STDOUT layers before _rl_store_iostream');
 
 $line = <$in>; chomp($line);
 note $line;
-note Dumper($line, "漢字1");
-ok($line eq "漢字1", 'pre-read');
+note Dumper($line, "🐪");
+ok($line eq "🐪", 'pre-read');
 
 if (0) {
     my $t = new Term::ReadLine 'ReadLineTest', $in, \*STDOUT;
 } else {
+    # Perl 5.10 and later have to pop after calling PerlIO_importFILE
     Term::ReadLine::Gnu::Var::_rl_store_iostream($in, 0);
     binmode($in, ":pop") if $] > 5.010;
     Term::ReadLine::Gnu::Var::_rl_store_iostream(\*STDOUT, 1);
@@ -73,8 +74,8 @@ is_deeply(\@layers, , \@expected, '\*STDOUT layers after _rl_store_iostream 1');
 
 $line = <$in>; chomp($line);
 note $line;
-note Dumper($line, "漢字2");
-ok($line eq "漢字2", 'post-read');
+note Dumper($line, "🐪🐪");
+ok($line eq "🐪🐪", 'post-read');
 
 @layers = PerlIO::get_layers(\*STDIN);  note 'STDIN:  ', join(':', @layers);
 is_deeply(\@layers, , \@expected, '\*STDIN layers after _rl_store_iostream 2');
