@@ -8,6 +8,9 @@
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
 
+# The GNU Readline Library start supporting multibyte characters since
+# version 4.3, and is still improving the support.
+
 use strict;
 use warnings;
 
@@ -35,6 +38,9 @@ BEGIN {
     $ENV{LC_ALL} = 'en_US.UTF-8';
 }
 
+# 'define @ARGV' is deprecated
+my $verbose = scalar @ARGV && ($ARGV[0] eq 'verbose');
+
 use Term::ReadLine;
 ok(1, 'load done');
 note "I'm testing Term::ReadLine::Gnu version $Term::ReadLine::Gnu::VERSION";
@@ -59,15 +65,17 @@ if (!defined $old_locale) {
 }
 ok(1, 'setlocale');
 
-my $line;
-my @layers;
-open (my $in, "<", "t/utf8.txt") or die "cannot open utf8.txt: $!";
-
+my ($in, $line, @layers);
+if ($verbose) {
+    $in = \*STDIN;
+} else {
+    open ($in, "<", "t/utf8.txt") or die "cannot open utf8.txt: $!";
+}
 if (0) {	# This may cause a fail.
     $line = <$in>; chomp($line);
     note $line;
-    note Dumper($line, "漢字1");
-    ok($line eq "漢字1", 'pre-read');
+    note Dumper($line, "🐪");
+    ok($line eq "🐪", 'pre-read');
 }
 
 my @expected = $] > 5.010 ? ('unix', 'perlio', 'encoding(utf8)', 'utf8') : ('stdio', 'encoding(utf8)', 'utf8');
@@ -93,27 +101,37 @@ is_deeply(\@layers, \@expected, "input layers after 'new'");
 note 'o: ', join(':', @layers);
 is_deeply(\@layers, \@expected, "output layers after 'new'");
 
-# make the GNU Readline 8 bit through
+# force the GNU Readline 8 bit through
 $t->parse_and_bind('set input-meta on');
 $t->parse_and_bind('set convert-meta off');
 $t->parse_and_bind('set output-meta on');
 
-$line = $t->readline("漢字> ");
+if ($verbose) {
+    while ($line = $t->readline("🐪🐪> ")) {
+	note $line;
+	note Dumper($line);
+    }
+    exit 0;
+}
+
+$line = $t->readline("🐪🐪> ");
 note $line;
-note Dumper($line, "漢字1");
-ok($line eq "漢字1", 'UTF-8 text string read');
+note Dumper($line, "🐪");
+ok($line eq "🐪", 'UTF-8 text string read');
 ok(utf8::is_utf8($line), 'UTF-8 text string');
+
+note "This does work: ", scalar reverse('🐪 🐪🐪 🐪🐪🐪');
 
 if (0) {	# This may cause a fail.
     $line = <$in>; chomp($line);
     note $line;
-    note Dumper($line, "漢字2");
-    ok($line eq "漢字2");
+    note Dumper($line, "🐪🐪");
+    ok($line eq "🐪🐪");
 
-    $line = $t->readline("漢字> ");
+    $line = $t->readline("🐪🐪🐪> ");
     note $line;
-    note Dumper($line, "漢字3");
-    ok($line eq "漢字3");
+    note Dumper($line, "🐪🐪🐪");
+    ok($line eq "🐪🐪🐪");
 
     @layers = PerlIO::get_layers($in);      note 'i: ', join(':', @layers);
     @layers = PerlIO::get_layers(\*STDOUT); note 'o: ', join(':', @layers);
