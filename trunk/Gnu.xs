@@ -519,7 +519,7 @@ static struct int_vars {
   { &rl_dispatching,				0, 0 },	/* 24 */
   { &rl_gnu_readline_p,				0, 1 },	/* 25 */
   /* rl_readline_state becomes unsigned long on RL 7.0 */
-  { (int *)&rl_readline_state,			0, 1 },	/* 26 */
+  { (int *)&rl_readline_state,			0, 0 },	/* 26 */
   { &rl_explicit_arg,				0, 1 },	/* 27 */
   { &rl_numeric_arg,				0, 1 },	/* 28 */
   { &rl_editing_mode,				0, 1 },	/* 29 */
@@ -527,9 +527,9 @@ static struct int_vars {
   { &rl_completion_type,			0, 0 },	/* 31 */
   { &rl_readline_version,			0, 1 },	/* 32 */
   { &rl_completion_suppress_append,		0, 0 },	/* 33 */
-  { &rl_completion_quote_character,		0, 0 },	/* 34 */
+  { &rl_completion_quote_character,		0, 1 },	/* 34 */
   { &rl_completion_suppress_quote,		0, 0 },	/* 35 */
-  { &rl_completion_found_quote,			0, 0 },	/* 36 */
+  { &rl_completion_found_quote,			0, 1 },	/* 36 */
   { &rl_completion_mark_symlink_dirs,		0, 0 },	/* 37 */
   { &rl_prefer_env_winsize,			0, 0 },	/* 38 */
   { &rl_sort_completion_matches,		0, 0 },	/* 39 */
