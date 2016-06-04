@@ -1024,7 +1024,7 @@ Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>.
 
 	str	rl_get_function_name(FunctionPtr function)	# TRG original
 
-=item C<function_of_keyseq(KEYMAP [,MAP])>
+=item C<function_of_keyseq(KEYSEQ [,MAP])>
 
 	(FunctionPtr|Keymap|str data, int type)
 		rl_function_of_keyseq(str keyseq,
@@ -1209,13 +1209,13 @@ Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>.
 
 	void	rl_deprep_terminal()
 
-=item C<tty_set_default_bindings(KMAP)>
+=item C<tty_set_default_bindings([MAP])>
 
-	void	rl_tty_set_default_bindings([Keymap KMAP])	# GRL 4.0
+	void	rl_tty_set_default_bindings([Keymap|str map = rl_get_keymap()])	# GRL 4.0
 
-=item C<tty_unset_default_bindings(KMAP)>
+=item C<tty_unset_default_bindings([MAP])>
 
-	void	rl_tty_unset_default_bindings([Keymap KMAP])	# GRL 5.0
+	void	rl_tty_unset_default_bindings([Keymap|str map = rl_get_keymap()]) # GRL 5.0
 
 =item C<reset_terminal([TERMINAL_NAME])>
 
@@ -1229,20 +1229,20 @@ Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>.
 
 =item C<save_state(READLINE_STATE)>
 
-	int	rl_save_state(struct readline_state *sp)	# GRL 6.0
+	READLINE_STATE	rl_save_state()				# GRL 6.0
 
 =item C<restore_state(READLINE_STATE)>
 
-	int	rl_restore_state(struct readline_state *sp)	# GRL 6.0
+	int	rl_restore_state(READLINE_STATE)		# GRL 6.0
 
 =item C<free(MEM)>
 
 	Not implemented since not required for Perl.
-	int	rl_(void *mem)					# GRL 6.0
+	int	rl_free(void *mem)				# GRL 6.0
 
 =item C<replace_line(TEXT [,CLEAR_UNDO])>
 
-	int	rl_replace_line(str text, int clear_undo)	# GRL 4.3
+	int	rl_replace_line(str text, int clear_undo = 0)	# GRL 4.3
 
 =item C<extend_line_buffer(LEN)>
 
@@ -1421,11 +1421,11 @@ When C<MAX> is omitted, the max length of an item in C<@matches> is used.
 
 =item C<history_get_history_state>
 
-	HISTORY_STATE	*history_get_hitory_state()		# GRL 6.3
+	HISTORY_STATE	history_get_hitory_state()		# GRL 6.3
 
 =item C<history_set_history_state>
 
-	void	*history_set_hitory_state(HISTORY_STATE *state)	# GRL 6.3
+	void	history_set_hitory_state(HISTORY_STATE)		# GRL 6.3
 
 =back
 
@@ -1433,7 +1433,7 @@ When C<MAX> is omitted, the max length of an item in C<@matches> is used.
 
 =over 4
 
-=item C<addhistory(STRING[, STRING, ...])>
+=item C<add_history(STRING)>
 
 	void	add_history(str string)
 
@@ -1448,12 +1448,13 @@ When C<MAX> is omitted, the max length of an item in C<@matches> is used.
 =item C<free_history(HISTENT)>
 
 	Not implemented since Term::ReadLine::Gnu does not support the
-	member 'data' of HIST_ENTRY structure, remove_history() covers it.
+	member 'data' of HIST_ENTRY structure. remove_history() frees
+	the memory.
 	histdata_t	free_history_entry(HIST_ENTRY *histent)	# GRL 5.0
 
-=item C<replace_history_entry(WHICH, LINE)>
+=item C<replace_history_entry(WHICH, STRING)>
 
-	str	replace_history_entry(int which, str line)
+	str	replace_history_entry(int which, str string)
 
 =item C<clear_history>
 
@@ -1473,14 +1474,14 @@ of C<unstifle_history()>.
 
 This is equivalent with C<stifle_history(undef)>.
 
+=item C<history_is_stifled>
+
+	int	history_is_stifled()
+
 =item C<SetHistory(LINE1 [, LINE2, ...])>
 
 sets the history of input, from where it can be used if the actual
 C<readline> is present.
-
-=item C<history_is_stifled>
-
-	int	history_is_stifled()
 
 =back
 
@@ -1601,9 +1602,9 @@ F<~/.history>.  Returns true if successful, or false if not.
 
 =over 4
 
-=item C<history_expand(LINE)>
+=item C<history_expand(STRING)>
 
-	(int result, str expansion) history_expand(str line)
+	(int result, str expansion) history_expand(str string)
 
 Note that this function returns C<expansion> in the scalar context.
 
@@ -1613,13 +1614,13 @@ Note that this function returns C<expansion> in the scalar context.
 						   int  cindex,
 						   char qchar = '\0')
 
-=item C<history_tokenize(LINE)>
+=item C<history_tokenize(STRING)>
 
-	(@str)	history_tokenize(str line)
+	(@str)	history_tokenize(str string)
 
-=item C<history_arg_extract(LINE, [FIRST [,LAST]])>
+=item C<history_arg_extract(STRING, [FIRST [,LAST]])>
 
-	str history_arg_extract(str line, int first = 0, int last = '$')
+	str history_arg_extract(str string, int first = 0, int last = '$')
 
 =back
 
@@ -1678,7 +1679,7 @@ Examples:
 	int rl_executing_key (GRL 6.3, read only)
 	str rl_executing_keyseq (GRL 6.3, read only)
 	int rl_key_sequence_length (read only)
-	int rl_readline_state (GRL 4.2, read only)
+	int rl_readline_state (GRL 4.2)
 	int rl_explicit_arg (read only)
 	int rl_numeric_arg (read only)
 	int rl_editing_mode (read only)
@@ -1712,9 +1713,9 @@ Examples:
 	int rl_completion_query_items
 	int rl_completion_append_character
 	int rl_completion_suppress_append (GRL 4.3)
-	int rl_completion_quote_character (GRL 5.0)
+	int rl_completion_quote_character (GRL 5.0, read only)
 	int rl_completion_suppress_quote (GRL 5.0)
-	int rl_completion_found_quote (GRL 5.0)
+	int rl_completion_found_quote (GRL 5.0, read only)
 	int rl_completion_mark_symlink_dirs (GRL 4.3)
 	int rl_ignore_completion_duplicates
 	int rl_filename_completion_desired
