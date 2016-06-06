@@ -2,15 +2,16 @@
 #
 #	$Id$
 
-const char *	T_PV
-CONST char *	T_PV
-Keymap		T_PTROBJ
-Function *	T_PTROBJ
+const char *		T_PV
+CONST char *		T_PV
+Keymap			T_PTROBJ
+Function *		T_PTROBJ
 rl_command_func_t *	T_PTROBJ
 readline_state_t *	T_PTROBJ
-HIST_ENTRY *	T_HIST_ENTRY
-HISTORY_STATE *	T_PTROBJ
-t_xstr		T_XSTR
+HIST_ENTRY *		T_HIST_ENTRY
+HISTORY_STATE *		T_PTROBJ
+t_utf8			T_XSTR
+t_utf8_free		T_XSTR_FREE
 
 ########################################################################
 INPUT
@@ -19,10 +20,23 @@ INPUT
 OUTPUT
 T_XSTR
 	if ($var) {
+	  SV *utf8_mode = get_sv("Term::ReadLine::Gnu::utf8_mode", 0);
 	  sv_setpv($arg, $var);
+	  if (SvTRUE(utf8_mode))
+	    sv_utf8_decode($arg);
+	}
+T_XSTR_FREE
+	if ($var) {
+	  SV *utf8_mode = get_sv("Term::ReadLine::Gnu::utf8_mode", 0);
+	  sv_setpv($arg, $var);
+	  if (SvTRUE(utf8_mode))
+	    sv_utf8_decode($arg);
 	  xfree($var);
 	}
 T_HIST_ENTRY
 	if ($var && $var->line) {
+	  SV *utf8_mode = get_sv("Term::ReadLine::Gnu::utf8_mode", 0);
 	  sv_setpv($arg, $var->line);
+	  if (SvTRUE(utf8_mode))
+	    sv_utf8_decode($arg);
 	}
