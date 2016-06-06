@@ -53,7 +53,8 @@ extern "C" {
 #define CONST const
 #endif /* (RL_READLINE_VERSION >= 0x0402) */
 
-typedef char *	t_xstr;		/* string which must be xfreed */
+typedef char *	t_utf8;			/* string which must not be xfreed */
+typedef char *	t_utf8_free;		/* string which must be xfreed */
 
 /*
  * compatibility definitions
@@ -286,7 +287,7 @@ static time_t history_get_time(){ return 0; }
 #if (RL_READLINE_VERSION < 0x0501)
 /* features introduced by GNU Readline 5.1 */
 static int rl_prefer_env_winsize = 0;
-static char *rl_variable_value(CONST char * v){ return NULL; }
+static t_utf8 rl_variable_value(CONST char * v){ return NULL; }
 static void rl_reset_screen_size(){}
 #endif /* (RL_READLINE_VERSION < 0x0501) */
 
@@ -1740,7 +1741,7 @@ MODULE = Term::ReadLine::Gnu		PACKAGE = Term::ReadLine::Gnu::XS
 
  # The function name "readline()" is reserved for a method name.
 
-t_xstr
+t_utf8_free
 rl_readline(prompt = NULL)
 	CONST char *	prompt
     PROTOTYPE: ;$
@@ -2258,7 +2259,7 @@ rl_delete_text(start = 0, end = rl_end)
 	int end
     PROTOTYPE: ;$$
 
-t_xstr
+t_utf8_free
 rl_copy_text(start = 0, end = rl_end)
 	int start
 	int end
@@ -2533,7 +2534,7 @@ rl_variable_bind(name, value)
  # but have been implemented for 2.2.1.
 
  # Do not free the string returned.
-char *
+t_utf8
 rl_variable_value(variable)
 	CONST char *	variable
     PROTOTYPE: $
@@ -2709,6 +2710,7 @@ rl_completion_matches(text, fn = NULL)
 	  
 	  if (matches) {
 	    int i, count;
+	    SV *utf8_mode = get_sv("Term::ReadLine::Gnu::utf8_mode", 0);
 
 	    /* count number of entries */
 	    for (count = 0; matches[count]; count++)
@@ -2716,7 +2718,10 @@ rl_completion_matches(text, fn = NULL)
 
 	    EXTEND(sp, count);
 	    for (i = 0; i < count; i++) {
-	      PUSHs(sv_2mortal(newSVpv(matches[i], 0)));
+	      SV *sv = sv_2mortal(newSVpv(matches[i], 0));
+	      if (SvTRUE(utf8_mode))
+		sv_utf8_decode(sv);
+	      PUSHs(sv);
 	      xfree(matches[i]);
 	    }
 	    xfree((char *)matches);
@@ -2725,13 +2730,13 @@ rl_completion_matches(text, fn = NULL)
 	  }
 	}
 
-t_xstr
+t_utf8_free
 rl_filename_completion_function(text, state)
 	const char *	text
 	int state
     PROTOTYPE: $$
 
-t_xstr
+t_utf8_free
 rl_username_completion_function(text, state)
 	const char *	text
 	int state
@@ -2972,11 +2977,15 @@ history_expand(line)
 	{
 	  char *expansion;
 	  int result;
+	  SV *utf8_mode = get_sv("Term::ReadLine::Gnu::utf8_mode", 0);
 
 	  result = history_expand(line, &expansion);
 	  EXTEND(sp, 2);
 	  PUSHs(sv_2mortal(newSViv(result)));
-	  PUSHs(sv_2mortal(newSVpv(expansion, 0)));
+	  SV *sv = sv_2mortal(newSVpv(expansion, 0));
+	  if (SvTRUE(utf8_mode))
+	    sv_utf8_decode(sv);
+	  PUSHs(sv);
 	  xfree(expansion);
 	}
 
@@ -2989,11 +2998,15 @@ _get_history_event(string, cindex, qchar = 0)
     PPCODE:
 	{
 	  char *text;
+	  SV *utf8_mode = get_sv("Term::ReadLine::Gnu::utf8_mode", 0);
 
 	  text = get_history_event(string, &cindex, qchar);
 	  EXTEND(sp, 2);
 	  if (text) {		/* don't free `text' */
-	    PUSHs(sv_2mortal(newSVpv(text, 0)));
+	    SV *sv = sv_2mortal(newSVpv(text, 0));
+	    if (SvTRUE(utf8_mode))
+	      sv_utf8_decode(sv);
+	    PUSHs(sv);
 	  } else {
 	    PUSHs(&PL_sv_undef);
 	  }
@@ -3011,6 +3024,7 @@ history_tokenize(text)
 	  tokens = history_tokenize(text);
 	  if (tokens) {
 	    int i, count;
+	    SV *utf8_mode = get_sv("Term::ReadLine::Gnu::utf8_mode", 0);
 
 	    /* count number of entries */
 	    for (count = 0; tokens[count]; count++)
@@ -3018,7 +3032,10 @@ history_tokenize(text)
 
 	    EXTEND(sp, count);
 	    for (i = 0; i < count; i++) {
-	      PUSHs(sv_2mortal(newSVpv(tokens[i], 0)));
+	      SV *sv = sv_2mortal(newSVpv(tokens[i], 0));
+	      if (SvTRUE(utf8_mode))
+		sv_utf8_decode(sv);
+	      PUSHs(sv);
 	      xfree(tokens[i]);
 	    }
 	    xfree((char *)tokens);
@@ -3029,7 +3046,7 @@ history_tokenize(text)
 
 #define DALLAR '$'		/* define for xsubpp bug */
 
-t_xstr
+t_utf8_free
 _history_arg_extract(line, first = 0 , last = DALLAR)
 	CONST char *	line
 	int first
@@ -3081,6 +3098,7 @@ _rl_store_str(pstr, id)
 	  }
 	  str_tbl[id].accessed = 1;
 
+	  //printf("%d: %s\n", id, pstr);
 	  len = strlen(pstr) + 1;
 	  *str_tbl[id].var = xmalloc(len);
 	  Copy(pstr, *str_tbl[id].var, len, char);
@@ -3131,7 +3149,12 @@ _rl_fetch_str(id)
 	    warn("Gnu.xs:_rl_fetch_str: Illegal `id' value: `%d'", id);
 	  } else {
 	    if (*(str_tbl[id].var)) {
+	      SV *utf8_mode = get_sv("Term::ReadLine::Gnu::utf8_mode", 0);
 	      sv_setpv(ST(0), *(str_tbl[id].var));
+	      if (SvTRUE(utf8_mode)) {
+		sv_utf8_decode(ST(0));
+		/*sv_utf8_upgrade(ST(0));*/
+	      }
 	    }
 	  }
 	}
