@@ -56,6 +56,16 @@ extern "C" {
 typedef char *	t_utf8;			/* string which must not be xfreed */
 typedef char *	t_utf8_free;		/* string which must be xfreed */
 
+static int utf8_mode;
+static SV*
+sv_2mortal_utf8(SV *sv)
+{
+  sv = sv_2mortal(sv);
+  if (utf8_mode)
+    sv_utf8_decode(sv);
+  return sv;
+}
+
 /*
  * compatibility definitions
  */
@@ -1160,7 +1170,8 @@ icpintfunc_wrapper(type, text, index)
 
   PUSHMARK(sp);
   if (text) {
-    XPUSHs(sv_2mortal(newSVpv(text, 0)));
+    utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
+    XPUSHs(sv_2mortal_utf8(newSVpv(text, 0)));
   } else {
     XPUSHs(&PL_sv_undef);
   }
@@ -1200,7 +1211,8 @@ dequoting_function_wrapper(type, text, quote_char)
 
   PUSHMARK(sp);
   if (text) {
-    XPUSHs(sv_2mortal(newSVpv(text, 0)));
+    utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
+    XPUSHs(sv_2mortal_utf8(newSVpv(text, 0)));
   } else {
     XPUSHs(&PL_sv_undef);
   }
@@ -1264,7 +1276,8 @@ completion_entry_function_wrapper(text, state)
 
   PUSHMARK(sp);
   if (text) {
-    XPUSHs(sv_2mortal(newSVpv(text, 0)));
+    utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
+    XPUSHs(sv_2mortal_utf8(newSVpv(text, 0)));
   } else {
     XPUSHs(&PL_sv_undef);
   }
@@ -1306,13 +1319,14 @@ attempted_completion_function_wrapper(text, start, end)
   SAVETMPS;
 
   PUSHMARK(sp);
+  utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
   if (text) {
-    XPUSHs(sv_2mortal(newSVpv(text, 0)));
+    XPUSHs(sv_2mortal_utf8(newSVpv(text, 0)));
   } else {
     XPUSHs(&PL_sv_undef);
   }
   if (rl_line_buffer) {
-    XPUSHs(sv_2mortal(newSVpv(rl_line_buffer, 0)));
+    XPUSHs(sv_2mortal_utf8(newSVpv(rl_line_buffer, 0)));
   } else {
     XPUSHs(&PL_sv_undef);
   }
@@ -1394,7 +1408,8 @@ filename_quoting_function_wrapper(text, match_type, quote_pointer)
 
   PUSHMARK(sp);
   if (text) {
-    XPUSHs(sv_2mortal(newSVpv(text, 0)));
+    utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
+    XPUSHs(sv_2mortal_utf8(newSVpv(text, 0)));
   } else {
     XPUSHs(&PL_sv_undef);
   }
@@ -1459,14 +1474,15 @@ ignore_some_completions_function_wrapper(matches)
 
   /* matches[0] is the maximal matching substring.  So it may NULL, even rest
    * of matches[] has values. */
+  utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
   if (matches[0]) {
-    XPUSHs(sv_2mortal(newSVpv(matches[0], 0)));
+    XPUSHs(sv_2mortal_utf8(newSVpv(matches[0], 0)));
     /* xfree(matches[0]);*/
   } else {
     XPUSHs(&PL_sv_undef);
   }
   for (i = 1; matches[i]; i++) {
-      XPUSHs(sv_2mortal(newSVpv(matches[i], 0)));
+      XPUSHs(sv_2mortal_utf8(newSVpv(matches[i], 0)));
       xfree(matches[i]);
   }
   /*xfree(matches);*/
@@ -1565,15 +1581,16 @@ completion_display_matches_hook_wrapper(matches, len, max)
 
   /* matches[0] is the maximal matching substring.  So it may NULL, even rest
    * of matches[] has values. */
+  utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
   if (matches[0]) {
-    av_push(av_matches, sv_2mortal(newSVpv(matches[0], 0)));
+    av_push(av_matches, sv_2mortal_utf8(newSVpv(matches[0], 0)));
   } else {
     av_push(av_matches, &PL_sv_undef);
   }
 
   for (i = 1; matches[i]; i++)
     if (matches[i]) {
-      av_push(av_matches, sv_2mortal(newSVpv(matches[i], 0)));
+      av_push(av_matches, sv_2mortal_utf8(newSVpv(matches[i], 0)));
     } else {
       av_push(av_matches, &PL_sv_undef);
     }
@@ -1715,7 +1732,8 @@ callback_handler_wrapper(line)
 
   PUSHMARK(sp);
   if (line) {
-    XPUSHs(sv_2mortal(newSVpv(line, 0)));
+    utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
+    XPUSHs(sv_2mortal_utf8(newSVpv(line, 0)));
   } else {
     XPUSHs(&PL_sv_undef);
   }
@@ -2710,18 +2728,15 @@ rl_completion_matches(text, fn = NULL)
 	  
 	  if (matches) {
 	    int i, count;
-	    SV *utf8_mode = get_sv("Term::ReadLine::Gnu::utf8_mode", 0);
 
 	    /* count number of entries */
 	    for (count = 0; matches[count]; count++)
 	      ;
 
 	    EXTEND(sp, count);
+	    utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
 	    for (i = 0; i < count; i++) {
-	      SV *sv = sv_2mortal(newSVpv(matches[i], 0));
-	      if (SvTRUE(utf8_mode))
-		sv_utf8_decode(sv);
-	      PUSHs(sv);
+	      PUSHs(sv_2mortal_utf8(newSVpv(matches[i], 0)));
 	      xfree(matches[i]);
 	    }
 	    xfree((char *)matches);
@@ -2977,15 +2992,12 @@ history_expand(line)
 	{
 	  char *expansion;
 	  int result;
-	  SV *utf8_mode = get_sv("Term::ReadLine::Gnu::utf8_mode", 0);
 
 	  result = history_expand(line, &expansion);
 	  EXTEND(sp, 2);
 	  PUSHs(sv_2mortal(newSViv(result)));
-	  SV *sv = sv_2mortal(newSVpv(expansion, 0));
-	  if (SvTRUE(utf8_mode))
-	    sv_utf8_decode(sv);
-	  PUSHs(sv);
+	  utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
+	  PUSHs(sv_2mortal_utf8(newSVpv(expansion, 0)));
 	  xfree(expansion);
 	}
 
@@ -2998,15 +3010,12 @@ _get_history_event(string, cindex, qchar = 0)
     PPCODE:
 	{
 	  char *text;
-	  SV *utf8_mode = get_sv("Term::ReadLine::Gnu::utf8_mode", 0);
 
 	  text = get_history_event(string, &cindex, qchar);
 	  EXTEND(sp, 2);
 	  if (text) {		/* don't free `text' */
-	    SV *sv = sv_2mortal(newSVpv(text, 0));
-	    if (SvTRUE(utf8_mode))
-	      sv_utf8_decode(sv);
-	    PUSHs(sv);
+	    utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
+	    PUSHs(sv_2mortal_utf8(newSVpv(text, 0)));
 	  } else {
 	    PUSHs(&PL_sv_undef);
 	  }
@@ -3024,18 +3033,15 @@ history_tokenize(text)
 	  tokens = history_tokenize(text);
 	  if (tokens) {
 	    int i, count;
-	    SV *utf8_mode = get_sv("Term::ReadLine::Gnu::utf8_mode", 0);
 
 	    /* count number of entries */
 	    for (count = 0; tokens[count]; count++)
 	      ;
 
 	    EXTEND(sp, count);
+	    utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
 	    for (i = 0; i < count; i++) {
-	      SV *sv = sv_2mortal(newSVpv(tokens[i], 0));
-	      if (SvTRUE(utf8_mode))
-		sv_utf8_decode(sv);
-	      PUSHs(sv);
+	      PUSHs(sv_2mortal_utf8(newSVpv(tokens[i], 0)));
 	      xfree(tokens[i]);
 	    }
 	    xfree((char *)tokens);
@@ -3149,11 +3155,10 @@ _rl_fetch_str(id)
 	    warn("Gnu.xs:_rl_fetch_str: Illegal `id' value: `%d'", id);
 	  } else {
 	    if (*(str_tbl[id].var)) {
-	      SV *utf8_mode = get_sv("Term::ReadLine::Gnu::utf8_mode", 0);
+	      utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
 	      sv_setpv(ST(0), *(str_tbl[id].var));
-	      if (SvTRUE(utf8_mode)) {
+	      if (utf8_mode) {
 		sv_utf8_decode(ST(0));
-		/*sv_utf8_upgrade(ST(0));*/
 	      }
 	    }
 	  }
