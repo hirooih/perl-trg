@@ -391,7 +391,7 @@ the actual C<readline> is present.
 
 =cut
 
-use vars '*addhistory';
+#use vars '*addhistory';
 *addhistory = \&AddHistory;	# for backward compatibility
 
 sub AddHistory {
@@ -563,7 +563,7 @@ sub CallbackHandlerInstall {
 # Documentation is after '__END__' for efficiency.
 
 # for backward compatibility
-use vars qw(*AddDefun *BindKey *UnbindKey *ParseAndBind *StifleHistory);
+#use vars qw(*AddDefun *BindKey *UnbindKey *ParseAndBind *StifleHistory);
 *AddDefun = \&add_defun;
 *BindKey = \&bind_key;
 *UnbindKey = \&unbind_key;
@@ -597,6 +597,7 @@ sub WriteHistory {
 package Term::ReadLine::Gnu::Var;
 use Carp;
 use strict;
+use warnings;
 our %_rl_vars;
 
 %_rl_vars
@@ -792,6 +793,7 @@ sub STORE {
 package Term::ReadLine::Gnu;
 use Carp;
 use strict;
+use warnings;
 
 #
 #	set value of %Attribs
@@ -830,6 +832,7 @@ foreach (keys %Term::ReadLine::Gnu::Var::_rl_vars) {
 package Term::ReadLine::Gnu::AU;
 use Carp;
 no strict qw(refs vars);
+use warnings;
 
 sub AUTOLOAD {
     { $AUTOLOAD =~ s/.*:://; }	# preserve match data

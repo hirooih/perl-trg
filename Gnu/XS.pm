@@ -23,12 +23,12 @@ $VERSION='1.31';	# added for CPAN
 our %Attribs;
 *Attribs = \%Term::ReadLine::Gnu::Attribs;
 
-use vars qw(*read_history);
+#use vars qw(*read_history);
 *read_history = \&read_history_range;
 
 # alias for 8 characters limitation imposed by AutoSplit
-use vars qw(*rl_unbind_key *rl_unbind_function *rl_unbind_command
-	    *history_list *history_arg_extract);
+#use vars qw(*rl_unbind_key *rl_unbind_function *rl_unbind_command
+#	    *history_list *history_arg_extract);
 *rl_unbind_key = \&unbind_key;
 *rl_unbind_function = \&unbind_function;
 *rl_unbind_command = \&unbind_command;
@@ -36,7 +36,7 @@ use vars qw(*rl_unbind_key *rl_unbind_function *rl_unbind_command
 *history_arg_extract = \&hist_arg_extract;
 
 # For backward compatibility.  Using these name (*_in_map) is deprecated.
-use vars qw(*rl_unbind_function_in_map *rl_unbind_command_in_map);
+#use vars qw(*rl_unbind_function_in_map *rl_unbind_command_in_map);
 *rl_unbind_function_in_map = \&unbind_function;
 *rl_unbind_command_in_map  = \&unbind_command;
 
