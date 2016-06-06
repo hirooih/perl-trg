@@ -120,7 +120,8 @@ require Term::ReadLine::Gnu::XS;
 
 #	Global Variables
 
-our(%Attribs, %Features, $readline_version, $utf8_in);
+# $utf8_mode is also refered by XS functions.
+our(%Attribs, %Features, $readline_version, $utf8_mode);
 
 # Each variable in the GNU Readline Library is tied to an entry of
 # this hash (%Attribs).  By accessing the hash entry, you can read
@@ -224,7 +225,7 @@ this package is being used, C<Term::ReadLine::Gnu> is returned.
 
 sub ReadLine { 'Term::ReadLine::Gnu'; }
 
-=item C<new(NAME,[IN[,OUT]])>
+=item C<new(NAME,[IN,OUT])>
 
 returns the handle for subsequent calls to following functions.
 Argument is the name of the application.  Optionally can be followed
@@ -250,6 +251,11 @@ sub new {
     # calls setenv() before the 1st assignment to $ENV{}.
     $ENV{_TRL_DUMMY} = '';
 
+    # UTF-8 condition from Term:ReadLine
+    $utf8_mode ||= ${^UNICODE} & 1 || defined ${^ENCODING};
+    #printf "\${^UNICODE}: 0x%X, ", ${^UNICODE};
+    #print "\${^ENCODING}: ", defined ${^ENCODING} ? 'defined' : 'undef', "\n";
+    
     # set tty before calling rl_initialize() not to output some
     # charactores to STDIO.
     # https://rt.cpan.org/Ticket/Display.html?id=96569
@@ -257,8 +263,15 @@ sub new {
 	my ($IN, $OUT) = $self->findConsole();
 	open(IN,"<$IN")   || croak "Cannot open $IN for read";
 	open(OUT,">$OUT") || croak "Cannot open $OUT for write";
+	if ($utf8_mode) {
+	    binmode OUT, ':utf8';
+	}
 	$self->newTTY(\*IN, \*OUT);
     } else {
+	# enable $utf8_mode if input stream has the utf8 layer.
+	my @layers = PerlIO::get_layers($_[0]);
+	$utf8_mode ||= ($layers[$#layers] eq 'utf8');
+    
 	$self->newTTY(@_);
     }
 
@@ -342,13 +355,6 @@ sub readline {			# should be ReadLine
 	$line = $self->rl_readline($prompt);
     }
     return undef unless defined $line;
-
-    # from ReadLine.pm: convert to the internal representation from UTF-8
-    # see 'perldoc perlvar'
-    if (($utf8_in || ${^UNICODE} & 1 || defined ${^ENCODING}) && utf8::valid($line)) {
-	utf8::decode($line);
-	utf8::upgrade($line);
-    }
 
     # history expansion
     if ($Attribs{do_expand}) {
@@ -499,6 +505,25 @@ sub newTTY {
 
     $Attribs{outstream} = $out;
     $Attribs{instream}  = $in;
+}
+
+=item C<enableUTF8>
+
+Enables UTF-8 support.
+
+If STDIN is in UTF-8 by the C<-C> command-line switch or
+C<PERL_UNICODE> environment variable, or C<IN> file handle has C<utf8>
+IO layer, then UTF-8 support is also enabled.  Otherwise you need this
+C<enableUTF8> method.
+
+This is an original method of C<Term::ReadLine:Gnu>.)
+
+=cut
+
+sub enableUTF8 {
+    my $self = shift;
+    $utf8_mode = 1;
+    binmode $self->OUT, ':utf8';
 }
 
 =back
@@ -732,8 +757,9 @@ sub STORE {
     } elsif ($type eq 'IO') {
 	my @layers = PerlIO::get_layers($value);
 #	print "#$id: ", join(':', @layers), "\n";
-	# check if the last layer is utf8 or not.
+	# check if the top layer is 'utf8' or not.
 	my $utf8stream = ($layers[$#layers] eq 'utf8');
+
 	_rl_store_iostream($value, $id);
 
 	# PerlIO_findFILE() push a stdio layer on perl 5.10 and later.
@@ -742,13 +768,9 @@ sub STORE {
 	# pop the stdio layer only when utf8 layer is included for
 	# remote debugging.
 	#   https://rt.cpan.org/Ticket/Display.html?id=110121
-	@layers = PerlIO::get_layers($value);
-#	print "#$id: ", join(':', @layers), "\n";
 	if ($utf8stream) {
+	    @layers = PerlIO::get_layers($value);
 	    binmode($value,  ":pop") if $layers[$#layers] eq 'stdio';
-	    $utf8_in = 1 if ($id == 0);	# to call utf8::decode() for input lines
-#	    @layers = PerlIO::get_layers($value);
-#	    print "#$id: ", join(':', @layers), "\n";
 	}
 	return $stream[$id] = $value;
     } elsif ($type eq 'K' || $type eq 'LF') {
