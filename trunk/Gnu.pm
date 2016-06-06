@@ -84,35 +84,42 @@ END
 {
     use Exporter ();
     use DynaLoader;
-    our ($VERSION, @ISA, @EXPORT_OK);
 
-    $VERSION = '1.31';		# update Gnu::XS::VERSION also.
+    our $VERSION = '1.31';		# update Gnu::XS::VERSION also.
 
     # Term::ReadLine::Gnu::AU makes a function in
     # `Term::ReadLine::Gnu::XS' as a method.
     # The namespace of Term::ReadLine::Gnu::AU is searched before ones
     # of other classes
-    @ISA = qw(Term::ReadLine::Gnu::AU Term::ReadLine::Stub
-	      Exporter DynaLoader);
 
-    @EXPORT_OK = qw(RL_PROMPT_START_IGNORE RL_PROMPT_END_IGNORE
-		    NO_MATCH SINGLE_MATCH MULT_MATCH
-		    ISFUNC ISKMAP ISMACR
-		    UNDO_DELETE UNDO_INSERT UNDO_BEGIN UNDO_END
-		    RL_STATE_NONE RL_STATE_INITIALIZING
-		    RL_STATE_INITIALIZED RL_STATE_TERMPREPPED
-		    RL_STATE_READCMD RL_STATE_METANEXT
-		    RL_STATE_DISPATCHING RL_STATE_MOREINPUT
-		    RL_STATE_ISEARCH RL_STATE_NSEARCH
-		    RL_STATE_SEARCH RL_STATE_NUMERICARG
-		    RL_STATE_MACROINPUT RL_STATE_MACRODEF
-		    RL_STATE_OVERWRITE RL_STATE_COMPLETING
-		    RL_STATE_SIGHANDLER RL_STATE_UNDOING
-		    RL_STATE_INPUTPENDING RL_STATE_TTYCSAVED
-		    RL_STATE_CALLBACK RL_STATE_VIMOTION
-		    RL_STATE_MULTIKEY RL_STATE_VICMDONCE
-		    RL_STATE_CHARSEARCH RL_STATE_REDISPLAYING
-		    RL_STATE_DONE);
+    our @ISA = qw(Term::ReadLine::Gnu::AU Term::ReadLine::Stub
+		  Exporter DynaLoader);
+
+    our %EXPORT_TAGS = (
+	prompt =>	[qw(RL_PROMPT_START_IGNORE RL_PROMPT_END_IGNORE)],
+	match_type =>	[qw(NO_MATCH SINGLE_MATCH MULT_MATCH)],
+	keymap_type =>	[qw(ISFUNC ISKMAP ISMACR)],
+	undo_code =>	[qw(UNDO_DELETE UNDO_INSERT UNDO_BEGIN UNDO_END)],
+	rl_state =>	[qw(RL_STATE_NONE RL_STATE_INITIALIZING
+			    RL_STATE_INITIALIZED RL_STATE_TERMPREPPED
+			    RL_STATE_READCMD RL_STATE_METANEXT
+			    RL_STATE_DISPATCHING RL_STATE_MOREINPUT
+			    RL_STATE_ISEARCH RL_STATE_NSEARCH
+			    RL_STATE_SEARCH RL_STATE_NUMERICARG
+			    RL_STATE_MACROINPUT RL_STATE_MACRODEF
+			    RL_STATE_OVERWRITE RL_STATE_COMPLETING
+			    RL_STATE_SIGHANDLER RL_STATE_UNDOING
+			    RL_STATE_INPUTPENDING RL_STATE_TTYCSAVED
+			    RL_STATE_CALLBACK RL_STATE_VIMOTION
+			    RL_STATE_MULTIKEY RL_STATE_VICMDONCE
+			    RL_STATE_CHARSEARCH RL_STATE_REDISPLAYING
+			    RL_STATE_DONE)],
+	);
+    Exporter::export_ok_tags('prompt');
+    Exporter::export_ok_tags('match_type');
+    Exporter::export_ok_tags('keymap_type');
+    Exporter::export_ok_tags('undo_code');
+    Exporter::export_ok_tags('rl_state');
 
     bootstrap Term::ReadLine::Gnu $VERSION; # DynaLoader
 }
@@ -121,7 +128,7 @@ require Term::ReadLine::Gnu::XS;
 #	Global Variables
 
 # $utf8_mode is also refered by XS functions.
-our(%Attribs, %Features, $readline_version, $utf8_mode);
+our($readline_version, $utf8_mode);
 
 # Each variable in the GNU Readline Library is tied to an entry of
 # this hash (%Attribs).  By accessing the hash entry, you can read
@@ -130,21 +137,21 @@ our(%Attribs, %Features, $readline_version, $utf8_mode);
 # for further details.
 
 # Normal (non-tied) entries
-%Attribs  = (
-	     MinLength => 1,
-	     do_expand => 0,
-	     completion_word => [],
-	     term_set => ['', '', '', ''],
-	    );
-%Features = (
-	     appname => 1, minline => 1, autohistory => 1,
-	     getHistory => 1, setHistory => 1, addHistory => 1,
-	     readHistory => 1, writeHistory => 1,
-	     preput => 1, attribs => 1, newTTY => 1,
-	     tkRunning => Term::ReadLine::Stub->Features->{'tkRunning'},
-	     ornaments => Term::ReadLine::Stub->Features->{'ornaments'},
-	     stiflehistory => 1,
-	    );
+our %Attribs  = (
+    MinLength => 1,
+    do_expand => 0,
+    completion_word => [],
+    term_set => ['', '', '', ''],
+    );
+our %Features = (
+    appname => 1, minline => 1, autohistory => 1,
+    getHistory => 1, setHistory => 1, addHistory => 1,
+    readHistory => 1, writeHistory => 1,
+    preput => 1, attribs => 1, newTTY => 1,
+    tkRunning => Term::ReadLine::Stub->Features->{'tkRunning'},
+    ornaments => Term::ReadLine::Stub->Features->{'ornaments'},
+    stiflehistory => 1,
+    );
 
 #
 #	GNU Readline/History Library constant definition
@@ -2028,7 +2035,52 @@ Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>
 
 =head1 EXPORTS
 
-None.
+No symbols are exported by default.
+The following tags are defined and their symbols can be exported.
+
+=over 4
+
+=item prompt
+
+RL_PROMPT_START_IGNORE RL_PROMPT_END_IGNORE
+
+=item match_type
+
+NO_MATCH SINGLE_MATCH MULT_MATCH
+
+=item keymap_type
+
+ISFUNC ISKMAP ISMACR
+
+=item undo_code
+
+UNDO_DELETE UNDO_INSERT UNDO_BEGIN UNDO_END
+
+=item rl_state
+
+RL_STATE_NONE RL_STATE_INITIALIZING
+RL_STATE_INITIALIZED RL_STATE_TERMPREPPED
+RL_STATE_READCMD RL_STATE_METANEXT
+RL_STATE_DISPATCHING RL_STATE_MOREINPUT
+RL_STATE_ISEARCH RL_STATE_NSEARCH
+RL_STATE_SEARCH RL_STATE_NUMERICARG
+RL_STATE_MACROINPUT RL_STATE_MACRODEF
+RL_STATE_OVERWRITE RL_STATE_COMPLETING
+RL_STATE_SIGHANDLER RL_STATE_UNDOING
+RL_STATE_INPUTPENDING RL_STATE_TTYCSAVED
+RL_STATE_CALLBACK RL_STATE_VIMOTION
+RL_STATE_MULTIKEY RL_STATE_VICMDONCE
+RL_STATE_CHARSEARCH RL_STATE_REDISPLAYING
+RL_STATE_DONE
+
+=back
+
+They can be exported as follows;
+
+	use Term::ReadLine;
+	BEGIN {
+	    import Term::ReadLine::Gnu qw(:keymap_type RL_STATE_INITIALIZED);
+	}
 
 =head1 ENVIRONMENT
 

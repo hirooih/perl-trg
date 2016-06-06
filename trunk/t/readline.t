@@ -34,7 +34,9 @@ BEGIN {
 my $verbose = scalar @ARGV && ($ARGV[0] eq 'verbose');
 
 use Term::ReadLine;
-use Term::ReadLine::Gnu qw(ISKMAP ISMACR ISFUNC RL_STATE_INITIALIZED);
+BEGIN {
+    import Term::ReadLine::Gnu qw(:keymap_type RL_STATE_INITIALIZED);
+}
 ok(1, 'load done');
 
 note "Testing Term::ReadLine::Gnu version $Term::ReadLine::Gnu::VERSION";
