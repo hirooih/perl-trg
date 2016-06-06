@@ -267,13 +267,13 @@ sub new {
     # charactores to STDIO.
     # https://rt.cpan.org/Ticket/Display.html?id=96569
     if (!@_) {
-	my ($IN, $OUT) = $self->findConsole();
-	open(IN,"<$IN")   || croak "Cannot open $IN for read";
-	open(OUT,">$OUT") || croak "Cannot open $OUT for write";
+	my ($in, $out) = $self->findConsole();
+	open(my $IN,"<$in")   || croak "Cannot open $in for read";
+	open(my $OUT,">$out") || croak "Cannot open $out for write";
 	if ($utf8_mode) {
-	    binmode OUT, ':utf8';
+	    binmode $OUT, ':utf8';
 	}
-	$self->newTTY(\*IN, \*OUT);
+	$self->newTTY($IN, $OUT);
     } else {
 	# enable $utf8_mode if input stream has the utf8 layer.
 	my @layers = PerlIO::get_layers($_[0]);
