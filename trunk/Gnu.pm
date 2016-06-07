@@ -127,8 +127,7 @@ require Term::ReadLine::Gnu::XS;
 
 #	Global Variables
 
-# $utf8_mode is also refered by XS functions.
-our($readline_version, $utf8_mode);
+our($readline_version);
 
 # Each variable in the GNU Readline Library is tied to an entry of
 # this hash (%Attribs).  By accessing the hash entry, you can read
@@ -258,8 +257,8 @@ sub new {
     # calls setenv() before the 1st assignment to $ENV{}.
     $ENV{_TRL_DUMMY} = '';
 
-    # UTF-8 condition from Term:ReadLine
-    $utf8_mode ||= ${^UNICODE} & 1 || defined ${^ENCODING};
+    # UTF-8 condition conpatible with Term:ReadLine
+    $Attribs{utf8_mode} ||= ${^UNICODE} & 1 || defined ${^ENCODING};
     #printf "\${^UNICODE}: 0x%X, ", ${^UNICODE};
     #print "\${^ENCODING}: ", defined ${^ENCODING} ? 'defined' : 'undef', "\n";
     
@@ -270,15 +269,15 @@ sub new {
 	my ($in, $out) = $self->findConsole();
 	open(my $IN,"<$in")   || croak "Cannot open $in for read";
 	open(my $OUT,">$out") || croak "Cannot open $out for write";
-	if ($utf8_mode) {
+	if ($Attribs{utf8_mode}) {
 	    binmode $IN,  ':encoding(UTF-8)'; # not necessary
 	    binmode $OUT, ':encoding(UTF-8)';
 	}
 	$self->newTTY($IN, $OUT);
     } else {
-	# enable $utf8_mode if input stream has the utf8 layer.
+	# enable UTF-8 mode if input stream has the utf8 layer.
 	my @layers = PerlIO::get_layers($_[0]);
-	$utf8_mode ||= ($layers[$#layers] eq 'utf8');
+	$Attribs{utf8_mode} ||= ($layers[$#layers] eq 'utf8');
     
 	$self->newTTY(@_);
     }
@@ -521,16 +520,16 @@ Enables UTF-8 support.
 
 If STDIN is in UTF-8 by the C<-C> command-line switch or
 C<PERL_UNICODE> environment variable, or C<IN> file handle has C<utf8>
-IO layer, then UTF-8 support is also enabled.  Otherwise you need this
-C<enableUTF8> method.
+IO layer, then UTF-8 support is also enabled.  In other cases you need
+this C<enableUTF8> method.
 
-This is an original method of C<Term::ReadLine:Gnu>.)
+This is an original method of C<Term::ReadLine:Gnu>.
 
 =cut
 
 sub enableUTF8 {
     my $self = shift;
-    $utf8_mode = 1;
+    $Attribs{utf8_mode} = 1;
     binmode $self->IN,  ':encoding(UTF-8)'; # not necessary
     binmode $self->OUT, ':encoding(UTF-8)';
 }
@@ -667,6 +666,7 @@ our %_rl_vars;
        rl_executing_key				=> ['I', 41], # GRL 6.3
        rl_key_sequence_length			=> ['I', 42], # GRL 6.3
        rl_change_environment			=> ['I', 43], # GRL 6.3
+       utf8_mode				=> ['I', 44], # internal
 
        rl_startup_hook				=> ['F', 0],
        rl_event_hook				=> ['F', 1],
@@ -766,7 +766,6 @@ sub STORE {
 	return _rl_store_function($value, $id);
     } elsif ($type eq 'IO') {
 	_rl_store_iostream($value, $id);
-
 	# _rl_store_iostream() calls PerlIO_findFILE().  It pushes the
 	# 'stdio' layer on perl 5.10 and later. We must pop the stdio
 	# layer.
@@ -780,7 +779,6 @@ sub STORE {
 		binmode($value,  ":pop");
 	    }
 	}
-
 	return $stream[$id] = $value;
     } elsif ($type eq 'K' || $type eq 'LF') {
 	carp "Term::ReadLine::Gnu::Var::STORE: read only variable `$name'\n";
@@ -823,7 +821,7 @@ foreach (keys %Term::ReadLine::Gnu::Var::_rl_vars) {
 	 rl_username_completion_function
 	 list_completion_function
          _trp_completion_function);
-    # auto-split subroutine cannot be processed in the map loop above
+    # auto-splited subroutines cannot be processed in the map loop above
     use strict 'refs';
     $Attribs{shadow_redisplay} = \&Term::ReadLine::Gnu::XS::shadow_redisplay;
     $Attribs{Tk_getc} = \&Term::ReadLine::Gnu::XS::Tk_getc;
@@ -845,7 +843,7 @@ sub AUTOLOAD {
     } else {
 	croak "Cannot do `$AUTOLOAD' in Term::ReadLine::Gnu";
     }
-    no warnings 'redefine';	# Why is this line necessary ?
+    no warnings 'redefine';	# Why is this line necessary ???
     *$AUTOLOAD = sub { shift; &$name(@_); };
     goto &$AUTOLOAD;
 }

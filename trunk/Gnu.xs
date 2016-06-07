@@ -56,8 +56,11 @@ extern "C" {
 typedef char *	t_utf8;			/* string which must not be xfreed */
 typedef char *	t_utf8_free;		/* string which must be xfreed */
 
-/* utf8_mode must be set before calling sv_2mortal_utf8() */
-static int utf8_mode;
+/* 
+ * utf8_mode is set in the Perl side, and it must be set before
+ * calling sv_2mortal_utf8()
+ */
+static int utf8_mode = 0;
 static SV*
 sv_2mortal_utf8(SV *sv)
 {
@@ -548,7 +551,8 @@ static struct int_vars {
   { &rl_completion_invoking_key,		0, 1 },	/* 40 */
   { &rl_executing_key,				0, 1 },	/* 41 */
   { &rl_key_sequence_length,			0, 1 },	/* 42 */
-  { &rl_change_environment,			0, 0 }	/* 43 */
+  { &rl_change_environment,			0, 0 },	/* 43 */
+  { &utf8_mode,					0, 0 }	/* 44 */
 };
 
 /*
@@ -606,7 +610,7 @@ static struct fn_vars {
     NULL
   },
   {
-    (XFunction **)&rl_completion_entry_function,			/* 4 */
+    (XFunction **)&rl_completion_entry_function,		/* 4 */
     NULL,
     (XFunction *)completion_entry_function_wrapper,		
     NULL
@@ -618,7 +622,7 @@ static struct fn_vars {
     NULL
   },
   {
-    (XFunction **)&rl_filename_quoting_function,			/* 6 */
+    (XFunction **)&rl_filename_quoting_function,		/* 6 */
     (XFunction *)rl_quote_filename,
     (XFunction *)filename_quoting_function_wrapper,
     NULL
@@ -642,7 +646,7 @@ static struct fn_vars {
     NULL
   },
   {
-    (XFunction **)&rl_directory_completion_hook,			/* 10 */
+    (XFunction **)&rl_directory_completion_hook,		/* 10 */
     NULL,
     (XFunction *)directory_completion_hook_wrapper,
     NULL
@@ -691,7 +695,7 @@ static struct fn_vars {
     NULL
   },
   {
-    (XFunction **)&rl_signal_event_hook,				/* 19 */
+    (XFunction **)&rl_signal_event_hook,			/* 19 */
     NULL,
     (XFunction *)signal_event_hook_wrapper,
     NULL
@@ -1171,7 +1175,6 @@ icpintfunc_wrapper(type, text, index)
 
   PUSHMARK(sp);
   if (text) {
-    utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
     XPUSHs(sv_2mortal_utf8(newSVpv(text, 0)));
   } else {
     XPUSHs(&PL_sv_undef);
@@ -1212,7 +1215,6 @@ dequoting_function_wrapper(type, text, quote_char)
 
   PUSHMARK(sp);
   if (text) {
-    utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
     XPUSHs(sv_2mortal_utf8(newSVpv(text, 0)));
   } else {
     XPUSHs(&PL_sv_undef);
@@ -1277,7 +1279,6 @@ completion_entry_function_wrapper(text, state)
 
   PUSHMARK(sp);
   if (text) {
-    utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
     XPUSHs(sv_2mortal_utf8(newSVpv(text, 0)));
   } else {
     XPUSHs(&PL_sv_undef);
@@ -1320,7 +1321,6 @@ attempted_completion_function_wrapper(text, start, end)
   SAVETMPS;
 
   PUSHMARK(sp);
-  utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
   if (text) {
     XPUSHs(sv_2mortal_utf8(newSVpv(text, 0)));
   } else {
@@ -1409,7 +1409,6 @@ filename_quoting_function_wrapper(text, match_type, quote_pointer)
 
   PUSHMARK(sp);
   if (text) {
-    utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
     XPUSHs(sv_2mortal_utf8(newSVpv(text, 0)));
   } else {
     XPUSHs(&PL_sv_undef);
@@ -1475,7 +1474,6 @@ ignore_some_completions_function_wrapper(matches)
 
   /* matches[0] is the maximal matching substring.  So it may NULL, even rest
    * of matches[] has values. */
-  utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
   if (matches[0]) {
     XPUSHs(sv_2mortal_utf8(newSVpv(matches[0], 0)));
     /* xfree(matches[0]);*/
@@ -1582,7 +1580,6 @@ completion_display_matches_hook_wrapper(matches, len, max)
 
   /* matches[0] is the maximal matching substring.  So it may NULL, even rest
    * of matches[] has values. */
-  utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
   if (matches[0]) {
     av_push(av_matches, sv_2mortal_utf8(newSVpv(matches[0], 0)));
   } else {
@@ -1733,7 +1730,6 @@ callback_handler_wrapper(line)
 
   PUSHMARK(sp);
   if (line) {
-    utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
     XPUSHs(sv_2mortal_utf8(newSVpv(line, 0)));
   } else {
     XPUSHs(&PL_sv_undef);
@@ -2755,7 +2751,6 @@ rl_completion_matches(text, fn = NULL)
 	      ;
 
 	    EXTEND(sp, count);
-	    utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
 	    for (i = 0; i < count; i++) {
 	      PUSHs(sv_2mortal_utf8(newSVpv(matches[i], 0)));
 	      xfree(matches[i]);
@@ -3017,7 +3012,6 @@ history_expand(line)
 	  result = history_expand(line, &expansion);
 	  EXTEND(sp, 2);
 	  PUSHs(sv_2mortal(newSViv(result)));
-	  utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
 	  PUSHs(sv_2mortal_utf8(newSVpv(expansion, 0)));
 	  xfree(expansion);
 	}
@@ -3035,7 +3029,6 @@ _get_history_event(string, cindex, qchar = 0)
 	  text = get_history_event(string, &cindex, qchar);
 	  EXTEND(sp, 2);
 	  if (text) {		/* don't free `text' */
-	    utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
 	    PUSHs(sv_2mortal_utf8(newSVpv(text, 0)));
 	  } else {
 	    PUSHs(&PL_sv_undef);
@@ -3060,7 +3053,6 @@ history_tokenize(text)
 	      ;
 
 	    EXTEND(sp, count);
-	    utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
 	    for (i = 0; i < count; i++) {
 	      PUSHs(sv_2mortal_utf8(newSVpv(tokens[i], 0)));
 	      xfree(tokens[i]);
@@ -3176,7 +3168,6 @@ _rl_fetch_str(id)
 	    warn("Gnu.xs:_rl_fetch_str: Illegal `id' value: `%d'", id);
 	  } else {
 	    if (*(str_tbl[id].var)) {
-	      utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
 	      sv_setpv(ST(0), *(str_tbl[id].var));
 	      if (utf8_mode) {
 		sv_utf8_decode(ST(0));
