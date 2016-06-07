@@ -1,10 +1,9 @@
-#!/usr/local/bin/perl
 #
 #	XS.pm : perl function definition for Term::ReadLine::Gnu
 #
 #	$Id$
 #
-#	Copyright (c) 1999 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 1999-2016 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -66,8 +65,10 @@ my $_tstrs_init = 0;
 # Uncomment the following line to enable AutoSplit.  If you are using
 # AutoLoader.pm distributed with Perl 5.004 or earlier, you must
 # update AutoLoader.pm due to its bug.
+# 2016/06/07: now it is time to uncomment. Ignore the warning message,
+# "... some names are not unique ...", during make.
 
-#__END__
+__END__
 
 
 #
