@@ -3221,6 +3221,8 @@ _rl_fetch_int(id)
 	  }
 	}
 
+#if 1	/* http://perldoc.perl.org/perlxs.html#Inserting-POD%2c-Comments-and-C-Preprocessor-Directives */
+
 void
 _rl_store_iostream(stream, id)
 	FILE *stream
@@ -3256,7 +3258,7 @@ _rl_store_iostream(stream, id)
 		       id, fileno(stream));
 	}
 
-#if 0 /* 2016/06/07 worked but no advantage */
+#else /* 2016/06/07 worked but no advantage */
 
 void
 _rl_store_iostream(iop, id)
