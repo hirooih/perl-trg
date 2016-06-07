@@ -1,6 +1,45 @@
 	-*- Indented-text -*-
 	$Id$
 
+1.32  2016-06-06
+	- improve UTF-8 handling
+	  - UTF-8 decoding is done at the interface between Perl and
+            XS.  This makes it possible for UTF-8 strings to be get
+            from the GNU Readline Library functions and variables.
+	  - add enableUTF8() method
+	  - UTF-8 support is enabled when STDIN is in UTF-8 by the -C
+	    command-line switch, or PERL_UNICODE environment -variable,
+	    or IN file handle has utf8 IO layer, or -enableUTF8 method
+	    is called.
+	  - pop IO layer only when stdio layer is pushed on utf8 layer
+            to support Perl 5.8.x
+	- rl_save_state(), rl_restore_state(),
+          history_get_history_state(), and history_set_history_state()
+          are finally implemented.
+	- update RL_STATE_* definitions
+	- fix rl_readline_state and history_legnth variable to be
+          writable
+	- fix rl_completion_quote_character and
+          rl_completion_found_quate variable to be read only
+	- update POD document
+	- t/*.t: use Test::More and improved
+	  - t/utf8_binary.t, t/utf8_text.t:
+	    - use en_US.UTF-8 instead of en_US.utf8 for locale
+	    - force the GNU Readline Library 8bit through
+	    - add variable access test, IO layer check, verbose mode,
+              etc.
+	    - use camel characters instead of Japanese kanji
+              characters
+	  - t/utf8_binary.t: skip when PERL_UNICODE is
+            set. [rt.cpan.org #114185]
+	  - t/utf8.txt: use camel characters instead of Japanese kanji
+            characters
+	  - t/callback.t: update comments and code clean-up
+	- use some modern Perl features (but still in 5.8 era)
+	  - use file handle references
+	  - define export tags
+	  - comment out 'use vars' for subroutine name aliase
+
 1.31  2016-03-06
 	- t/utf8_binary.t, t/utf_text.t: skip on non UTF-8 environment.
 	- t/readline.t: skip the cursor move test for an active CPAN
@@ -20,7 +59,7 @@
 	- add tests for UTF-8 handling.
 	- pass _rl_store_iostream 'FILE *' in stead of 'PerlIO *'.
 	- remove T_STDIO definition from typemap.
-	- requires 5.8.1
+	- requires Perl 5.8.1
 
 1.28  2015-09-21
 	- Makefile.PL: revert a change on 1.27 which causes fail on
