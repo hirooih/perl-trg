@@ -20,14 +20,12 @@ INPUT
 OUTPUT
 T_XSTR
 	if ($var) {
-	  int utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
 	  sv_setpv($arg, $var);
 	  if (utf8_mode)
 	    sv_utf8_decode($arg);
 	}
 T_XSTR_FREE
 	if ($var) {
-	  int utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
 	  sv_setpv($arg, $var);
 	  if (utf8_mode)
 	    sv_utf8_decode($arg);
@@ -35,7 +33,6 @@ T_XSTR_FREE
 	}
 T_HIST_ENTRY
 	if ($var && $var->line) {
-	  int utf8_mode = SvTRUE(get_sv("Term::ReadLine::Gnu::utf8_mode", 0));
 	  sv_setpv($arg, $var->line);
 	  if (utf8_mode)
 	    sv_utf8_decode($arg);
