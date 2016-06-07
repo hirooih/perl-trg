@@ -9,14 +9,18 @@
 #	modify it under the same terms as Perl itself.
 
 # The GNU Readline Library start supporting multibyte characters since
-# version 4.3, and is still improving the support.
+# version 4.3, and is still improving the support.  You should use the
+# latest GNU Readline Library for UTF-8 support.
 
 use strict;
 use warnings;
 
 # convert into UTF-8 text strings
+# use ':encoding(UTF-8)', not ':utf8' nor ':encoding(utf8)'
+#   http://perldoc.perl.org/PerlIO.html
+#   http://perldoc.perl.org/Encode.html, 'UTF-8 vs. utf8 vs. UTF8'
 use utf8;
-use open ':std', ':encoding(utf8)';
+use open ':std', ':encoding(UTF-8)';
 
 # This must follow UTF-8 setting.
 # See 'CAVEATS and NOTES' in http://perldoc.perl.org/Test/More.html for details.
@@ -75,8 +79,8 @@ if (0) {	# This may cause a fail.
     ok($line eq "🐪", 'pre-read');
 }
 
-my $expected = $] > 5.010 ? ['unix', 'perlio', 'encoding(utf8)', 'utf8']
-    : ['stdio', 'encoding(utf8)', 'utf8'];
+my $expected = $] > 5.010 ? ['unix', 'perlio', 'encoding(utf-8-strict)', 'utf8']
+    : ['stdio', 'encoding(utf-8-strict)', 'utf8'];
 @layers = PerlIO::get_layers($in);
 note 'i: ', join(':', @layers);
 is_deeply(\@layers, $expected, "input layers before 'new'");
@@ -115,8 +119,8 @@ my $a = $t->Attribs;
 if ($verbose) {
     $a->{do_expand} = 1;
     while ($line = $t->readline("🐪🐪> ")) {
-	note $line;
-	note Dumper($line);
+	print {$t->OUT} $line, "\n";
+	print {$t->OUT} Dumper($line), "\n";
     }
     exit 0;
 }
@@ -127,6 +131,9 @@ note $line;
 note Dumper($line, "🐪");
 ok($line eq "🐪", 'UTF-8 text string read');
 ok(utf8::is_utf8($line), 'UTF-8 text string: function');
+
+# output stream
+print {$t->OUT} "# output stream test: 🐪 🐪🐪 🐪🐪🐪\n";
 
 # UTF8 string variable access
 $a->{readline_name} = '🐪 🐪🐪 🐪🐪🐪';

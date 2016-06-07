@@ -271,7 +271,8 @@ sub new {
 	open(my $IN,"<$in")   || croak "Cannot open $in for read";
 	open(my $OUT,">$out") || croak "Cannot open $out for write";
 	if ($utf8_mode) {
-	    binmode $OUT, ':utf8';
+	    binmode $IN,  ':encoding(UTF-8)'; # not necessary
+	    binmode $OUT, ':encoding(UTF-8)';
 	}
 	$self->newTTY($IN, $OUT);
     } else {
@@ -510,8 +511,8 @@ sub newTTY {
     $| = 1;			# for DB::OUT
     select($sel);
 
-    $Attribs{outstream} = $out;
     $Attribs{instream}  = $in;
+    $Attribs{outstream} = $out;
 }
 
 =item C<enableUTF8>
@@ -530,7 +531,8 @@ This is an original method of C<Term::ReadLine:Gnu>.)
 sub enableUTF8 {
     my $self = shift;
     $utf8_mode = 1;
-    binmode $self->OUT, ':utf8';
+    binmode $self->IN,  ':encoding(UTF-8)'; # not necessary
+    binmode $self->OUT, ':encoding(UTF-8)';
 }
 
 =back
@@ -763,23 +765,22 @@ sub STORE {
     } elsif ($type eq 'F') {
 	return _rl_store_function($value, $id);
     } elsif ($type eq 'IO') {
-	my @layers = PerlIO::get_layers($value);
-#	print "#$id: ", join(':', @layers), "\n";
-	# check if the top layer is 'utf8' or not.
-	my $utf8stream = ($layers[$#layers] eq 'utf8');
-
 	_rl_store_iostream($value, $id);
 
-	# PerlIO_findFILE() push a stdio layer on perl 5.10 and later.
-	# pop the stdio layer
+	# _rl_store_iostream() calls PerlIO_findFILE().  It pushes the
+	# 'stdio' layer on perl 5.10 and later. We must pop the stdio
+	# layer.
 	#   https://rt.cpan.org/Ticket/Display.html?id=59832
-	# pop the stdio layer only when utf8 layer is included for
-	# remote debugging.
+	# But we must pop the 'stdio' layer only when utf8 layer is
+	# included for remote debugging.
 	#   https://rt.cpan.org/Ticket/Display.html?id=110121
-	if ($utf8stream) {
-	    @layers = PerlIO::get_layers($value);
-	    binmode($value,  ":pop") if $layers[$#layers] eq 'stdio';
+	if ($] > 5.010) {
+	    my @layers = PerlIO::get_layers($value);
+	    if ((grep /^utf8$/, @layers) > 0 && $layers[$#layers] eq 'stdio') {
+		binmode($value,  ":pop");
+	    }
 	}
+
 	return $stream[$id] = $value;
     } elsif ($type eq 'K' || $type eq 'LF') {
 	carp "Term::ReadLine::Gnu::Var::STORE: read only variable `$name'\n";

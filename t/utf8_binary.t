@@ -9,10 +9,13 @@
 #	modify it under the same terms as Perl itself.
 
 # The GNU Readline Library start supporting multibyte characters since
-# version 4.3, and is still improving the support.
-# If you want just read strings including mutibyte charactors
-# (e.g. UTF-8), you may simply treat them as binary strings as shown this
-# test.
+# version 4.3, and is still improving the support.  You should use the
+# latest GNU Readline Library for UTF-8 support.
+# If you just want to read strings including mutibyte charactors
+# (e.g. UTF-8), you may simply treat them as binary strings as shown
+# this test.
+# But if you want to process UTF-8 strings in your perl script (see
+# reverse test below), take a look at t/utf8_text.t.
 
 use strict;
 use warnings;
@@ -98,8 +101,8 @@ my $a = $t->Attribs;
 if ($verbose) {
     $a->{do_expand} = 1;
     while ($line = $t->readline("🐪🐪> ")) {
-	note $line;
-	note Dumper($line);
+	print {$t->OUT} $line, "\n";
+	print {$t->OUT} Dumper($line), "\n";
     }
     exit 0;
 }
@@ -110,6 +113,9 @@ note $line;
 note Dumper($line, "🐪");
 ok($line eq "🐪", 'UTF-8 binary string read');
 ok(!utf8::is_utf8($line), 'not UTF-8 text string: function');
+
+# output stream
+print {$t->OUT} "# output stream test: 🐪 🐪🐪 🐪🐪🐪\n";
 
 # UTF8 string variable access
 $a->{readline_name} = '🐪 🐪🐪 🐪🐪🐪';
