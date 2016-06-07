@@ -56,6 +56,7 @@ extern "C" {
 typedef char *	t_utf8;			/* string which must not be xfreed */
 typedef char *	t_utf8_free;		/* string which must be xfreed */
 
+/* utf8_mode must be set before calling sv_2mortal_utf8() */
 static int utf8_mode;
 static SV*
 sv_2mortal_utf8(SV *sv)
@@ -1741,6 +1742,26 @@ callback_handler_wrapper(line)
 
   perl_call_sv(callback_handler_callback, G_DISCARD);
 }
+
+#if 0 /* 2016/06/07 worked but no advantage */
+/* to keep PerlIO given by _rl_store_iostream() */
+static PerlIO *perlio_in;
+static PerlIO *perlio_out;
+
+/* for rl_getc_function */
+static int
+trg_getc()
+{
+  return PerlIO_getc(perlio_in);
+}
+/* for rl_input_available_hook */
+static int
+trg_input_available()
+{
+  return PerlIO_get_cnt(perlio_in) > 0;
+}
+#endif
+
 
 /*
  * make separate name space for low level XS functions and their methods
@@ -3243,6 +3264,50 @@ _rl_store_iostream(stream, id)
 	  PerlIO_debug("TRG:store_iostream id %d fd %d\n",
 		       id, fileno(stream));
 	}
+
+#if 0 /* 2016/06/07 worked but no advantage */
+
+void
+_rl_store_iostream(iop, id)
+	PerlIO *iop
+	int id
+    PROTOTYPE: $$
+    CODE:
+	{
+	  int fd = -1;
+	  switch (id) {
+	  case 0:
+	    perlio_in = iop;
+	    rl_instream = PerlIO_findFILE(iop);
+	    fd = fileno(rl_instream);
+	    break;
+	  case 1:
+	    perlio_out = iop;
+	    rl_outstream = PerlIO_findFILE(iop);
+	    fd = fileno(rl_outstream);
+#ifdef __CYGWIN__
+	    {
+	      /* Cygwin b20.1 library converts NL to CR-NL
+		 automatically.  But it does not do it on a file
+		 stream made by Perl.  Set terminal attribute
+		 explicitly */
+		struct termios tio;
+		tcgetattr(fd, &tio);
+		tio.c_iflag |= ICRNL;
+		tio.c_oflag |= ONLCR;
+		tcsetattr(fd, TCSADRAIN, &tio);
+	    }
+#endif /* __CYGWIN__ */
+	    break;
+	  default:
+	    warn("Gnu.xs:_rl_store_iostream: Illegal `id' value: `%d'", id);
+	    break;
+	  }
+	  PerlIO_debug("TRG:store_iostream id %d fd %d\n",
+		       id, fd);
+	}
+
+#endif
 
 #if 0 /* not used since 1.26 */
 
