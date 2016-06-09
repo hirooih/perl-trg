@@ -69,7 +69,7 @@ use strict;
 use warnings;
 use Carp;
 # use version TRG-1.22 for perl 5.7.x, or TRG-1.09 for older Perl
-use 5.8.1; use 5.008;
+use 5.8.1;
 
 # This module can't be loaded directly.
 BEGIN {
