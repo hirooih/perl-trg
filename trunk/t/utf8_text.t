@@ -79,7 +79,7 @@ if (0) {	# This may cause a fail.
     ok($line eq "🐪", 'pre-read');
 }
 
-my $expected = $] > 5.010 ? ['unix', 'perlio', 'encoding(utf-8-strict)', 'utf8']
+my $expected = $] >= 5.010 ? ['unix', 'perlio', 'encoding(utf-8-strict)', 'utf8']
     : ['stdio', 'encoding(utf-8-strict)', 'utf8'];
 @layers = PerlIO::get_layers($in);
 note 'i: ', join(':', @layers);

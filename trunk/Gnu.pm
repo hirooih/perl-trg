@@ -773,7 +773,7 @@ sub STORE {
 	# But we must pop the 'stdio' layer only when utf8 layer is
 	# included for remote debugging.
 	#   https://rt.cpan.org/Ticket/Display.html?id=110121
-	if ($] > 5.010) {
+	if ($] >= 5.010) {
 	    my @layers = PerlIO::get_layers($value);
 	    if ((grep /^utf8$/, @layers) > 0 && $layers[$#layers] eq 'stdio') {
 		binmode($value,  ":pop");
