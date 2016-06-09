@@ -51,9 +51,9 @@ my $verbose = scalar @ARGV && ($ARGV[0] eq 'verbose');
 
 # check locale setting because the following tests depend on locale feature.
 use Config;
-if (! $Config{d_setlocale}) {
+if (!$Config{d_setlocale}) {
     diag "d_setlocale is not defined. Skipped...";
-    ok(1, 'skip') for 1..(NTEST-2);
+    ok(1, 'skip') for 1..(NTEST-1);
     exit 0;
 }
 ok(1, '$Config{d_setlocale}');
@@ -64,7 +64,7 @@ use locale;
 my $old_locale = setlocale(LC_ALL, 'en_US.UTF-8');
 if (!defined $old_locale) {
     diag "The locale 'en_US.UTF-8' is not supported. Skipped...";
-    ok(1, 'skip') for 1..(NTEST-3);
+    ok(1, 'skip') for 1..(NTEST-2);
     exit 0;
 }
 ok(1, 'setlocale');
