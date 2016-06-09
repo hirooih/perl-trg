@@ -1,6 +1,12 @@
 	-*- Indented-text -*-
 	$Id$
 
+1.33  2016-06-10
+	- Gnu.pm, t/utf8_text.t: fix version checks for perl 5.10.0.
+	- t/utf8_text.t: fix the number of skip for systems which do
+	  not support en_US.UTF-8 locale.
+	- Gnu.pm: delete old formated 'use VERSION'
+
 1.32  2016-06-06
 	- improve UTF-8 handling
 	  - UTF-8 decoding is done at the interface between Perl and
