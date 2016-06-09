@@ -63,7 +63,7 @@ if (0) {	# This may cause a fail.
     ok($line eq "🐪", 'pre-read');
 }
 
-my $expected = $] > 5.010 ? ['unix', 'perlio'] : ['stdio'];
+my $expected = $] >= 5.010 ? ['unix', 'perlio'] : ['stdio'];
 @layers = PerlIO::get_layers($in);
 note 'i: ', join(':', @layers);
 is_deeply(\@layers, $expected, "input layers before 'new'");
@@ -81,7 +81,7 @@ if ($verbose) {
 print "\n";	# rl_initialize() outputs some escape characters in Term-ReadLine-Gnu less than 6.3, 
 isa_ok($t, 'Term::ReadLine');
 
-$expected = $] > 5.010 ? ['unix', 'perlio', 'stdio'] : ['stdio'];
+$expected = $] >= 5.010 ? ['unix', 'perlio', 'stdio'] : ['stdio'];
 @layers = PerlIO::get_layers($t->IN);
 note 'i: ', join(':', @layers);
 is_deeply(\@layers, $expected, "input layers after 'new'");

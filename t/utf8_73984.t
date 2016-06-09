@@ -38,7 +38,7 @@ use Term::ReadLine;
 ok(1, 'load done');
 note "I'm testing Term::ReadLine::Gnu version $Term::ReadLine::Gnu::VERSION";
 
-my @expected = $] > 5.010 ? ('unix', 'perlio', 'encoding(utf8)', 'utf8') : ('stdio', 'encoding(utf8)', 'utf8');
+my @expected = $] >= 5.010 ? ('unix', 'perlio', 'encoding(utf8)', 'utf8') : ('stdio', 'encoding(utf8)', 'utf8');
 my $line;
 my @layers;
 open (my $in, "<", "t/utf8.txt") or die "cannot open utf8.txt: $!";
@@ -59,9 +59,9 @@ if (0) {
 } else {
     # Perl 5.10 and later have to pop after calling PerlIO_importFILE
     Term::ReadLine::Gnu::Var::_rl_store_iostream($in, 0);
-    binmode($in, ":pop") if $] > 5.010;
+    binmode($in, ":pop") if $] >= 5.010;
     Term::ReadLine::Gnu::Var::_rl_store_iostream(\*STDOUT, 1);
-    binmode(\*STDOUT, ":pop") if $] > 5.010;
+    binmode(\*STDOUT, ":pop") if $] >= 5.010;
 }
 ok(1, 'rl_store_iostream');
 
