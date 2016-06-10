@@ -16,6 +16,7 @@ extern "C" {
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
+#define NEED_sv_2pv_flags
 #include "ppport.h"
 #ifdef __cplusplus
 }
@@ -735,7 +736,7 @@ voidfunc_wrapper(type)
   SAVETMPS;
 
   PUSHMARK(sp);
-  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+  count = call_sv(fn_tbl[type].callback, G_SCALAR);
   SPAGAIN;
 
   if (count != 1)
@@ -766,7 +767,7 @@ vintfunc_wrapper(type, arg)
   PUSHMARK(sp);
   XPUSHs(sv_2mortal(newSViv(arg)));
   PUTBACK;
-  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+  count = call_sv(fn_tbl[type].callback, G_SCALAR);
   SPAGAIN;
 
   if (count != 1)
@@ -803,7 +804,7 @@ vcpfunc_wrapper(type, text)
   }
   PUTBACK;
 
-  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+  count = call_sv(fn_tbl[type].callback, G_SCALAR);
   SPAGAIN;
 
   if (count != 1)
@@ -845,7 +846,7 @@ vcppfunc_wrapper(type, arg)
   XPUSHs(sv);
   PUTBACK;
 
-  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+  count = call_sv(fn_tbl[type].callback, G_SCALAR);
 
   SPAGAIN;
 
@@ -881,7 +882,7 @@ hook_func_wrapper(type)
   SAVETMPS;
 
   PUSHMARK(sp);
-  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+  count = call_sv(fn_tbl[type].callback, G_SCALAR);
   SPAGAIN;
 
   if (count != 1)
@@ -911,7 +912,7 @@ intfunc_wrapper(type, arg)
   PUSHMARK(sp);
   XPUSHs(sv_2mortal(newSViv(arg)));
   PUTBACK;
-  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+  count = call_sv(fn_tbl[type].callback, G_SCALAR);
   SPAGAIN;
 
   if (count != 1)
@@ -947,7 +948,7 @@ icpfunc_wrapper(type, text)
   }
   PUTBACK;
 
-  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+  count = call_sv(fn_tbl[type].callback, G_SCALAR);
 
   SPAGAIN;
 
@@ -987,7 +988,7 @@ icppfunc_wrapper(type, arg)
   XPUSHs(sv);
   PUTBACK;
 
-  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+  count = call_sv(fn_tbl[type].callback, G_SCALAR);
 
   SPAGAIN;
 
@@ -1022,7 +1023,7 @@ cpvfunc_wrapper(type)
   SAVETMPS;
 
   PUSHMARK(sp);
-  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+  count = call_sv(fn_tbl[type].callback, G_SCALAR);
   SPAGAIN;
 
   if (count != 1)
@@ -1054,7 +1055,7 @@ cpifunc_wrapper(type, arg)
   PUSHMARK(sp);
   XPUSHs(sv_2mortal(newSViv(arg)));
   PUTBACK;
-  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+  count = call_sv(fn_tbl[type].callback, G_SCALAR);
   SPAGAIN;
 
   if (count != 1)
@@ -1092,7 +1093,7 @@ cpcpfunc_wrapper(type, text)
   }
   PUTBACK;
 
-  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+  count = call_sv(fn_tbl[type].callback, G_SCALAR);
   SPAGAIN;
 
   if (count != 1)
@@ -1134,7 +1135,7 @@ cpcppfunc_wrapper(type, arg)
   XPUSHs(sv);
   PUTBACK;
 
-  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+  count = call_sv(fn_tbl[type].callback, G_SCALAR);
 
   SPAGAIN;
 
@@ -1182,7 +1183,7 @@ icpintfunc_wrapper(type, text, index)
   XPUSHs(sv_2mortal(newSViv(index)));
   PUTBACK;
 
-  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+  count = call_sv(fn_tbl[type].callback, G_SCALAR);
 
   SPAGAIN;
 
@@ -1222,7 +1223,7 @@ dequoting_function_wrapper(type, text, quote_char)
   XPUSHs(sv_2mortal(newSViv(quote_char)));
   PUTBACK;
 
-  count = perl_call_sv(fn_tbl[type].callback, G_SCALAR);
+  count = call_sv(fn_tbl[type].callback, G_SCALAR);
 
   SPAGAIN;
 
@@ -1286,7 +1287,7 @@ completion_entry_function_wrapper(text, state)
   XPUSHs(sv_2mortal(newSViv(state)));
   PUTBACK;
 
-  count = perl_call_sv(fn_tbl[CMP_ENT].callback, G_SCALAR);
+  count = call_sv(fn_tbl[CMP_ENT].callback, G_SCALAR);
 
   SPAGAIN;
 
@@ -1335,7 +1336,7 @@ attempted_completion_function_wrapper(text, start, end)
   XPUSHs(sv_2mortal(newSViv(end)));
   PUTBACK;
 
-  count = perl_call_sv(fn_tbl[ATMPT_COMP].callback, G_ARRAY);
+  count = call_sv(fn_tbl[ATMPT_COMP].callback, G_ARRAY);
 
   SPAGAIN;
 
@@ -1421,7 +1422,7 @@ filename_quoting_function_wrapper(text, match_type, quote_pointer)
   }
   PUTBACK;
 
-  count = perl_call_sv(fn_tbl[FN_QUOTE].callback, G_SCALAR);
+  count = call_sv(fn_tbl[FN_QUOTE].callback, G_SCALAR);
 
   SPAGAIN;
 
@@ -1487,7 +1488,7 @@ ignore_some_completions_function_wrapper(matches)
   /*xfree(matches);*/
   PUTBACK;
 
-  count = perl_call_sv(fn_tbl[IGNORE_COMP].callback, G_ARRAY);
+  count = call_sv(fn_tbl[IGNORE_COMP].callback, G_ARRAY);
 
   SPAGAIN;
 
@@ -1599,7 +1600,7 @@ completion_display_matches_hook_wrapper(matches, len, max)
   XPUSHs(sv_2mortal(newSViv(max)));
   PUTBACK;
 
-  perl_call_sv(fn_tbl[COMP_DISP_HOOK].callback, G_DISCARD);
+  call_sv(fn_tbl[COMP_DISP_HOOK].callback, G_DISCARD);
 }
 #else /* (RL_VERSION_MAJOR < 4) */
 static void
@@ -1715,7 +1716,7 @@ function_wrapper(count, key, id)
   XPUSHs(sv_2mortal(newSViv(key)));
   PUTBACK;
 
-  perl_call_sv(fntbl[id].pfn, G_DISCARD);
+  call_sv(fntbl[id].pfn, G_DISCARD);
 
   return 0;
 }
@@ -1736,7 +1737,7 @@ callback_handler_wrapper(line)
   }
   PUTBACK;
 
-  perl_call_sv(callback_handler_callback, G_DISCARD);
+  call_sv(callback_handler_callback, G_DISCARD);
 }
 
 #if 0 /* 2016/06/07 worked but no advantage */
@@ -3117,7 +3118,7 @@ _rl_store_str(pstr, id)
 	  }
 	  str_tbl[id].accessed = 1;
 
-	  //printf("%d: %s\n", id, pstr);
+	  /*printf("%d: %s\n", id, pstr);*/
 	  len = strlen(pstr) + 1;
 	  *str_tbl[id].var = xmalloc(len);
 	  Copy(pstr, *str_tbl[id].var, len, char);
