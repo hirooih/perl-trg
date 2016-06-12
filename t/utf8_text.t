@@ -81,12 +81,19 @@ if (0) {	# This may cause a fail.
 
 my $expected = $] >= 5.010 ? ['unix', 'perlio', 'encoding(utf-8-strict)', 'utf8']
     : ['stdio', 'encoding(utf-8-strict)', 'utf8'];
+my $expected_x;
+if (${^UNICODE} == 0) {
+    $expected_x = $expected;
+} else {
+    $expected_x = $] >= 5.010 ? ['unix', 'perlio', 'utf8', 'encoding(utf-8-strict)', 'utf8']
+    : ['stdio', 'utf8', 'encoding(utf-8-strict)', 'utf8'];
+}
 @layers = PerlIO::get_layers($in);
 note 'i: ', join(':', @layers);
 is_deeply(\@layers, $expected, "input layers before 'new'");
 @layers = PerlIO::get_layers(\*STDOUT);
 note 'o: ', join(':', @layers);
-is_deeply(\@layers, $expected, "output layers before 'new'");
+is_deeply(\@layers, $expected_x, "output layers before 'new'");
 
 my $t;
 if ($verbose) {
@@ -105,7 +112,7 @@ note 'i: ', join(':', @layers);
 is_deeply(\@layers, $expected, "input layers after 'new'");
 @layers = PerlIO::get_layers($t->OUT);
 note 'o: ', join(':', @layers);
-is_deeply(\@layers, $expected, "output layers after 'new'");
+is_deeply(\@layers, $expected_x, "output layers after 'new'");
 
 # force the GNU Readline 8 bit through
 if ($t->ReadLine eq 'Term::ReadLine::Gnu') {
