@@ -1,6 +1,11 @@
 	-*- Indented-text -*-
 	$Id$
 
+1.34  2016-06-12
+	- ppport.h: update from version 1.0007 to version 3.31.
+	- t/utf8_text.t: fix for the fail when PERL_UNICODE environment
+	  variable is set.
+
 1.33  2016-06-10
 	- Gnu.pm, t/utf8_text.t: fix version checks for perl 5.10.0.
 	- t/utf8_text.t: fix the number of skip for systems which do
@@ -14,7 +19,7 @@
             from the GNU Readline Library functions and variables.
 	  - add enableUTF8() method
 	  - UTF-8 support is enabled when STDIN is in UTF-8 by the -C
-	    command-line switch, or PERL_UNICODE environment -variable,
+	    command-line switch, or PERL_UNICODE environment variable,
 	    or IN file handle has utf8 IO layer, or -enableUTF8 method
 	    is called.
 	  - pop IO layer only when stdio layer is pushed on utf8 layer

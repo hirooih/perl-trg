@@ -85,7 +85,7 @@ END
     use Exporter ();
     use DynaLoader;
 
-    our $VERSION = '1.33';		# update Gnu::XS::VERSION also.
+    our $VERSION = '1.34';		# update Gnu::XS::VERSION also.
 
     # Term::ReadLine::Gnu::AU makes a function in
     # `Term::ReadLine::Gnu::XS' as a method.
