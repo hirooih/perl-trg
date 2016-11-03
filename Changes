@@ -1,6 +1,18 @@
 	-*- Indented-text -*-
 	$Id$
 
+1.35  2016-11-03
+	- readline-7.0 support
+	    new function
+		rl_clear_visible_line
+		rl_tty_set_echoing
+		rl_pending_signal
+	    new variable
+		rl_persistent_signal_handlers
+	- Gnu.xs: fix a bug of rl_readline_state variable causing on a
+	  big-endian, sizeof(int)==4, and sizeof(long)==8 platform
+	  with the GNU Readline Library 7.0. [rt.cpan.org #118371]
+
 1.34  2016-06-12
 	- ppport.h: update from version 1.0007 to version 3.31.
 	- t/utf8_text.t: fix for the fail when PERL_UNICODE environment
@@ -78,7 +90,7 @@
 	- t/readline.t, t/history.t: use LC_ALL instead of LANG.
 
 1.27  2015-09-06
-	- readline-7.0 support
+	- readline-7.0-rc2 support
 	    new function
 		rl_callback_sigcleanup
 	- improve POD documents
