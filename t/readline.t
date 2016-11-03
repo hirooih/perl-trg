@@ -13,7 +13,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 146;
+use Test::More tests => 147;
 use Data::Dumper;
 
 # redefine Test::Mode::note due to it requires Perl 5.10.1.
@@ -409,7 +409,8 @@ note "2.4.5 Allowing Undoing";
 ########################################################################
 note "2.4.6 Redisplay";
 # rl_redisplay!!!, rl_forced_update_display (below), rl_on_new_line!!!,
-# rl_on_new_line_with_prompt!!!, rl_reset_line_state!!!, rl_crlf!!!,
+# rl_on_new_line_with_prompt!!!, rl_clear_visible_line()!!!,
+# rl_reset_line_state!!!, rl_crlf!!!,
 # rl_show_char!!!,
 # rl_message, rl_clear_message, rl_save_prompt, rl_restore_prompt:
 #   see Gnu/XS.pm:change_ornaments()
@@ -429,7 +430,7 @@ note "2.4.8 Character Input";
 note "2.4.9 Terminal Management";
 # rl_prep_terminal!!!, rl_deprep_terminal!!!,
 # rl_tty_set_default_bindings!!!, rl_tty_unset_default_bindings!!!,
-# rl_reset_terminal!!!
+# rl_tty_set_echoing!!!, rl_reset_terminal!!!
 
 ########################################################################
 note "2.4.10 Utility Functions";
@@ -465,9 +466,10 @@ note "2.4.12 Alternate Interface";
 note "2.5 Readline Signal Handling";
 ok($a->{catch_signals} == 1, 'catch_signals');
 ok($a->{catch_sigwinch} == 1, 'catch_sigwinch');
+ok($a->{persistent_signal_handlers} == 0, 'persistent_signal_handlers');
 ok($a->{change_environment} == 1, 'change_environment');
 
-# rl_cleanup_after_signal!!!, rl_free_line_state!!!,
+# rl_pending_signal()!!!, rl_cleanup_after_signal!!!, rl_free_line_state!!!,
 # rl_reset_after_signal!!!, rl_echo_signal_char!!!, rl_resize_terminal!!!,
 
 # rl_set_screen_size, rl_get_screen_size
