@@ -357,8 +357,17 @@ static void	*history_set_hitory_state(HISTORY_STATE *state)
 
 #if (RL_READLINE_VERSION < 0x0700)
 /* features introduced by GNU Readline 7.0 */
+static int rl_clear_visible_line(void) { return 0; }
+static int rl_tty_set_echoing(int value) { return 0; }
 static void rl_callback_sigcleanup (void) {}
+static int rl_pending_signal(void) { return 0; }
+static int rl_persistent_signal_handlers = 0;
 #endif /* (RL_READLINE_VERSION < 0x0700) */
+
+#if (RL_READLINE_VERSION == 0x0700)
+/* not defined in readline.h */
+extern int rl_tty_set_echoing PARAMS((int));
+#endif /* (RL_READLINE_VERSION == 0x0700) */
 
 /*
  * utility/dummy functions
@@ -561,7 +570,8 @@ static struct int_vars {
   { &rl_executing_key,				0, 1, 0},	/* 41 */
   { &rl_key_sequence_length,			0, 1, 0},	/* 42 */
   { &rl_change_environment,			0, 0, 0},	/* 43 */
-  { &utf8_mode,					0, 0, 0}	/* 44 */
+  { &rl_persistent_signal_handlers,		0, 0, 0},	/* 44 */
+  { &utf8_mode,					0, 0, 0}	/* 45 */
 };
 
 /*
@@ -2247,6 +2257,10 @@ rl_on_new_line_with_prompt()
     PROTOTYPE:
 
 int
+rl_clear_visible_line()
+    PROTOTYPE:
+
+int
 rl_reset_line_state()
     PROTOTYPE:
 
@@ -2382,6 +2396,11 @@ _rl_tty_unset_default_bindings(kmap = rl_get_keymap())
     PROTOTYPE: ;$
     CODE:
 	rl_tty_unset_default_bindings(kmap);
+
+int
+rl_tty_set_echoing(value)
+	int value
+    PROTOTYPE: $
 
 int
 rl_reset_terminal(terminal_name = NULL)
@@ -2651,6 +2670,10 @@ rl_callback_handler_remove()
  #
  #	2.5 Readline Signal Handling
  #
+
+int
+rl_pending_signal()
+    PROTOTYPE:
 
 void
 rl_cleanup_after_signal()
