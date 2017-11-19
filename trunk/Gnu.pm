@@ -80,6 +80,11 @@ the Term::ReadLine documentation for more information.
 END
     }
 }
+# use Term::ReadLine::Stub on a dumb terminal.
+# https://rt.cpan.org/Ticket/Display.html?id=123398
+BEGIN {
+#    croak "dumb terminal." if($ENV{TERM} =~ /^(dumb|emacs|unknown)$/);
+}
 
 {
     use Exporter ();
