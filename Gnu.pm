@@ -3,7 +3,7 @@
 #
 #	$Id$
 #
-#	Copyright (c) 1996-2016 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 1996-2017 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -250,6 +250,8 @@ sub new {
     my $this = shift;		# Package
     my $class = ref($this) || $this;
 
+    # Debian Bug Report #204362
+    croak "Wrong number of arguments" unless @_ == 1 or @_ == 3;
     my $name = shift;
 
     my $self = \%Attribs;
