@@ -3,7 +3,7 @@
 #
 #	$Id$
 #
-#	Copyright (c) 1996 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 1996-2017 Hiroo Hayashi.  All rights reserved.
 #		<hiroo.hayashi@computer.org>
 #
 #	This program is free software; you can redistribute it and/or
@@ -33,9 +33,9 @@ if ($ENV{AUTOMATED_TESTING} && !open(SESAMI, '/dev/tty')) {
     exit 0;
 }
 # I could not reach a tester, "Chris Williams (BINGOS)".
-if ($ENV{AUTOMATED_TESTING} && ($Config{osname} eq 'openbsd')) {
-    die "OS unsupported\nPlease contact the author.\n";
-}
+#if ($ENV{AUTOMATED_TESTING} && ($Config{osname} eq 'openbsd')) {
+#    die "OS unsupported\nPlease contact the author.\n";
+#}
 
 $defs = ($Config{strings} =~ m|/string.h$|) ? '-DHAVE_STRING_H' : '';
 
