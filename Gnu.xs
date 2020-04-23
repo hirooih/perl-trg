@@ -3,7 +3,7 @@
  *
  *	$Id$
  *
- *	Copyright (c) 1996-2019 Hiroo Hayashi.  All rights reserved.
+ *	Copyright (c) 1996-2020 Hiroo Hayashi.  All rights reserved.
  *
  *	This program is free software; you can redistribute it and/or
  *	modify it under the same terms as Perl itself.
@@ -1406,6 +1406,11 @@ attempted_completion_function_wrapper(text, start, end)
       xfree(matches);
       matches = NULL;
     }
+    if (count > 1 && matches[0] == NULL) { /* #132384 */
+      warn("Gnu.xs:attempted_completion_function_wrapper: The 1st element is NULL.  Use rl_completion_matches() properly.");
+      xfree(matches);
+      matches = NULL;
+    }
   } else {
     matches = NULL;
   }
@@ -1492,9 +1497,9 @@ ignore_some_completions_function_wrapper(matches)
      char **matches;
 {
   dSP;
-  int count, i, only_one_match;
+  int count, i, only_lcd;
   
-  only_one_match = matches[1] == NULL ? 1 : 0;
+  only_lcd = matches[1] == NULL;
 
   ENTER;
   SAVETMPS;
@@ -1513,14 +1518,13 @@ ignore_some_completions_function_wrapper(matches)
       XPUSHs(sv_2mortal_utf8(newSVpv(matches[i], 0)));
       xfree(matches[i]);
   }
-  /*xfree(matches);*/
   PUTBACK;
 
   count = call_sv(fn_tbl[IGNORE_COMP].callback, G_ARRAY);
 
   SPAGAIN;
 
-  if (only_one_match) {
+  if (only_lcd) {
     if (count == 0) {		/* no match */
       xfree(matches[0]);
       matches[0] = NULL;
