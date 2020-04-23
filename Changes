@@ -1,6 +1,10 @@
 	-*- Indented-text -*-
 	$Id$
 
+1.37  2020-XX-XX
+	- fixes to be more CPAN Testers friendly
+	  - Makefile.PL exits 0 when $TERM is not set properly. [rt.cpan.org #128806]
+
 1.36  2019-01-14
 	- readline-8.0 support
 	    new function
