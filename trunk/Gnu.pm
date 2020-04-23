@@ -32,7 +32,7 @@ Term::ReadLine::Gnu - Perl extension for the GNU Readline/History Library
 This is an implementation of
 L<Term::ReadLine|http://search.cpan.org/dist/Term-ReadLine/> using
 L<the GNU ReadlineE<sol>History
-Library|http://cnswww.cns.cwru.edu/php/chet/readline/rltop.html>.
+Library|https://tiswww.cwru.edu/php/chet/readline/rltop.html>.
 
 For basic functions object oriented interface is provided. These are
 described in the section L</"Standard Methods"> and
@@ -46,9 +46,9 @@ and
 L</"C<Term::ReadLine::Gnu>
 Variables"> briefly.  For further details of the GNU Readline/History
 Library, see L<GNU Readline Library
-Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html> and
+Manual|https://tiswww.cwru.edu/php/chet/readline/readline.html> and
 L<GNU History Library
-Manual|http://cnswww.cns.cwru.edu/php/chet/readline/history.html>.
+Manual|https://tiswww.cwru.edu/php/chet/readline/history.html>.
 
 There are some C<Term::ReadLine::Gnu> original features.  They are
 described in the section L</"C<Term::ReadLine::Gnu> Specific
@@ -84,7 +84,7 @@ END
 # https://rt.cpan.org/Ticket/Display.html?id=123398
 # Debian Bug Report #99843
 BEGIN {
-    if (!defined($ENV{TERM}) || $ENV{TERM} =~ /^(dumb|emacs|unknown)$/) {
+    if (!exists($ENV{TERM}) || !defined($ENV{TERM}) || $ENV{TERM} =~ /^(dumb|emacs|unknown|)$/) {
 	croak "dumb terminal.";
     }
 }
@@ -873,7 +873,7 @@ function is called as C<$term-E<gt>foo()>.
 The titles of the following sections are same as the titles of the
 corresponding sections in the "Programming with GNU Readline" section
 in the L<GNU Readline Library
-Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>.
+Manual|https://tiswww.cwru.edu/php/chet/readline/readline.html>.
 Refer them for further details.
 
 Although it is preferred to use method interface, most methods have
@@ -895,7 +895,7 @@ C<KEY> is pressed.  The C<FUNCTION> can be a reference to a Perl
 function (see L</"Custom Functions">) or a "named function" named by
 C<add_defun()> function or commands described in the "Bindable
 Readline Commands" section in the L<GNU Readline Library
-Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>.
+Manual|https://tiswww.cwru.edu/php/chet/readline/readline.html>.
 
 	$term->bind_key(ord "\ci, 'tab-insert');
 
@@ -921,7 +921,7 @@ Here is an example;
 	}
 
 See the "Writing a New Function" section in the L<GNU Readline Library
-Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html> for
+Manual|https://tiswww.cwru.edu/php/chet/readline/readline.html> for
 further details.
 
 =head3 Readline Convenience Functions
@@ -1055,7 +1055,7 @@ Bind C<KEY> to the null function.  Returns non-zero in case of error.
 Parse C<LINE> as if it had been read from the F<~/.inputrc> file and
 perform any key bindings and variable assignments found.  For further
 detail see L<GNU Readline Library
-Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>.
+Manual|https://tiswww.cwru.edu/php/chet/readline/readline.html>.
 
 =item C<read_init_file([FILENAME])>
 
@@ -1695,9 +1695,9 @@ Note that this function returns C<expansion> in the scalar context.
 
 Following GNU Readline/History Library variables can be accessed by a
 Perl program.  See L<GNU Readline Library
-Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html> and
+Manual|https://tiswww.cwru.edu/php/chet/readline/readline.html> and
 L<GNU History Library
-Manual|http://cnswww.cns.cwru.edu/php/chet/readline/history.html> for
+Manual|https://tiswww.cwru.edu/php/chet/readline/history.html> for
 details of each variable.  You can access them by using C<Attribs>
 methods.  Names of keys in this hash conform to standard conventions
 with the leading C<rl_> stripped.
@@ -1829,7 +1829,7 @@ described along with examples.
 
 Most of descriptions in this section came from L<GNU Readline
 Library
-Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>.
+Manual|https://tiswww.cwru.edu/php/chet/readline/readline.html>.
 
 =over 4
 
@@ -2069,7 +2069,7 @@ follows;
 
 For further details, see the section "Readline Init File" in the L<GNU
 Readline Library
-Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>
+Manual|https://tiswww.cwru.edu/php/chet/readline/readline.html>
 
 =back
 
@@ -2135,9 +2135,9 @@ further details.
 
 =item L<Term::ReadLine::Gnu Project Home Page|http://sourceforge.net/projects/perl-trg/>
 
-=item L<GNU Readline Library Manual|http://cnswww.cns.cwru.edu/php/chet/readline/readline.html>
+=item L<GNU Readline Library Manual|https://tiswww.cwru.edu/php/chet/readline/readline.html>
 
-=item L<GNU History Library Manual|http://cnswww.cns.cwru.edu/php/chet/readline/history.html>
+=item L<GNU History Library Manual|https://tiswww.cwru.edu/php/chet/readline/history.html>
 
 =item Sample and test programs (F<eg/*> and F<t/*>) in L<the C<Term::ReadLine::Gnu> distribution|http://search.cpan.org/dist/Term-ReadLine-Gnu/>
 
