@@ -2,8 +2,11 @@
 	$Id$
 
 1.37  2020-XX-XX
+        - Gnu.s: warns if attempted completion function returns undef in pos 0.
+          [rt.cpan.org #132384]
 	- fixes to be more CPAN Testers friendly
 	  - Makefile.PL exits 0 when $TERM is not set properly. [rt.cpan.org #128806]
+        - Update URLs of the GNU Readline Library manual website. [rt.cpan.org #131362]
 
 1.36  2019-01-14
 	- readline-8.0 support
