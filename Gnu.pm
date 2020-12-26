@@ -2182,7 +2182,7 @@ of Synopsys' shells.
 Pfm is a terminal-based file manager written in Perl, based on PFM.COM
 for MS-DOS (originally by Paul Culley and Henk de Heer).
 
-=item L<The soundgrab|http://brittonkerin.com/soundgrab/soundgrab.html>
+=item L<The soundgrab|https://sourceforge.net/projects/soundgrab/>
 
 soundgrab is designed to help you slice up a big long raw audio file
 (by default 44.1 kHz 2 channel signed sixteen bit little endian) and
