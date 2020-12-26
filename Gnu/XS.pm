@@ -3,7 +3,7 @@
 #
 #	$Id$
 #
-#	Copyright (c) 1999-2016 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 1999-2020 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -40,9 +40,6 @@ our %Attribs;
 *rl_unbind_command_in_map  = \&unbind_command;
 
 rl_add_defun('history-expand-line',	 \&history_expand_line);
-# bind operate-and-get-next to \C-o by default for the compatibility
-# with bash and Term::ReadLine::Perl
-rl_add_defun('operate-and-get-next',	 \&operate_and_get_next, ord "\co");
 rl_add_defun('display-readline-version', \&display_readline_version);
 rl_add_defun('change-ornaments',	 \&change_ornaments);
 
