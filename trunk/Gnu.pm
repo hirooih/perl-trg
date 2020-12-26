@@ -3,7 +3,7 @@
 #
 #	$Id$
 #
-#	Copyright (c) 1996-2019 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 1996-2020 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -302,6 +302,13 @@ sub new {
 
     # keep rl_readline_version value for efficiency
     $readline_version = $Attribs{readline_version};
+
+    # bind operate-and-get-next to \C-o by default for the compatibility
+    # with bash and Term::ReadLine::Perl
+    # GNU Readline 8.1 and later support operate-and-get-next natively.
+    Term::ReadLine::Gnu::XS::rl_add_defun('operate-and-get-next',
+					  \&Term::ReadLine::Gnu::XS::operate_and_get_next, ord "\co")
+	if ($readline_version < 0x801);
 
     $self;
 }
