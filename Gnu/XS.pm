@@ -404,7 +404,7 @@ sub history_expand_line {
 }
 
 # The equivalent of the Korn shell C-o operate-and-get-next-history-line
-# editing command. 
+# editing command.
 
 # This routine was borrowed from bash.
 sub operate_and_get_next {
@@ -533,7 +533,7 @@ sub _ch_wrapper {
 	}
 
 	# add to history buffer
-	add_history($line) 
+	add_history($line)
 	    if ($Attribs{MinLength} > 0
 		&& length($line) >= $Attribs{MinLength});
     }
