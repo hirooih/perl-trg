@@ -378,6 +378,14 @@ static void rl_check_signals (void) {}
 static int history_quoting_state;
 #endif /* (RL_READLINE_VERSION < 0x0800) */
 
+#if (RL_READLINE_VERSION < 0x0801)
+/* features introduced by GNU Readline 8.1 */
+static void rl_activate_mark (void) {}
+static void rl_deactivate_mark (void) {}
+static void rl_keep_mark_active (void) {}
+static int rl_mark_active_p (void) { return 0; }
+#endif /* (RL_READLINE_VERSION < 0x0800) */
+
 /*
  * utility/dummy functions
  */                                                                                
@@ -2931,6 +2939,22 @@ replace_history_entry(which, line)
 
 void
 clear_history()
+    PROTOTYPE:
+
+void
+rl_activate_mark()
+    PROTOTYPE:
+
+void
+rl_deactivate_mark()
+    PROTOTYPE:
+
+void
+rl_keep_mark_active()
+    PROTOTYPE:
+
+int
+rl_mark_active_p()
     PROTOTYPE:
 
 int
