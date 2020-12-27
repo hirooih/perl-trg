@@ -1372,7 +1372,23 @@ When C<MAX> is omitted, the max length of an item in C<@matches> is used.
 
 =item C<clear_history>
 
-    void	rl_clear_history()				# GRL 6.3
+	void	rl_clear_history()				# GRL 6.3
+
+=item C<activate_mark>
+
+	void	rl_activate_mark()				# GRL 8.1
+
+=item C<deactivate_mark>
+
+	void	rl_deactivate_mark()				# GRL 8.1
+
+=item C<keep_mark_active>
+
+	void	rl_keep_mark_active()				# GRL 8.1
+
+=item C<mark_active_p>
+
+	int	rl_mark_active_p()				# GRL 8.1
 
 =back
 
