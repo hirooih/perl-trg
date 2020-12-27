@@ -57,7 +57,7 @@ extern "C" {
 typedef char *	t_utf8;			/* string which must not be xfreed */
 typedef char *	t_utf8_free;		/* string which must be xfreed */
 
-/* 
+/*
  * utf8_mode is set in the Perl side, and it must be set before
  * calling sv_2mortal_utf8()
  */
@@ -388,7 +388,7 @@ static int rl_mark_active_p (void) { return 0; }
 
 /*
  * utility/dummy functions
- */                                                                                
+ */
 /* from GNU Readline:xmalloc.h */
 #ifndef PTR_T
 #ifdef __STDC__
@@ -502,14 +502,14 @@ static struct str_vars {
   { (char **)&rl_library_version,			0, 1 },	/* 2 */
   { (char **)&rl_terminal_name,				0, 0 },	/* 3 */
   { (char **)&rl_readline_name,				0, 0 },	/* 4 */
-  
+
   { (char **)&rl_basic_word_break_characters,		0, 0 },	/* 5 */
   { (char **)&rl_basic_quote_characters,		0, 0 },	/* 6 */
   { (char **)&rl_completer_word_break_characters,	0, 0 },	/* 7 */
   { (char **)&rl_completer_quote_characters,		0, 0 },	/* 8 */
   { (char **)&rl_filename_quote_characters,		0, 0 },	/* 9 */
   { (char **)&rl_special_prefixes,			0, 0 },	/* 10 */
-  
+
   { &history_no_expand_chars,				0, 0 },	/* 11 */
   { &history_search_delimiter_chars,			0, 0 },	/* 12 */
 
@@ -640,7 +640,7 @@ static struct fn_vars {
   { &rl_startup_hook,	NULL,	startup_hook_wrapper,	NULL },	/* 0 */
   { &rl_event_hook,	NULL,	event_hook_wrapper,	NULL },	/* 1 */
   { &rl_getc_function,	rl_getc, getc_function_wrapper,	NULL },	/* 2 */
-  {								
+  {
     (XFunction **)&rl_redisplay_function,			/* 3 */
     (XFunction *)rl_redisplay,
     (XFunction *)redisplay_function_wrapper,
@@ -649,7 +649,7 @@ static struct fn_vars {
   {
     (XFunction **)&rl_completion_entry_function,		/* 4 */
     NULL,
-    (XFunction *)completion_entry_function_wrapper,		
+    (XFunction *)completion_entry_function_wrapper,
     NULL
   },
   {
@@ -828,7 +828,7 @@ vcpfunc_wrapper(type, text)
   int count;
   int ret;
   SV *svret;
-  
+
   ENTER;
   SAVETMPS;
 
@@ -868,7 +868,7 @@ vcppfunc_wrapper(type, arg)
   int ret;
   SV *svret;
   char *rstr;
-  
+
   ENTER;
   SAVETMPS;
 
@@ -972,7 +972,7 @@ icpfunc_wrapper(type, text)
   dSP;
   int count;
   int ret;
-  
+
   ENTER;
   SAVETMPS;
 
@@ -1010,7 +1010,7 @@ icppfunc_wrapper(type, arg)
   SV *sv;
   int ret;
   char *rstr;
-  
+
   ENTER;
   SAVETMPS;
 
@@ -1054,7 +1054,7 @@ cpvfunc_wrapper(type)
   int count;
   char *str;
   SV *svret;
-  
+
   ENTER;
   SAVETMPS;
 
@@ -1084,7 +1084,7 @@ cpifunc_wrapper(type, arg)
   int count;
   char *str;
   SV *svret;
-  
+
   ENTER;
   SAVETMPS;
 
@@ -1117,7 +1117,7 @@ cpcpfunc_wrapper(type, text)
   int count;
   char *str;
   SV *svret;
-  
+
   ENTER;
   SAVETMPS;
 
@@ -1157,7 +1157,7 @@ cpcppfunc_wrapper(type, arg)
   char *str;
   SV *svret;
   char *rstr;
-  
+
   ENTER;
   SAVETMPS;
 
@@ -1206,7 +1206,7 @@ icpintfunc_wrapper(type, text, index)
   dSP;
   int count;
   int ret;
-  
+
   ENTER;
   SAVETMPS;
 
@@ -1246,7 +1246,7 @@ dequoting_function_wrapper(type, text, quote_char)
   int count;
   SV *replacement;
   char *str;
-  
+
   ENTER;
   SAVETMPS;
 
@@ -1310,7 +1310,7 @@ completion_entry_function_wrapper(text, state)
   int count;
   SV *match;
   char *str;
-  
+
   ENTER;
   SAVETMPS;
 
@@ -1353,7 +1353,7 @@ attempted_completion_function_wrapper(text, start, end)
   dSP;
   int count;
   char **matches;
-  
+
   ENTER;
   SAVETMPS;
 
@@ -1445,7 +1445,7 @@ filename_quoting_function_wrapper(text, match_type, quote_pointer)
   int count;
   SV *replacement;
   char *str;
-  
+
   ENTER;
   SAVETMPS;
 
@@ -1485,7 +1485,7 @@ filename_dequoting_function_wrapper(text, quote_char)
      int quote_char;
 {
   return dequoting_function_wrapper(FN_DEQUOTE, text, quote_char);
-}  
+}
 
 static int
 char_is_quoted_p_wrapper(text, index)
@@ -1506,7 +1506,7 @@ ignore_some_completions_function_wrapper(matches)
 {
   dSP;
   int count, i, only_lcd;
-  
+
   only_lcd = matches[1] == NULL;
 
   ENTER;
@@ -1615,7 +1615,7 @@ completion_display_matches_hook_wrapper(matches, len, max)
   dSP;
   int i;
   AV *av_matches;
-  
+
   /* copy C matches[] array into perl array */
   av_matches = newAV();
 
@@ -1682,7 +1682,7 @@ filename_rewrite_hook_wrapper(text, quote_char)
      int quote_char;
 {
   return dequoting_function_wrapper(FN_REWRITE, text, quote_char);
-}  
+}
 
 static int
 signal_event_hook_wrapper() { return hook_func_wrapper(SIG_EVT); }
@@ -1847,7 +1847,7 @@ rl_add_defun(name, fn, key = -1)
 	  for (i = 0; i < nentry; i++)
 	    if (! fntbl[i].pfn)
 	      break;
-	  
+
 	  if (i >= nentry) {
 	    warn("Gnu.xs:rl_add_defun: custom function table is full. The maximum number of custum function is %d.\n",
 		 nentry);
@@ -1855,7 +1855,7 @@ rl_add_defun(name, fn, key = -1)
 	  }
 
 	  fntbl[i].pfn = newSVsv(fn);
-	  
+
 	  /* rl_add_defun() always returns 0. */
 	  rl_add_defun(dupstr(name), fntbl[i].wrapper, key);
 	  RETVAL = fntbl[i].wrapper;
@@ -1869,7 +1869,7 @@ rl_add_defun(name, fn, key = -1)
 Keymap
 rl_make_bare_keymap()
     PROTOTYPE:
-	  
+
 Keymap
 _rl_copy_keymap(map)
 	Keymap map
@@ -2148,7 +2148,7 @@ rl_function_of_keyseq(keyseq, map = rl_get_keymap())
 	  } else
 	    ;			/* return NULL list */
 	}
-	  
+
 void
 _rl_invoking_keyseqs(function, map = rl_get_keymap())
 	rl_command_func_t *	function
@@ -2157,7 +2157,7 @@ _rl_invoking_keyseqs(function, map = rl_get_keymap())
     PPCODE:
 	{
 	  char **keyseqs;
-	  
+
 	  keyseqs = rl_invoking_keyseqs_in_map(function, map);
 
 	  if (keyseqs) {
@@ -2197,7 +2197,7 @@ rl_get_all_function_names()
 	  /* count number of entries */
 	  for (count = 0; funmap[count]; count++)
 	    ;
-	  
+
 	  EXTEND(sp, count);
 	  for (i = 0; i < count; i++) {
 	    PUSHs(sv_2mortal(newSVpv(funmap[i]->name, 0)));
@@ -2509,7 +2509,7 @@ rl_initialize()
       /* from perl.c:perl_destruct() */
 #if defined(USE_ENVIRON_ARRAY) && !defined(PERL_USE_SAFE_PUTENV) \
   && !defined(PERL_DARWIN)
-# if ((PERL_VERSION > 8) || (PERL_VERSION == 8 && PERL_SUBVERSION >= 6)) 
+# if ((PERL_VERSION > 8) || (PERL_VERSION == 8 && PERL_SUBVERSION >= 6))
       /* Perl 5.8.6 introduced PL_use_safe_putenv. */
       if (environ != PL_origenviron && !PL_use_safe_putenv
 #  else
@@ -2525,7 +2525,7 @@ rl_initialize()
 	char **tmpenv;
 	for (i = 0; environ[i]; i++)
 	  ;
-	/* 
+	/*
 	 * We cannot use New*() which uses safemalloc() instead of
 	 * safesysmalloc().
 	 */
@@ -2600,9 +2600,9 @@ rl_display_match_list(pmatches, plen = -1, pmax = -1)
  #	2.4.11 Miscellaneous Functions
  #
 
- # rl_macro_bind() is documented by readline-4.2 but it has been implemented 
+ # rl_macro_bind() is documented by readline-4.2 but it has been implemented
  # from 2.2.1.
- # It is equivalent with 
+ # It is equivalent with
  # rl_generic_bind(ISMACR, keyseq, (char *)macro_keys, map).
 int
 _rl_macro_bind(keyseq, macro, map = rl_get_keymap())
@@ -2651,7 +2651,7 @@ rl_set_paren_blink_timeout(usec)
 	int usec
     PROTOTYPE: $
 
- # rl_get_termcap() is documented by readline-4.2 but it has been implemented 
+ # rl_get_termcap() is documented by readline-4.2 but it has been implemented
  # from 2.2.1.
 
  # Do not free the string returned.
@@ -2817,7 +2817,7 @@ rl_completion_matches(text, fn = NULL)
 	   * !!!?
 	   */
 	  SPAGAIN; sp -= 2;
-	  
+
 	  if (matches) {
 	    int i, count;
 
@@ -3427,7 +3427,7 @@ _rl_fetch_iostream(id)
 	    XSRETURN_UNDEF;
 	    break;
 	  }
-	  PerlIO_debug("TRG:fetch_iostream id %d fd %d\n", 
+	  PerlIO_debug("TRG:fetch_iostream id %d fd %d\n",
 		       id, PerlIO_fileno(RETVAL));
 	}
     OUTPUT:
@@ -3473,7 +3473,7 @@ _rl_store_function(fn, id)
 	    warn("Gnu.xs:_rl_store_function: Illegal `id' value: `%d'", id);
 	    XSRETURN_UNDEF;
 	  }
-	  
+
 	  if (SvTRUE(fn)) {
 	    /*
 	     * Don't remove braces. The definition of SvSetSV() of

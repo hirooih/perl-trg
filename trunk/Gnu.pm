@@ -219,7 +219,7 @@ sub RL_STATE_REDISPLAYING	{	       # updating terminal display [6.1]
     $readline_version < 0x0700 ? 0x80_0000 : 0x100_0000;
 }
 sub RL_STATE_DONE {			       # done; accepted line
-    $readline_version < 0x0501 ? 0x8_0000 : 
+    $readline_version < 0x0501 ? 0x8_0000 :
 	($readline_version < 0x0601 ? 0x80_0000 :
 	 ($readline_version < 0x0700 ? 0x100_0000 : 0x200_0000));
 }
@@ -271,7 +271,7 @@ sub new {
     $Attribs{utf8_mode} ||= ${^UNICODE} & 1 || defined ${^ENCODING};
     #printf "\${^UNICODE}: 0x%X, ", ${^UNICODE};
     #print "\${^ENCODING}: ", defined ${^ENCODING} ? 'defined' : 'undef', "\n";
-    
+
     # set tty before calling rl_initialize() not to output some
     # charactores to STDIO.
     # https://rt.cpan.org/Ticket/Display.html?id=96569
@@ -288,7 +288,7 @@ sub new {
 	# enable UTF-8 mode if input stream has the utf8 layer.
 	my @layers = PerlIO::get_layers($_[0]);
 	$Attribs{utf8_mode} ||= ($layers[$#layers] eq 'utf8');
-    
+
 	$self->newTTY(@_);
     }
 
@@ -472,9 +472,9 @@ minimal interface: C<appname> should be present if the first argument
 to C<new> is recognized, and C<minline> should be present if
 C<MinLine> method is not dummy.  C<autohistory> should be present if
 lines are put into history automatically (maybe subject to
-C<MinLine>), and C<addHistory> if C<AddHistory> method is not dummy. 
+C<MinLine>), and C<addHistory> if C<AddHistory> method is not dummy.
 C<preput> means the second argument to C<readline> method is processed.
-C<getHistory> and C<setHistory> denote that the corresponding methods are 
+C<getHistory> and C<setHistory> denote that the corresponding methods are
 present. C<tkRunning> denotes that a Tk application may run while ReadLine
 is getting input.
 
@@ -922,7 +922,7 @@ Here is an example;
 
 	sub reverse_line {		# reverse a whole line
 	    my($count, $key) = @_;	# ignored in this sample function
-    	
+
 	    $t->modifying(0, $a->{end}); # save undo information
 	    $a->{line_buffer} = reverse $a->{line_buffer};
 	}
