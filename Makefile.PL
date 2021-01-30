@@ -88,7 +88,7 @@ if ($Config{osname} eq 'os2') {
             if ($homebrew_prefix) {
                 chomp $homebrew_prefix;
                 $RLLIB = "-L$homebrew_prefix/lib";
-                $Config{libpth} .= " $homebrew_prefix/lib";
+                push (@LIBPTH, "$homebrew_prefix/lib");
                 $RLINC = "-I$homebrew_prefix/include";
             }
         }
