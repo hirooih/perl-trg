@@ -1,15 +1,20 @@
 	-*- Indented-text -*-
 	$Id$
 
-1.38  2021-01-31
+1.38  2021-02-22
         - Makefile.PL
-            - utilize ExtUtils::Liblist::ext()
-            - require ExtUtils::MakeMaker 7.58 or later on macOS Big Sur or later.
-              See https://github.com/Perl-Toolchain-Gang/ExtUtils-MakeMaker/issues/381
-              for details.
+            - run 'brew --prefix ncurses' internally to detect ncurses installed
+              by Homebrew on macOS [rt.cpan.org #133846]
+            - utilize ExtUtils::Liblist::ext() [rt.cpan.org #134408]
+              On macOS Big Sur or later 'perl Makefile.PL' may warn as
+                "Could not find neither libtermcap, libtinfo, libncurses, or libcurses."
+              You should be able to ignore this warning if you have Xcode installed. See
+                https://github.com/Perl-Toolchain-Gang/ExtUtils-MakeMaker/issues/381
+              for details. To suppress this message, use ExtUtils::MakeMaker 7.58 or later.
             - can specify multiple directories on --prefix, --libdir, and
-              --includedir options by separating them with colons (for Homebrew
-              on macOS).
+              --includedir options by separating them with colons
+        - INSTALL
+            - update for changes above and so on.
 
 1.37  2020-12-27
 	- readline-8.1 support
