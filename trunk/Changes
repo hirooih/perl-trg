@@ -1,6 +1,10 @@
 	-*- Indented-text -*-
 	$Id$
 
+1.39  2021-02-22
+        - Makefile.PL
+            - some more fix for Homebrew on macOS [rt.cpan.org #133846]
+
 1.38  2021-02-22
         - Makefile.PL
             - run 'brew --prefix ncurses' internally to detect ncurses installed
