@@ -112,10 +112,12 @@ if ($Config{osname} eq 'os2') {
         if ($Config{osname} eq 'darwin'
             && substr($Config{osvers}, 0, index($Config{osvers}, '.')) > 19
             && $ExtUtils::MakeMaker::VERSION < 7.58) {
+            warn "Install XCode or use Homebrew package.\n";
             warn "macOS Big Sur or later requires ExtUtils::MakeMaker 7.58 or later.\n";
             warn "See https://github.com/Perl-Toolchain-Gang/ExtUtils-MakeMaker/issues/381 for details.\n";
+        } else {
+            exit $err;
         }
-	exit $err;
     } 
  
     $libs = "-lreadline $TERMCAP_LIB";
