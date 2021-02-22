@@ -3,7 +3,7 @@
 #
 #	$Id$
 #
-#	Copyright (c) 1999-2020 Hiroo Hayashi.  All rights reserved.
+#	Copyright (c) 1999-2021 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
 #	modify it under the same terms as Perl itself.
@@ -16,7 +16,7 @@ use warnings;
 use AutoLoader 'AUTOLOAD';
 
 our $VERSION;
-$VERSION='1.37';	# added for CPAN
+$VERSION='1.38';	# added for CPAN
 
 # make aliases
 our %Attribs;
