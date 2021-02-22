@@ -85,11 +85,12 @@ if ($Config{osname} eq 'os2') {
     if ($Config{osname} eq 'darwin' && !($RLLIB || $RLINC)) {
         foreach ('readline', 'ncurses') {
             my $homebrew_prefix = `brew --prefix $_`;
-            if ($homebrew_prefix) {
-                chomp $homebrew_prefix;
-                $RLLIB = "-L$homebrew_prefix/lib";
+            chomp $homebrew_prefix;
+            if ($homebrew_prefix
+                && ((substr($Config{osvers}, 0, index($Config{osvers}, '.')) > 19) || -d $homebrew_prefix)) {
+                $RLLIB .= " -L$homebrew_prefix/lib";
                 push (@LIBPTH, "$homebrew_prefix/lib");
-                $RLINC = "-I$homebrew_prefix/include";
+                $RLINC .= " -I$homebrew_prefix/include";
             }
         }
     }
