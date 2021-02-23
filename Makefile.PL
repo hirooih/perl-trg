@@ -178,7 +178,7 @@ WriteMakefile
       ) : () ),
      INC	  => $RLINC,
      dist	  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz' },
-     clean	  => { FILES => "rlver.c rlver$Config{_exe} rlmalloc.c rlmalloc$Config{_exe}" },
+     clean	  => { FILES => "rlver.c rlver$Config{_exe} rlmalloc.c rlmalloc$Config{_exe} .history_test" },
 );
 
 if ($Config{usesfio} eq 'true') {
