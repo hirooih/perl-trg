@@ -161,9 +161,9 @@ WriteMakefile
      META_MERGE	  => {
 	 resources => {
 	     license => 'http://dev.perl.org/licenses/',
-	     homepage => 'http://sourceforge.net/projects/perl-trg/',
-	     bugtracker => 'http://rt.cpan.org/Public/Dist/Display.html?Name=Term-ReadLine-Gnu',
-	     repository => 'https://sourceforge.net/p/perl-trg/code/HEAD/tree/',
+	     homepage => 'https://github.com/hirooih/perl-trg',
+	     bugtracker => 'https://github.com/hirooih/perl-trg/issues',
+	     repository => 'https://github.com/hirooih/perl-trg.git',
 	 },
      },
      VERSION_FROM => 'Gnu.pm',

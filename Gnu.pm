@@ -2156,7 +2156,7 @@ further details.
 
 =over 4
 
-=item L<Term::ReadLine::Gnu Project Home Page|http://sourceforge.net/projects/perl-trg/>
+=item L<Term::ReadLine::Gnu Project Home Page|https://github.com/hirooih/perl-trg>
 
 =item L<GNU Readline Library Manual|https://tiswww.cwru.edu/php/chet/readline/readline.html>
 
@@ -2243,7 +2243,7 @@ GTK+ support in addition to Tk.
 =over 4
 
 =item Submit a bug report to
-L<rt.cpan.org|https://rt.cpan.org/Dist/Display.html?Name=Term-ReadLine-Gnu>.
+L<the bug tracker on GitHub|https://github.com/hirooih/perl-trg/issues>.
 
 =item C<add_defun()> can define up to 16 functions.
 
