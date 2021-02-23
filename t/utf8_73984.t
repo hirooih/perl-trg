@@ -5,8 +5,6 @@
 #	mocks binmoded (utf-8) IO
 #	https://rt.cpan.org/Public/Bug/Display.html?id=73894
 #
-#	$Id$
-#
 #	Copyright (c) 2016 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or

@@ -1,7 +1,5 @@
 #!/usr/local/bin/perl -w
 #
-# $Id$
-#
 # POD documentation after __END__
 
 # This program is contributed by Achim Bohnet.  It demonstrates how to

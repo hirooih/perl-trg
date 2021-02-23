@@ -1,8 +1,6 @@
 # -*- perl -*-
 #	utf8_text.t --- Term::ReadLine::Gnu UTF-8 text string test script
 #
-#	$Id$
-#
 #	Copyright (c) 2016-2019 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or

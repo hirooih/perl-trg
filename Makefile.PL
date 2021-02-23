@@ -1,8 +1,6 @@
 #
 #	Makefile.PL for Term::ReadLine::Gnu
 #
-#	$Id$
-#
 #	Copyright (c) 1996-2021 Hiroo Hayashi.  All rights reserved.
 #		<hiroo.hayashi@computer.org>
 #

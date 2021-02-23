@@ -1,8 +1,6 @@
 #
 #	Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#	$Id$
-#
 #	Copyright (c) 1996-2021 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or

@@ -1,8 +1,6 @@
 # -*- perl -*-
 #	00check.t - check versions
 #
-#	$Id$
-#
 #	Copyright (c) 2008-2016 Hiroo Hayashi.  All rights reserved.
 #
 #	This program is free software; you can redistribute it and/or
