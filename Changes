@@ -1,5 +1,8 @@
 	-*- Indented-text -*-
 
+1.40  2021-02-23
+        - Migrate the repository and the bug tracker to GitHub
+
 1.39  2021-02-22
         - Makefile.PL
             - some more fix for Homebrew on macOS [rt.cpan.org #133846]
