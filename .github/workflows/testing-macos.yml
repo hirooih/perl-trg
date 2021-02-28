@@ -1,0 +1,31 @@
+name: test-on-macos
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+jobs:
+  make-test:
+    runs-on: ${{ matrix.os }}
+    env:
+      TERM: xterm-256color
+
+    strategy:
+      #fail-fast: false
+      matrix:
+        # https://docs.github.com/en/actions/reference/specifications-for-github-hosted-runners
+        #os: [macos-10.15, macos-11.0]
+        os: [macos-10.15]
+
+    name: Build on ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install prerequisites
+        run: |
+            perl -V
+            brew install readline
+      - name: Run make test
+        run: |
+            perl Makefile.PL
+            make
+            make test
