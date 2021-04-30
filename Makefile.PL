@@ -11,7 +11,7 @@
 #               <ilya@math.ohio-state.edu>
 #
 # Usage: perl Makefile.PL [--prefix=...] [--includedir=...] [--libdir=...]
-#		[OPTIMIZE=...] [verbose]
+#       [OPTIMIZE=...] [verbose]
 #
 #       Read INSTALL for more details.
 ########################################################################
@@ -20,7 +20,7 @@ use ExtUtils::MakeMaker;
 use Config;
 use Getopt::Long;
 use 5.008; use 5.8.1;
-my ($defs, $libs, $lddflags, $RLLIB, $RLINC, @LIBPTH, $verbose);
+my (@defs, @libs, @lddflags, @RLLIB, @RLINC, @LIBPTH, $verbose);
 
 # exit 0 before creating the Makefile to be CPAN Testers friendly
 # see http://wiki.cpantester.org/wiki/CPANAuthorNotes
@@ -38,12 +38,10 @@ if ($ENV{AUTOMATED_TESTING}
     exit 0;
 }
 
-$defs = ($Config{strings} =~ m|/string.h$|) ? '-DHAVE_STRING_H' : '';
+push(@defs, '-DHAVE_STRING_H') if ($Config{strings} =~ m|/string.h$|);
 
 # pacify warnings for -D_FORTIFY_SOURCE which perl 5.20.0 started using
-if ($Config{ccflags} =~ /-D_FORTIFY_SOURCE=/) {
-    $defs .= ' -O';
-}
+push(@defs, '-O') if ($Config{ccflags} =~ /-D_FORTIFY_SOURCE=/);
 
 # Parse command line to specify paths for the GNU Readline Library
 {
@@ -53,20 +51,20 @@ if ($Config{ccflags} =~ /-D_FORTIFY_SOURCE=/) {
                "includedir=s" => \$incdir);
     if (defined $libdir) {
         foreach (split(':', $libdir)) {
-            $RLLIB .= " -L$_";
-            push (@LIBPTH, $_);
+            push(@RLLIB, "-L$_");
+            push(@LIBPTH, $_);
         }
     }
     if (defined $incdir) {
         foreach (split(':', $incdir)) {
-            $RLINC .= " -I$_";
+            push(@RLINC, "-I$_");
         }
     }
     if (defined $prefix) {
         foreach (split(':', $prefix)) {
-            $RLLIB .= " -L$_/lib";
-            push (@LIBPTH, "$_/lib");
-            $RLINC .= " -I$_/include";
+            push(@RLLIB, "-L$_/lib");
+            push(@LIBPTH, "$_/lib");
+            push(@RLINC, "-I$_/include");
         }
     }
     foreach (@ARGV) {
@@ -79,22 +77,21 @@ if ($Config{ccflags} =~ /-D_FORTIFY_SOURCE=/) {
 
 if ($Config{osname} eq 'os2') {
     # Check ftp://ftp.math.ohio-state.edu/pub/users/ilya/os2/
-    $libs = '-lreadline_import';
-    $defs .= ' -DOS2_USEDLL';
-    $lddflags = '';
+    push(@libs, '-lreadline_import');
+    push(@defs, '-DOS2_USEDLL');
 } else {
     # if user hasn't provided RLLIB or RLINC....
     # OS X uses libedit, but they've named it libreadline...
     # see if user has installed gnu readline via homebrew
-    if ($Config{osname} eq 'darwin' && !($RLLIB || $RLINC)) {
+    if ($Config{osname} eq 'darwin' && !(@RLLIB || @RLINC)) {
         foreach ('readline', 'ncurses') {
             my $homebrew_prefix = `brew --prefix $_`;
             chomp $homebrew_prefix;
             if ($homebrew_prefix
                 && ((substr($Config{osvers}, 0, index($Config{osvers}, '.')) > 19) || -d $homebrew_prefix)) {
-                $RLLIB .= " -L$homebrew_prefix/lib";
-                push (@LIBPTH, "$homebrew_prefix/lib");
-                $RLINC .= " -I$homebrew_prefix/include";
+                push(@RLLIB, "-L$homebrew_prefix/lib");
+                push(@LIBPTH,  "$homebrew_prefix/lib");
+                push(@RLINC, "-I$homebrew_prefix/include");
             }
         }
     }
@@ -125,33 +122,30 @@ if ($Config{osname} eq 'os2') {
         }
     }
 
-    $libs = "-lreadline $TERMCAP_LIB";
+    push(@libs, '-lreadline', $TERMCAP_LIB);
     # Latest Perl in FreeBSD does not need this hack. (Dec.2002)
-    $libs .= ' -lcrypt' if ($Config{osname} =~ /freebsd/i);
-    $lddflags = '';
+    push(@libs, '-lcrypt') if ($Config{osname} =~ /freebsd/i);
     # If you are using old Cygwin, enable the following line.
-    #$lddflags = ($Config{osname} =~ /cygwin/i) ? '-static' : '';
+    #push(@lddflags, '-static') if ($Config{osname} =~ /cygwin/i);
 }
 
 # Check version of GNU Readline Library (for version 4.2 and before)
 {
     my ($rlmajorver, $rlminorver) =
-        check_readline_version($RLINC, $RLLIB, $defs, $lddflags, $libs);
+        check_readline_version("@RLINC", "@RLLIB", "@defs", "@lddflags", "@libs");
 
     if ($rlmajorver < 4 || $rlmajorver == 4 && $rlminorver <= 2) {
-        $defs .= " -DRL_READLINE_VERSION=" .
-            sprintf("0x%02x%02x", $rlmajorver, $rlminorver);
-        $defs .= " -DRL_VERSION_MAJOR=$rlmajorver";
-        $defs .= " -DRL_VERSION_MINOR=$rlminorver";
+        push(@defs, "-DRL_READLINE_VERSION=" . sprintf("0x%02x%02x", $rlmajorver, $rlminorver));
+        push(@defs, "-DRL_VERSION_MAJOR=$rlmajorver");
+        push(@defs, "-DRL_VERSION_MINOR=$rlminorver");
     }
     # to show GNU Readline Library version in CPAN Tester Reports
-    $defs .= " -DTRG_READLINE_VERSION=" .
-        sprintf("0x%02x%02x", $rlmajorver, $rlminorver);
+    push(@defs, "-DTRG_READLINE_VERSION=" . sprintf("0x%02x%02x", $rlmajorver, $rlminorver));
 }
 
 # Check whether xmalloc has been renamed to _rl_malloc (Gentoo Linux)
-if (my $extra_defs = guess_malloc_names($RLINC, $RLLIB, $defs, $lddflags, $libs)) {
-    $defs .= " $extra_defs";
+if (my $extra_defs = guess_malloc_names("@RLINC", "@RLLIB", "@defs", "@lddflags", "@libs")) {
+    push(@defs, $extra_defs);
 }
 
 # generate a Makefile
@@ -172,15 +166,15 @@ WriteMakefile
      },
      VERSION_FROM => 'Gnu.pm',
      MIN_PERL_VERSION => '5.8.1',
-     LIBS         => [ "$RLLIB $libs" ],
-     LDDLFLAGS    => "$RLLIB $Config{lddlflags}",
-     dynamic_lib  => { OTHERLDFLAGS => $lddflags },
-     DEFINE       => $defs,
+     LIBS         => [ "@RLLIB @libs" ],
+     LDDLFLAGS    => "@RLLIB $Config{lddlflags}",
+     dynamic_lib  => { OTHERLDFLAGS => "@lddflags" },
+     DEFINE       => "@defs",
      ($Config{osname} eq 'os2' ?
       (
        IMPORTS    => { xfree => 'emxlibcm.401' }, # Yuck!
       ) : () ),
-     INC          => $RLINC,
+     INC          => "@RLINC",
      dist         => { COMPRESS => 'gzip -9f', SUFFIX => 'gz' },
      clean        => { FILES => "rlver.c rlver$Config{_exe} rlmalloc.c rlmalloc$Config{_exe} .history_test" },
 );
