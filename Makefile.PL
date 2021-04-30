@@ -11,7 +11,7 @@
 #               <ilya@math.ohio-state.edu>
 #
 # Usage: perl Makefile.PL [--prefix=...] [--includedir=...] [--libdir=...]
-#               [OPTIMIZE=...]
+#		[OPTIMIZE=...] [verbose]
 #
 #       Read INSTALL for more details.
 ########################################################################
@@ -20,7 +20,7 @@ use ExtUtils::MakeMaker;
 use Config;
 use Getopt::Long;
 use 5.008; use 5.8.1;
-my ($defs, $libs, $lddflags, $RLLIB, $RLINC, @LIBPTH);
+my ($defs, $libs, $lddflags, $RLLIB, $RLINC, @LIBPTH, $verbose);
 
 # exit 0 before creating the Makefile to be CPAN Testers friendly
 # see http://wiki.cpantester.org/wiki/CPANAuthorNotes
@@ -67,6 +67,12 @@ if ($Config{ccflags} =~ /-D_FORTIFY_SOURCE=/) {
             $RLLIB .= " -L$_/lib";
             push (@LIBPTH, "$_/lib");
             $RLINC .= " -I$_/include";
+        }
+    }
+    foreach (@ARGV) {
+        if ($_ eq 'verbose') {
+            $verbose = 1;
+            last;
         }
     }
 }
@@ -199,7 +205,7 @@ exit(0);
 # ExtUtils::Liblist::ext() is not verbose by default any more and does much better job.
 sub search_lib {
     my ($lib) = @_;
-    my ($EXTRALIBS, $BSLOADLIBS, $LDLOADLIBS, $LD_RUN_PATH) = ExtUtils::Liblist->ext($lib);
+    my ($EXTRALIBS, $BSLOADLIBS, $LDLOADLIBS, $LD_RUN_PATH) = ExtUtils::Liblist->ext($lib, $verbose);
     return $EXTRALIBS || $LDLOADLIBS || search_lib_sub($lib);
 }
 
