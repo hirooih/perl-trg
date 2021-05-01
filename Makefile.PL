@@ -20,11 +20,11 @@ use ExtUtils::MakeMaker;
 use Config;
 use Getopt::Long;
 use 5.008; use 5.8.1;
-my (@defs, @libs, @lddflags, @RLLIB, @RLINC, @LIBPTH, $verbose);
+my (@defs, @libs, @lddflags, @RLLIB, @RLINC, @LIBPTH, $verbose, $err);
 
 # exit 0 before creating the Makefile to be CPAN Testers friendly
 # see http://wiki.cpantester.org/wiki/CPANAuthorNotes
-my $err = $ENV{AUTOMATED_TESTING} ? 0 : 1;
+$err = $ENV{AUTOMATED_TESTING} ? 0 : 1;
 # test /dev/tty for CPAN Testers
 if ($ENV{AUTOMATED_TESTING} && !open(SESAMI, '/dev/tty')) {
     warn "cannot open /dev/tty\n";
@@ -75,41 +75,35 @@ push(@defs, '-O') if ($Config{ccflags} =~ /-D_FORTIFY_SOURCE=/);
     }
 }
 
+# if user hasn't provided RLLIB or RLINC....
+# OS X uses libedit, but they've named it libreadline...
+# see if user has installed gnu readline via homebrew
+if ($Config{osname} eq 'darwin' && !(@RLLIB || @RLINC)) {
+    foreach ('readline', 'ncurses') {
+        my $homebrew_prefix = `brew --prefix $_`;
+        chomp $homebrew_prefix;
+        if ($homebrew_prefix
+            && ((substr($Config{osvers}, 0, index($Config{osvers}, '.')) > 19) || -d $homebrew_prefix)) {
+            push(@RLLIB, "-L$homebrew_prefix/lib");
+            push(@LIBPTH,  "$homebrew_prefix/lib");
+            push(@RLINC, "-I$homebrew_prefix/include");
+        }
+    }
+}
+
 if ($Config{osname} eq 'os2') {
     # Check ftp://ftp.math.ohio-state.edu/pub/users/ilya/os2/
     push(@libs, '-lreadline_import');
     push(@defs, '-DOS2_USEDLL');
 } else {
-    # if user hasn't provided RLLIB or RLINC....
-    # OS X uses libedit, but they've named it libreadline...
-    # see if user has installed gnu readline via homebrew
-    if ($Config{osname} eq 'darwin' && !(@RLLIB || @RLINC)) {
-        foreach ('readline', 'ncurses') {
-            my $homebrew_prefix = `brew --prefix $_`;
-            chomp $homebrew_prefix;
-            if ($homebrew_prefix
-                && ((substr($Config{osvers}, 0, index($Config{osvers}, '.')) > 19) || -d $homebrew_prefix)) {
-                push(@RLLIB, "-L$homebrew_prefix/lib");
-                push(@LIBPTH,  "$homebrew_prefix/lib");
-                push(@RLINC, "-I$homebrew_prefix/include");
-            }
-        }
-    }
+    push(@libs, '-lreadline');
+}
 
-    # Search libtermcap, libtinfo, libncurses, or libcurses in this order.
-    # I emulate the behavior of the configure script for bash, and don't
-    # know why AIX prefers curses.
-    # libtermcap.a on HPUX cannot be used for dynamically linked binary.
-    # Old Cygwin may require setting false (0).
-    # tinfo is for Debian. [Debian Bug Report #644423]
-    my $PREFER_CURSES = $Config{osname} eq 'aix' || $Config{osname} eq 'hpux'
-                        || $Config{osname} eq 'cygwin';
-    my $TERMCAP_LIB = (! $PREFER_CURSES && &search_lib('-ltermcap'))
-        || &search_lib('-ltinfo')
-        || &search_lib('-lncurses')
-        || &search_lib('-lcurses');
-
-    unless ($TERMCAP_LIB) {
+{
+    my $TERMCAP_LIB = search_termlib();
+    if ($TERMCAP_LIB) {
+        push(@libs, $TERMCAP_LIB);
+    } else {
         warn "Could not find neither libtermcap, libtinfo, libncurses, or libcurses.\n";
         if ($Config{osname} eq 'darwin'
             && substr($Config{osvers}, 0, index($Config{osvers}, '.')) > 19
@@ -121,27 +115,55 @@ if ($Config{osname} eq 'os2') {
             exit $err;
         }
     }
+}
 
-    push(@libs, '-lreadline', $TERMCAP_LIB);
-    # Latest Perl in FreeBSD does not need this hack. (Dec.2002)
-    push(@libs, '-lcrypt') if ($Config{osname} =~ /freebsd/i);
-    # If you are using old Cygwin, enable the following line.
-    #push(@lddflags, '-static') if ($Config{osname} =~ /cygwin/i);
+{
+    my $frlver = 'rlver';
+    write_rlver("$frlver.c");
+    if (compile_rlver($frlver, "@RLINC", "@RLLIB", "@defs", "@lddflags", "@libs")) {
+        warn <<EOM;
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Could not compile $frlver.c.
+
+system(): $!
+
+If you have installed the GNU Readline Library (libreadline.{a,so} and
+readline/readline.h, etc.) on directories for which your perl is not
+configured to search (refer the value of `ccflags' and `libpath' in
+the output of `perl -V'), specify the paths as follows;
+
+        perl Makefile.PL --includedir=/yourdir/include --libdir=/yourdir/lib
+or
+        perl Makefile.PL --prefix=/yourdir
+
+Note that the GNU Readline Library version 2.0 and earlier causes error
+here.  Update it to version 2.1 and/or later.
+
+Read INSTALL for more details.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+EOM
+        exit $err;    
+    }
 }
 
 # Check version of GNU Readline Library (for version 4.2 and before)
 {
-    my ($rlmajorver, $rlminorver) =
-        check_readline_version("@RLINC", "@RLLIB", "@defs", "@lddflags", "@libs");
+    my ($rlmajorver, $rlminorver) = check_readline_version();
+    my $rlver_hex = sprintf("0x%02x%02x", $rlmajorver, $rlminorver);
 
     if ($rlmajorver < 4 || $rlmajorver == 4 && $rlminorver <= 2) {
-        push(@defs, "-DRL_READLINE_VERSION=" . sprintf("0x%02x%02x", $rlmajorver, $rlminorver));
+        push(@defs, "-DRL_READLINE_VERSION=$rlver_hex");
         push(@defs, "-DRL_VERSION_MAJOR=$rlmajorver");
         push(@defs, "-DRL_VERSION_MINOR=$rlminorver");
     }
     # to show GNU Readline Library version in CPAN Tester Reports
-    push(@defs, "-DTRG_READLINE_VERSION=" . sprintf("0x%02x%02x", $rlmajorver, $rlminorver));
+    push(@defs, "-DTRG_READLINE_VERSION=$rlver_hex");
 }
+
+# Latest Perl in FreeBSD does not need this hack. (Dec.2002)
+push(@libs, '-lcrypt') if ($Config{osname} =~ /freebsd/i);
+# If you are using old Cygwin, enable the following line.
+#push(@lddflags, '-static') if ($Config{osname} =~ /cygwin/i);
 
 # Check whether xmalloc has been renamed to _rl_malloc (Gentoo Linux)
 if (my $extra_defs = guess_malloc_names("@RLINC", "@RLLIB", "@defs", "@lddflags", "@libs")) {
@@ -181,7 +203,6 @@ WriteMakefile
 
 if ($Config{usesfio} eq 'true') {
     warn <<'EOM';
-
 ******************** !!!Warning!!! *********************
 ** Your Perl is configured as `usesfio' equals true.  **
 ** Term::ReadLine::Gnu may not work with your Perl.   **
@@ -191,6 +212,24 @@ EOM
 }
 
 exit(0);
+
+########################################################################
+sub search_termlib {
+    # Search libtermcap, libtinfo, libncurses, or libcurses in this order.
+    # I emulate the behavior of the configure script for bash, and don't
+    # know why AIX prefers curses.
+    # libtermcap.a on HPUX cannot be used for dynamically linked binary.
+    # Old Cygwin may require setting false (0).
+    # tinfo is for Debian. [Debian Bug Report #644423]
+    my $PREFER_CURSES = $Config{osname} eq 'aix' || $Config{osname} eq 'hpux'
+                        || $Config{osname} eq 'cygwin';
+    my $TERMCAP_LIB = (! $PREFER_CURSES && &search_lib('-ltermcap'))
+        || &search_lib('-ltinfo')
+        || &search_lib('-lncurses')
+        || &search_lib('-lcurses');
+
+    return $TERMCAP_LIB;
+}
 
 ########################################################################
 # Search a library '$lib' in $Config{libpth} directories, and return
@@ -211,7 +250,7 @@ sub search_lib_sub {
         warn "search_lib: illegal arguments, \`$lib\'.\n";
         return undef;
     }
-    my $libbase = 'lib' . substr($lib, 2) . $Config{lib_ext};
+    my $libbase    = 'lib' . substr($lib, 2) . $Config{lib_ext};
     my $libbase_so = 'lib' . substr($lib, 2) . "." . $Config{so};
     foreach (@LIBPTH) {
         if (-f $_ . '/' . $libbase) {
@@ -231,9 +270,8 @@ sub search_lib_sub {
 #       RL_VERSION_MAJOR
 #       RL_VERSION_MINOR
 # Someday we don't need this subroutine..
-sub check_readline_version {
-    my ($RLINC, $RLLIB, $defs, $lddflags, $libs) = @_;
-    my $frlver = 'rlver.c';
+sub write_rlver {
+    my ($frlver) = @_;
 
     # make temp file
     open(F, ">$frlver") || die "Cannot open $frlver:$!\n";
@@ -244,37 +282,20 @@ sub check_readline_version {
 int main() { puts(rl_library_version); return 0; }
 EOF
     close(F);
+}
+
+sub compile_rlver {
+    my ($base, $RLINC, $RLLIB, $defs, $lddflags, $libs) = @_;
 
     # compile it
-    my $comp_cmd = "$Config{cc} $RLINC $Config{ccflags} $defs $frlver -o rlver $RLLIB $lddflags $Config{ldflags} $libs";
+    my $comp_cmd = "$Config{cc} $RLINC $Config{ccflags} $defs $base.c -o $base $RLLIB $lddflags $Config{ldflags} $libs";
     print $comp_cmd, "\n";
     system($comp_cmd);
-    if ($?) {
-        warn <<EOM;
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-Could not compile $frlver.
+    return $?;
+}
 
-system(): $!
-
-If you have installed the GNU Readline Library (libreadline.{a,so} and
-readline/readline.h, etc.) on directories for which your perl is not
-configured to search (refer the value of `ccflags' and `libpath' in
-the output of `perl -V'), specify the paths as follows;
-
-        perl Makefile.PL --includedir=/yourdir/include --libdir=/yourdir/lib
-or
-        perl Makefile.PL --prefix=/yourdir
-
-Note that the GNU Readline Library version 2.0 and earlier causes error
-here.  Update it to version 2.1 and/or later.
-
-Read INSTALL for more details.
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-EOM
-        exit $err;
-    }
-
-    # execute it and get version
+sub check_readline_version {
+    # execute rlver and get version
     my $rlver;
     chomp($rlver = `./rlver`);
     # MacOS X 10.4 has libedit by default.
