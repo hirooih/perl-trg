@@ -100,28 +100,17 @@ if ($Config{osname} eq 'os2') {
 }
 
 {
-    my $TERMCAP_LIB = search_termlib();
-    if ($TERMCAP_LIB) {
-        push(@libs, $TERMCAP_LIB);
-    } else {
-        warn "Could not find neither libtermcap, libtinfo, libncurses, or libcurses.\n";
-        if ($Config{osname} eq 'darwin'
-            && substr($Config{osvers}, 0, index($Config{osvers}, '.')) > 19
-            && $ExtUtils::MakeMaker::VERSION < 7.58) {
-            warn "Install XCode or use Homebrew package.\n";
-            warn "macOS Big Sur or later requires ExtUtils::MakeMaker 7.58 or later.\n";
-            warn "See https://github.com/Perl-Toolchain-Gang/ExtUtils-MakeMaker/issues/381 for details.\n";
-        } else {
-            exit $err;
-        }
-    }
-}
-
-{
     my $frlver = 'rlver';
     write_rlver("$frlver.c");
-    if (compile_rlver($frlver, "@RLINC", "@RLLIB", "@defs", "@lddflags", "@libs")) {
-        warn <<EOM;
+
+    # First compile rlver.c without specifing terminal library (for some libreadline.so).
+    if (compile_rlver($frlver, "@RLINC", "@RLLIB", "@defs", "@lddflags", "@libs", 1)) {
+        # If failed, compile rlver.c with terminal library.
+        # See https://github.com/hirooih/perl-trg/issues/6 for details
+        if (my $termlib = search_termlib()) {
+            push(@libs, $termlib);
+            if (compile_rlver($frlver, "@RLINC", "@RLLIB", "@defs", "@lddflags", "@libs", 0)) {
+                warn <<EOM;
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Could not compile $frlver.c.
 
@@ -142,7 +131,25 @@ here.  Update it to version 2.1 and/or later.
 Read INSTALL for more details.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 EOM
-        exit $err;    
+                exit $err;
+            }
+            # Succeeded
+        } else {
+            warn "Could not find neither libtermcap, libtinfo, libncurses, or libcurses.\n";
+            if ($Config{osname} eq 'darwin'
+                && substr($Config{osvers}, 0, index($Config{osvers}, '.')) > 19
+                && $ExtUtils::MakeMaker::VERSION < 7.58) {
+                # may not reach here
+                warn <<EOM;
+Install XCode or use Homebrew package.
+macOS Big Sur or later requires ExtUtils::MakeMaker 7.58 or later.
+See https://github.com/Perl-Toolchain-Gang/ExtUtils-MakeMaker/issues/381 for details.
+EOM
+                # don't exit for now
+            } else {
+                exit $err;
+            }
+        }
     }
 }
 
@@ -284,11 +291,11 @@ EOF
 }
 
 sub compile_rlver {
-    my ($base, $RLINC, $RLLIB, $defs, $lddflags, $libs) = @_;
+    my ($base, $RLINC, $RLLIB, $defs, $lddflags, $libs, $quiet) = @_;
 
-    # compile it
     my $comp_cmd = "$Config{cc} $RLINC $Config{ccflags} $defs $base.c -o $base $RLLIB $lddflags $Config{ldflags} $libs";
-    print $comp_cmd, "\n";
+    $comp_cmd .= " >/dev/null 2>&1" if $quiet;
+    print $comp_cmd, "\n" if $verbose;
     system($comp_cmd);
     return $?;
 }
@@ -369,7 +376,7 @@ EOF
         my $xdef = join " ", map "-D$_=$symbol_set->{$_}", sort keys %$symbol_set;
         # compile it
         my $comp_cmd = "$Config{cc} $RLINC $Config{ccflags} $defs $xdef $frlmalloc -o rlmalloc $RLLIB $lddflags $Config{ldflags} $libs";
-        print $comp_cmd, "\n";
+        print $comp_cmd, "\n" if $verbose;
         unless (system($comp_cmd) || `./rlmalloc` !~ /^ok$/ || $?) {
             $extra_defs = $xdef;
             last;
