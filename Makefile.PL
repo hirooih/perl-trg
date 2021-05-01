@@ -221,14 +221,13 @@ sub search_termlib {
     # libtermcap.a on HPUX cannot be used for dynamically linked binary.
     # Old Cygwin may require setting false (0).
     # tinfo is for Debian. [Debian Bug Report #644423]
-    my $PREFER_CURSES = $Config{osname} eq 'aix' || $Config{osname} eq 'hpux'
-                        || $Config{osname} eq 'cygwin';
-    my $TERMCAP_LIB = (! $PREFER_CURSES && &search_lib('-ltermcap'))
-        || &search_lib('-ltinfo')
-        || &search_lib('-lncurses')
-        || &search_lib('-lcurses');
-
-    return $TERMCAP_LIB;
+    if ($Config{osname} eq 'aix' || $Config{osname} eq 'hpux' || $Config{osname} eq 'cygwin') {
+        return (search_lib('-lncurses') || search_lib('-ltermcap')
+                || search_lib('-ltinfo') || search_lib('-lcurses'));
+    } else {
+        return (search_lib('-ltermcap') || search_lib('-ltinfo')
+                || search_lib('-lncurses') || search_lib('-lcurses'));
+    }
 }
 
 ########################################################################
