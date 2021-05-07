@@ -12,3 +12,4 @@ rlmalloc
 rlmalloc.c
 rlver
 rlver.c
+Term-ReadLine-Gnu-*/**
