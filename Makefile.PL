@@ -17,6 +17,7 @@
 ########################################################################
 use strict;
 use ExtUtils::MakeMaker;
+use ExtUtils::PkgConfig;
 use Config;
 use Getopt::Long;
 use 5.008; use 5.8.1;
@@ -107,8 +108,8 @@ if ($Config{osname} eq 'os2') {
     if (compile_rlver($frlver, "@RLINC", "@RLLIB", "@defs", "@lddflags", "@libs", 1)) {
         # If failed, compile rlver.c with terminal library.
         # See https://github.com/hirooih/perl-trg/issues/6 for details
-        if (my $termlib = search_termlib()) {
-            push(@libs, $termlib);
+        if (my @termlib = search_termlib()) {
+            push(@libs, @termlib);
             if (compile_rlver($frlver, "@RLINC", "@RLLIB", "@defs", "@lddflags", "@libs", 0)) {
                 warn <<EOM;
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -228,6 +229,10 @@ sub search_termlib {
     # libtermcap.a on HPUX cannot be used for dynamically linked binary.
     # Old Cygwin may require setting false (0).
     # tinfo is for Debian. [Debian Bug Report #644423]
+    my $pkg_config_results = ExtUtils::PkgConfig->libs('ncurses');
+    if ($pkg_config_results) {
+        return split ' ', $pkg_config_results;
+    }
     if ($Config{osname} eq 'aix' || $Config{osname} eq 'hpux' || $Config{osname} eq 'cygwin') {
         return (search_lib('-lncurses') || search_lib('-ltermcap')
                 || search_lib('-ltinfo') || search_lib('-lcurses'));
