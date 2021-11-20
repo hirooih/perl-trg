@@ -382,7 +382,7 @@ EOF
         # compile it
         my $comp_cmd = "$Config{cc} $RLINC $Config{ccflags} $defs $xdef $frlmalloc -o rlmalloc $RLLIB $lddflags $Config{ldflags} $libs";
         print $comp_cmd, "\n" if $verbose;
-        unless (system($comp_cmd) || `./rlmalloc` !~ /^ok$/ || $?) {
+        if (system($comp_cmd) == 0 && `./rlmalloc` =~ /^ok\s*$/) {  # maybe terminated by "\r\n"
             $extra_defs = $xdef;
             last;
         }
