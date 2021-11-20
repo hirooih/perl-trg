@@ -376,27 +376,18 @@ int main() {
 EOF
     close($F);
 
-    my $extra_defs;
     for my $symbol_set (@symbol_sets) {
         my $xdef = join " ", map "-D$_=$symbol_set->{$_}", sort keys %$symbol_set;
         # compile it
         my $comp_cmd = "$Config{cc} $RLINC $Config{ccflags} $defs $xdef $frlmalloc -o rlmalloc $RLLIB $lddflags $Config{ldflags} $libs";
         print $comp_cmd, "\n" if $verbose;
-        if (system($comp_cmd) == 0 && `./rlmalloc` =~ /^ok\s*$/) {  # maybe terminated by "\r\n"
-            $extra_defs = $xdef;
-            last;
-        }
+        return $xdef if (system($comp_cmd) == 0 && `./rlmalloc` =~ /^ok\s*$/); # maybe terminated by "\r\n"
     }
-
-    unless (defined $extra_defs) {
-        warn <<EOM;
+    warn <<EOM;
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 I was unable to find a working xmalloc in your readline library.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 EOM
-        exit $err;
-    }
-
-    return $extra_defs;
+    exit $err;
 }
 # End of Makefile.PL
