@@ -27,21 +27,6 @@ extern "C" {
 #include <readline/history.h>
 
 /*
- * Perl 5.005 requires an ANSI C Compiler.  Good news.
- * But I should still support legacy C compilers now.
- */
-/* Adapted from BSD /usr/include/sys/cdefs.h. */
-#if defined (__STDC__)
-#  if !defined (PARAMS)
-#    define PARAMS(protos) protos
-#  endif
-#else /* !__STDC__ */
-#  if !defined (PARAMS)
-#    define PARAMS(protos) ()
-#  endif
-#endif /* !__STDC__ */
-
-/*
  * In Readline 4.2 many variables, function arguments, and function
  * return values are now declared `const' where appropriate.
  */
@@ -72,34 +57,34 @@ sv_2mortal_utf8(SV *sv)
  * compatibility definitions
  */
 #if (RL_READLINE_VERSION < 0x0402)
-typedef int rl_command_func_t PARAMS((int, int));
-typedef char *rl_compentry_func_t PARAMS((const char *, int));
-typedef char **rl_completion_func_t PARAMS((const char *, int, int));
-typedef char *rl_quote_func_t PARAMS((char *, int, char *));
-typedef char *rl_dequote_func_t PARAMS((char *, int));
-typedef int rl_compignore_func_t PARAMS((char **));
-typedef void rl_compdisp_func_t PARAMS((char **, int, int));
-typedef int rl_hook_func_t PARAMS((void));
-typedef int rl_getc_func_t PARAMS((FILE *));
-typedef int rl_linebuf_func_t PARAMS((char *, int));
+typedef int rl_command_func_t (int, int);
+typedef char *rl_compentry_func_t (const char *, int);
+typedef char **rl_completion_func_t (const char *, int, int);
+typedef char *rl_quote_func_t (char *, int, char *);
+typedef char *rl_dequote_func_t (char *, int);
+typedef int rl_compignore_func_t (char **);
+typedef void rl_compdisp_func_t (char **, int, int);
+typedef int rl_hook_func_t (void);
+typedef int rl_getc_func_t (FILE *);
+typedef int rl_linebuf_func_t (char *, int);
 
 /* `Generic' function pointer typedefs */
-typedef int rl_intfunc_t PARAMS((int));
+typedef int rl_intfunc_t (int);
 #define rl_ivoidfunc_t rl_hook_func_t
-typedef int rl_icpfunc_t PARAMS((char *));
-typedef int rl_icppfunc_t PARAMS((char **));
+typedef int rl_icpfunc_t (char *);
+typedef int rl_icppfunc_t (char **);
 
-typedef void rl_voidfunc_t PARAMS((void));
-typedef void rl_vintfunc_t PARAMS((int));
-typedef void rl_vcpfunc_t PARAMS((char *));
-typedef void rl_vcppfunc_t PARAMS((char **));
+typedef void rl_voidfunc_t (void);
+typedef void rl_vintfunc_t (int);
+typedef void rl_vcpfunc_t (char *);
+typedef void rl_vcppfunc_t (char **);
 
 /* rl_last_func() is defined in rlprivate.h */
 extern rl_command_func_t *rl_last_func;
 #endif /* (RL_READLINE_VERSION < 0x0402) */
 
 #if (RL_READLINE_VERSION < 0x0500)
-typedef char *rl_cpvfunc_t PARAMS((void));
+typedef char *rl_cpvfunc_t (void);
 #endif /* (RL_READLINE_VERSION < 0x0500) */
 
 
@@ -145,12 +130,12 @@ rl_unbind_command_in_map (command, map)
 
 #if (RL_VERSION_MAJOR < 4)
 /* documented by Readline 4.0 but already implemented since 2.0 or 2.1. */
-extern void rl_extend_line_buffer PARAMS((int));
-extern char **rl_funmap_names PARAMS((void));
-extern int rl_add_funmap_entry PARAMS((CONST char *, rl_command_func_t *));
-extern void rl_prep_terminal PARAMS((int));
-extern void rl_deprep_terminal PARAMS((void));
-extern int rl_execute_next PARAMS((int));
+extern void rl_extend_line_buffer (int);
+extern char **rl_funmap_names (void);
+extern int rl_add_funmap_entry (CONST char *, rl_command_func_t *);
+extern void rl_prep_terminal (int);
+extern void rl_deprep_terminal (void);
+extern int rl_execute_next (int);
 
 /* features introduced by GNU Readline 4.0 */
 /* dummy variable/function definition */
@@ -170,8 +155,8 @@ static void rl_resize_terminal(){}
  * Before GNU Readline Library Version 4.0, rl_save_prompt() was
  * _rl_save_prompt and rl_restore_prompt() was _rl_restore_prompt().
  */
-extern void _rl_save_prompt PARAMS((void));
-extern void _rl_restore_prompt PARAMS((void));
+extern void _rl_save_prompt (void);
+extern void _rl_restore_prompt (void);
 static void rl_save_prompt() { _rl_save_prompt(); }
 static void rl_restore_prompt() { _rl_restore_prompt(); }
 #endif /* (RL_VERSION_MAJOR < 4) */
@@ -207,7 +192,7 @@ static rl_icppfunc_t *rl_directory_rewrite_hook = NULL;
 static char *history_word_delimiters = " \t\n;&()|<>";
 
 /* documented by 4.2a but implemented since 2.1 */
-extern char *rl_get_termcap PARAMS((const char *));
+extern char *rl_get_termcap (const char *);
 
 /* features introduced by GNU Readline 4.2a */
 static int rl_readline_version = RL_READLINE_VERSION;
@@ -334,7 +319,7 @@ rl_free_keymap (map)
 extern int rl_key_sequence_length;
 #if (RL_READLINE_VERSION > 0x0600)
 /* externed by 6.3 but implemented since 6.1 */
-extern void rl_free_keymap PARAMS((Keymap));
+extern void rl_free_keymap (Keymap);
 #endif
 /* features introduced by GNU Readline 6.3 */
 static rl_hook_func_t *rl_signal_event_hook = NULL;
@@ -363,7 +348,7 @@ static int rl_persistent_signal_handlers = 0;
 
 #if (RL_READLINE_VERSION == 0x0700)
 /* not defined in readline.h */
-extern int rl_tty_set_echoing PARAMS((int));
+extern int rl_tty_set_echoing (int);
 #endif /* (RL_READLINE_VERSION == 0x0700) */
 
 #if (RL_READLINE_VERSION < 0x0800)
@@ -396,9 +381,9 @@ static int rl_mark_active_p (void) { return 0; }
 #endif /* !PTR_T */
 
 /* from GNU Readline:xmalloc.c */
-extern PTR_T xmalloc PARAMS((int));
-extern char *tgetstr PARAMS((const char *, char **));
-extern int tputs PARAMS((const char *, int, int (*)(int)));
+extern PTR_T xmalloc (int);
+extern char *tgetstr (const char *, char **);
+extern int tputs (const char *, int, int (*)(int));
 
 /*
  * Using xfree() in GNU Readline Library causes problem with Solaris
@@ -465,7 +450,7 @@ rl_get_function_name (function)
  * Redefine here since the function defined as static in complete.c.
  * This function is used for default value for rl_filename_quoting_function.
  */
-static char * rl_quote_filename PARAMS((char *s, int rtype, char *qcp));
+static char * rl_quote_filename (char *s, int rtype, char *qcp);
 
 static char *
 rl_quote_filename (s, rtype, qcp)
@@ -593,30 +578,30 @@ static struct int_vars {
  *	function pointer variable table for _rl_store_function(),
  *	_rl_fetch_funtion()
  */
-static int startup_hook_wrapper PARAMS((void));
-static int event_hook_wrapper PARAMS((void));
-static int getc_function_wrapper PARAMS((PerlIO *));
-static void redisplay_function_wrapper PARAMS((void));
-static char *completion_entry_function_wrapper PARAMS((const char *, int));;
-static char **attempted_completion_function_wrapper PARAMS((char *, int, int));
+static int startup_hook_wrapper (void);
+static int event_hook_wrapper (void);
+static int getc_function_wrapper (PerlIO *);
+static void redisplay_function_wrapper (void);
+static char *completion_entry_function_wrapper (const char *, int);;
+static char **attempted_completion_function_wrapper (char *, int, int);
 static char *filename_quoting_function_wrapper PARAMS((char *text, int match_type,
 						    char *quote_pointer));
-static char *filename_dequoting_function_wrapper PARAMS((char *text, int quote_char));
-static int char_is_quoted_p_wrapper PARAMS((char *text, int index));
-static void ignore_some_completions_function_wrapper PARAMS((char **matches));
-static int directory_completion_hook_wrapper PARAMS((char **textp));
-static int history_inhibit_expansion_function_wrapper PARAMS((char *str, int i));
-static int pre_input_hook_wrapper PARAMS((void));
+static char *filename_dequoting_function_wrapper (char *text, int quote_char);
+static int char_is_quoted_p_wrapper (char *text, int index);
+static void ignore_some_completions_function_wrapper (char **matches);
+static int directory_completion_hook_wrapper (char **textp);
+static int history_inhibit_expansion_function_wrapper (char *str, int i);
+static int pre_input_hook_wrapper (void);
 static void completion_display_matches_hook_wrapper PARAMS((char **matches,
 							 int len, int max));
-static char *completion_word_break_hook_wrapper PARAMS((void));
-static int prep_term_function_wrapper PARAMS((int meta_flag));
-static int deprep_term_function_wrapper PARAMS((void));
-static int directory_rewrite_hook_wrapper PARAMS((char **dirnamep));
-static char *filename_rewrite_hook_wrapper PARAMS((char *text, int quote_char));
-static int signal_event_hook_wrapper PARAMS((void));
-static int input_available_hook_wrapper PARAMS((void));
-static int filename_stat_hook_wrapper PARAMS((char **fnamep));
+static char *completion_word_break_hook_wrapper (void);
+static int prep_term_function_wrapper (int meta_flag);
+static int deprep_term_function_wrapper (void);
+static int directory_rewrite_hook_wrapper (char **dirnamep);
+static char *filename_rewrite_hook_wrapper (char *text, int quote_char);
+static int signal_event_hook_wrapper (void);
+static int input_available_hook_wrapper (void);
+static int filename_stat_hook_wrapper (char **fnamep);
 
 enum { STARTUP_HOOK, EVENT_HOOK, GETC_FN, REDISPLAY_FN,
        CMP_ENT, ATMPT_COMP,
@@ -1699,7 +1684,7 @@ filename_stat_hook_wrapper(fnamep)
  *	and add entry on fntbl[].
  */
 
-static int function_wrapper PARAMS((int count, int key, int id));
+static int function_wrapper (int count, int key, int id);
 
 static int fw_00(c, k) int c; int k; { return function_wrapper(c, k,  0); }
 static int fw_01(c, k) int c; int k; { return function_wrapper(c, k,  1); }
