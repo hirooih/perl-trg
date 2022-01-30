@@ -366,7 +366,17 @@ static void rl_activate_mark (void) {}
 static void rl_deactivate_mark (void) {}
 static void rl_keep_mark_active (void) {}
 static int rl_mark_active_p (void) { return 0; }
-#endif /* (RL_READLINE_VERSION < 0x0800) */
+#endif /* (RL_READLINE_VERSION < 0x0801) */
+
+#if (RL_READLINE_VERSION < 0x0802)
+/* features introduced by GNU Readline 8.2 */
+static int rl_trim_arg_from_keyseq (const char *keyseq, size_t len, Keymap map) { return 0; }
+static int rl_set_timeout (unsigned int secs, unsigned int usecs) { return 0; }
+static int rl_clear_timeout (void) { return 0; }
+static int rl_timeout_remaining (unsigned int *secs, unsigned int *usecs) { return 0; }
+static int rl_eof_found = 0;
+static rl_hook_func_t *rl_timeout_event_hook = NULL;
+#endif /* (RL_READLINE_VERSION < 0x0802) */
 
 /*
  * utility/dummy functions
@@ -571,7 +581,8 @@ static struct int_vars {
   { &rl_change_environment,                     0, 0, 0},       /* 43 */
   { &rl_persistent_signal_handlers,             0, 0, 0},       /* 44 */
   { &history_quoting_state,                     0, 0, 0},       /* 45 */
-  { &utf8_mode,                                 0, 0, 0}        /* 46 */
+  { &utf8_mode,                                 0, 0, 0},       /* 46 */
+  { &rl_eof_found,                              0, 0, 0}        /* 47 */
 };
 
 /*
@@ -602,6 +613,7 @@ static char *filename_rewrite_hook_wrapper (char *text, int quote_char);
 static int signal_event_hook_wrapper (void);
 static int input_available_hook_wrapper (void);
 static int filename_stat_hook_wrapper (char **fnamep);
+static int timeout_event_hook_wrapper (void);
 
 enum { STARTUP_HOOK, EVENT_HOOK, GETC_FN, REDISPLAY_FN,
        CMP_ENT, ATMPT_COMP,
@@ -609,7 +621,7 @@ enum { STARTUP_HOOK, EVENT_HOOK, GETC_FN, REDISPLAY_FN,
        IGNORE_COMP, DIR_COMP, HIST_INHIBIT_EXP,
        PRE_INPUT_HOOK, COMP_DISP_HOOK, COMP_WD_BRK_HOOK,
        PREP_TERM, DEPREP_TERM, DIR_REWRITE, FN_REWRITE,
-       SIG_EVT, INP_AVL, FN_STAT
+       SIG_EVT, INP_AVL, FN_STAT, TIMEOUT_EVENT
 };
 
 typedef int XFunction ();
@@ -729,6 +741,12 @@ static struct fn_vars {
     (XFunction **)&rl_filename_stat_hook,                       /* 21 */
     NULL,
     (XFunction *)filename_stat_hook_wrapper,
+    NULL
+  },
+  {
+    (XFunction **)&rl_timeout_event_hook,                       /* 22 */
+    NULL,
+    (XFunction *)timeout_event_hook_wrapper,
     NULL
   }
 };
@@ -1679,6 +1697,9 @@ filename_stat_hook_wrapper(fnamep)
   return icppfunc_wrapper(FN_STAT, fnamep);
 }
 
+static int
+timeout_event_hook_wrapper() { return hook_func_wrapper(TIMEOUT_EVENT); }
+
 /*
  *      If you need more custom functions, define more funntion_wrapper_xx()
  *      and add entry on fntbl[].
@@ -2131,6 +2152,21 @@ rl_function_of_keyseq(keyseq, map = rl_get_keymap())
             ;                   /* return NULL list */
         }
 
+int
+rl_trim_arg_from_keyseq(keyseq, map = rl_get_keymap())
+        SV *    keyseq
+        Keymap map
+    PROTOTYPE: $;$
+    CODE:
+        {
+          if (!SvOK(keyseq))
+            RETVAL = -1;
+          else
+            RETVAL = rl_trim_arg_from_keyseq(SvPV_nolen(keyseq), SvCUR(keyseq), map);
+        }
+    OUTPUT:
+        RETVAL
+
 void
 _rl_invoking_keyseqs(function, map = rl_get_keymap())
         rl_command_func_t *     function
@@ -2390,6 +2426,39 @@ int
 rl_set_keyboard_input_timeout(usec)
         int usec
     PROTOTYPE: $
+
+int
+rl_set_timeout(secs, usecs)
+        unsigned int secs
+        unsigned int usecs
+    PROTOTYPE: $$
+
+int
+rl_clear_timeout()
+    PROTOTYPE:
+
+void
+rl_timeout_remaining()
+    PROTOTYPE:
+    PPCODE:
+        {
+          int ret;
+          U8 gimme = GIMME_V; // https://perldoc.perl.org/perlcall#Using-GIMME_V
+          if (gimme == G_ARRAY) {
+            unsigned int secs, usecs;
+            ret = rl_timeout_remaining(&secs, &usecs);
+            EXTEND(sp, 3);
+            PUSHs(sv_2mortal(newSViv(ret)));
+            PUSHs(sv_2mortal(newSViv(secs)));
+            PUSHs(sv_2mortal(newSViv(usecs)));
+          } else if (gimme == G_SCALAR) {
+            ret = rl_timeout_remaining(NULL, NULL);
+            EXTEND(sp, 1);
+            PUSHs(sv_2mortal(newSViv(ret)));
+          } else {  // G_VOID
+            XSRETURN(0);
+          }
+        }
 
  #
  #      2.4.9 Terminal Management

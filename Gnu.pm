@@ -119,7 +119,9 @@ BEGIN {
                             RL_STATE_CALLBACK RL_STATE_VIMOTION
                             RL_STATE_MULTIKEY RL_STATE_VICMDONCE
                             RL_STATE_CHARSEARCH RL_STATE_REDISPLAYING
-                            RL_STATE_DONE)],
+                            RL_STATE_DONE RL_STATE_TIMEOUT
+                            RL_STATE_EOF
+                            )],
         );
     Exporter::export_ok_tags('prompt');
     Exporter::export_ok_tags('match_type');
@@ -221,6 +223,8 @@ sub RL_STATE_DONE {                            # done; accepted line
         ($readline_version < 0x0601 ? 0x80_0000 :
          ($readline_version < 0x0700 ? 0x100_0000 : 0x200_0000));
 }
+sub RL_STATE_TIMEOUT            { 0x400_0000; } # [8.2]
+sub RL_STATE_EOF                { 0x800_0000; } # [8.2]
 
 #
 #       Methods Definition
@@ -684,6 +688,7 @@ our %_rl_vars;
        rl_persistent_signal_handlers            => ['I', 44], # GRL 7.0
        history_quoting_state                    => ['I', 45], # GRL 8.0
        utf8_mode                                => ['I', 46], # internal
+       rl_eof_found                             => ['I', 47], # GRL 8.2
 
        rl_startup_hook                          => ['F', 0],
        rl_event_hook                            => ['F', 1],
@@ -707,6 +712,7 @@ our %_rl_vars;
        rl_signal_event_hook                     => ['F', 19], # GRL 6.3
        rl_input_available_hook                  => ['F', 20], # GRL 6.3
        rl_filename_stat_hook                    => ['F', 21], # GRL 6.3
+       rl_timeout_event_hook                    => ['F', 22], # GRL 8.2
 
        rl_instream                              => ['IO', 0],
        rl_outstream                             => ['IO', 1],
@@ -1086,6 +1092,11 @@ Manual|https://tiswww.cwru.edu/php/chet/readline/readline.html>.
                 rl_function_of_keyseq(str keyseq,
                                       Keymap|str map = rl_get_keymap())
 
+=item C<trim_arg_from_keyseq(KEYSEQ [,MAP])>
+
+        int     rl_trim_arg_from_keyseq(str keyseq,
+                                        Keymap|str map = rl_get_keymap()) # GRL 8.2
+
 =item C<invoking_keyseqs(FUNCTION [,MAP])>
 
         (@str)  rl_invoking_keyseqs(FunctionPtr|str function,
@@ -1254,6 +1265,19 @@ Manual|https://tiswww.cwru.edu/php/chet/readline/readline.html>.
 =item C<set_keyboard_input_timeout(uSEC)>
 
         int     rl_set_keyboard_input_timeout(int usec)         # GRL 4.2
+
+=item C<set_timeout(SECS, USECS)>
+
+        int     rl_set_timeout(int secs, int usecs)             # GRL 8.2
+
+=item C<clear_timeout()>
+
+        int     rl_clear_timeout()                              # GRL 8.2
+
+=item C<timeout_remaining()>
+
+        int     rl_timeout_remaining()          # scalar context, GRL 8.2
+        (int ret, int secs, int usecs)  rl_timeout_remaining()  # array context
 
 =back
 
@@ -1736,6 +1760,7 @@ Examples:
         int rl_end
         int rl_mark
         int rl_done
+        int rl_eof_found (GRL 8.2)
         int rl_num_chars_to_read (GRL 4.1)
         int rl_pending_input
         int rl_dispatching
@@ -1757,6 +1782,7 @@ Examples:
         pfunc rl_event_hook
         pfunc rl_getc_function
         pfunc rl_signal_event_hook (GRL 6.3)
+        pfunc rl_timeout_event_hook (GRL 8.2)
         pfunc rl_input_available_hook (GRL 6.3)
         pfunc rl_redisplay_function
         pfunc rl_prep_term_function (GRL 2.1)
@@ -2132,7 +2158,8 @@ RL_STATE_INPUTPENDING RL_STATE_TTYCSAVED
 RL_STATE_CALLBACK RL_STATE_VIMOTION
 RL_STATE_MULTIKEY RL_STATE_VICMDONCE
 RL_STATE_CHARSEARCH RL_STATE_REDISPLAYING
-RL_STATE_DONE
+RL_STATE_DONE RL_STATE_TIMEOUT
+RL_STATE_EOF
 
 =back
 
