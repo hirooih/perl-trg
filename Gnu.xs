@@ -333,7 +333,7 @@ void rl_clear_history (void) {}
 /*
   documented by 6.3 but implemented since 2.1
 static HISTORY_STATE    *history_get_hitory_state();
-static void     *history_set_hitory_state(HISTORY_STATE *state)
+static void     *history_set_history_state(HISTORY_STATE *state)
  */
 #endif /* (RL_READLINE_VERSION < 0x0603) */
 
