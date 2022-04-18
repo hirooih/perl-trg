@@ -36,7 +36,7 @@
 
 1.37  2020-12-27
 	- readline-8.1 support
-	    new function
+	    new functions
 		rl_activate_mark
 		rl_deactivate_mark
 		rl_keep_mark_active
@@ -52,7 +52,7 @@
 
 1.36  2019-01-14
 	- readline-8.0 support
-	    new function
+	    new functions
 		rl_empty_keymap
 		rl_set_keymap_name
 		rl_check_signals
@@ -72,7 +72,7 @@
 
 1.35  2016-11-03
 	- readline-7.0 support
-	    new function
+	    new functions
 		rl_clear_visible_line
 		rl_tty_set_echoing
 		rl_pending_signal
@@ -231,7 +231,7 @@
 	  release or newers.)
 	    new function
 		rl_clear_history
-	    new variable
+	    new variables
 		rl_signal_event_hook
 		rl_input_available_hook
 		rl_executing_key
@@ -300,11 +300,11 @@
 	  on non-supported platform (for example one without GNU
 	  Readline Library).
 	- readline-6.0 support
-	    new function
+	    new functions
 		rl_save_state (not supported yet)
 		rl_restore_state (not supported yet)
 		rl_echo_signal_char
-	    new variable
+	    new variables
 		rl_display_prompt
 		rl_sort_completion_matches
 		rl_completion_invoking_key
@@ -323,7 +323,7 @@
 	- fix Makefile.PL to work with the latest Cygwin.
 	 (Use 1.15 for old Cygwin.)
 	- readline-5.1 support
-	    new function
+	    new functions
 		variable_value
 		reset_screen_size
 	    new variable
@@ -331,14 +331,14 @@
 
 1.15  2004-10-17
 	- readline-5.0 support
-	    new function
+	    new functions
 		bind_key_if_unbound
 		bind_keyseq
 		bind_keyseq_if_unbound
 		tty_unset_default_bindings
 		add_history_time
 		history_get_time
-	    new variable
+	    new variables
 		history_write_timestamps
 		completion_quote_character
 		completion_suppress_quote
@@ -486,14 +486,14 @@
 
 	- add support of new variables and functions introduced by GNU
 	  Readline Library Version 4.0
-	    new variable
+	    new variables
 		rl_erase_empty_line
 		rl_catch_signals
 		rl_catch_sigwinch
 		rl_pre_input_hook
 		completion_display_matches_hook
 		history_inhibit_expansion_function
-	    new function
+	    new functions
 		rl_display_match_list()
 		rl_cleanup_after_signal()
 		rl_free_line_state()
