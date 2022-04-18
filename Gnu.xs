@@ -508,7 +508,7 @@ static struct str_vars {
   { &rl_executing_macro,                                0, 1 }, /* 13 */
   { &history_word_delimiters,                           0, 0 }, /* 14 */
   { &rl_display_prompt,                                 0, 0 }, /* 15 */
-  { &rl_executing_keyseq,                               0, 1 }  /* 16 */
+  { &rl_executing_keyseq,                               0, 1 }, /* 16 */
 };
 
 /*
@@ -582,7 +582,7 @@ static struct int_vars {
   { &rl_persistent_signal_handlers,             0, 0, 0},       /* 44 */
   { &history_quoting_state,                     0, 0, 0},       /* 45 */
   { &utf8_mode,                                 0, 0, 0},       /* 46 */
-  { &rl_eof_found,                              0, 0, 0}        /* 47 */
+  { &rl_eof_found,                              0, 0, 0},       /* 47 */
 };
 
 /*
@@ -621,7 +621,7 @@ enum { STARTUP_HOOK, EVENT_HOOK, GETC_FN, REDISPLAY_FN,
        IGNORE_COMP, DIR_COMP, HIST_INHIBIT_EXP,
        PRE_INPUT_HOOK, COMP_DISP_HOOK, COMP_WD_BRK_HOOK,
        PREP_TERM, DEPREP_TERM, DIR_REWRITE, FN_REWRITE,
-       SIG_EVT, INP_AVL, FN_STAT, TIMEOUT_EVENT
+       SIG_EVT, INP_AVL, FN_STAT, TIMEOUT_EVENT,
 };
 
 typedef int XFunction ();
@@ -748,7 +748,7 @@ static struct fn_vars {
     NULL,
     (XFunction *)timeout_event_hook_wrapper,
     NULL
-  }
+  },
 };
 
 /*
@@ -1743,7 +1743,7 @@ static struct fnnode {
   { fw_12,      NULL },
   { fw_13,      NULL },
   { fw_14,      NULL },
-  { fw_15,      NULL }
+  { fw_15,      NULL },
 };
 
 static int
