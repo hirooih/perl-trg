@@ -14,8 +14,7 @@ jobs:
       #fail-fast: false
       matrix:
         # https://docs.github.com/en/actions/reference/specifications-for-github-hosted-runners
-        #os: [macos-10.15, macos-11.0]
-        os: [macos-10.15]
+        os: [macos-latest]
 
     name: Build on ${{ matrix.os }}
     steps:
