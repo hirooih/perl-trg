@@ -1,5 +1,28 @@
 -*- Indented-text -*-
 
+1.43  2022-09-27
+	- readline-8.2 support
+	    new functions
+		rl_trim_arg_from_keyseq
+		rl_set_timeout
+		rl_clear_timeout
+		rl_timeout_remaining
+	    new variables
+		rl_eof_found
+		rl_timeout_event_hook
+	    new state values for rl_readline_state
+		RL_STATE_TIMEOUT
+		RL_STATE_EOF
+	- t/00checkver.t: check if $TERM is set properly [#11]
+	- Makefile.PL
+	    - warn if $TERM is not set properly [#11]
+	    - fix for MSYS2: take care of `\r\n` in the output of rlmalloc
+	    - guess_malloc_names(): simplify the control structure
+	- INSTALL: add a section for "MSYS2"
+	- Gnu.xs: no more non-ANSI C compiler support (remove PARAM macros)
+	- Gnu.pm, Gnu.xs, Gnu/XS.pm: expand tabs
+	- README.md, INSTALL.md: changed to Markdown
+
 1.42  2021-05-07
 	- Makefile.PL: force rlver to link with a terminal library
 	    - fix compile error on some of Cygwin environments and others. [#7]
