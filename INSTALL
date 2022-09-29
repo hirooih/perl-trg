@@ -34,7 +34,7 @@
 
 	% perl Makefile.PL --prefix=/termcap/dir:/readline/dir
 
-        If you are not an administrator and cannot install Perl module
+	If you are not an administrator and cannot install Perl module
 	in your system directory, try
 		perldoc perlfaq8
 	and see the section 'How do I keep my own module/library
@@ -43,7 +43,7 @@
 
 1.3 Trouble Shooting
 
-        If you have any trouble when using or installing this module
+	If you have any trouble when using or installing this module
 	or find a bug, please open a ticket on the bug tracker on
 	GitHub;
 	<https://github.com/hirooih/perl-trg/issues>
@@ -88,7 +88,7 @@
 		GNU Readline Library 2.1
 		libreadline.a in bash-2.0.tar.gz
 		Cygwin b20.1
-	see INSTALL file which is included in Term-ReadLine-Gnu-1.11.	
+	see INSTALL file which is included in Term-ReadLine-Gnu-1.11.
 
 2.1. Install from the GNU Readline Library Source
 
@@ -101,11 +101,11 @@
 
 2.1.1. Install on macOS
 
-        On macOS Big Sur or later 'perl Makefile.PL' may warn as
-          "Could not find neither libtermcap, libtinfo, libncurses, or libcurses."
-        You should be able to ignore this warning if you have Xcode installed. See
-          https://github.com/Perl-Toolchain-Gang/ExtUtils-MakeMaker/issues/381
-        for details. To suppress this message, use ExtUtils::MakeMaker 7.58 or later.
+	On macOS Big Sur or later 'perl Makefile.PL' may warn as
+	  "Could not find neither libtermcap, libtinfo, libncurses, or libcurses."
+	You should be able to ignore this warning if you have Xcode installed. See
+	  https://github.com/Perl-Toolchain-Gang/ExtUtils-MakeMaker/issues/381
+	for details. To suppress this message, use ExtUtils::MakeMaker 7.58 or later.
 
 	/usr/bin/perl on macOS 10.5 (Leopard) and later supports
 	32bit/64bit universal binary.  Make Makefile as follows;
@@ -117,7 +117,7 @@
 	follows.  (works on GNU Readline 6.3 and later)
 
 	Enable the following lines in support/shobj-conf in GNU
-        Readline 6.3 distribution;
+	Readline 6.3 distribution;
 
 	# for 32 and 64bit universal library
 	#SHOBJ_ARCHFLAGS='-arch i386 -arch x86_64'
@@ -146,11 +146,11 @@
 
 2.2.3. Homebrew on macOS
 
-       1. Install Homebrew
+	1. Install Homebrew
 	See https://brew.sh/.
 
-       2. Use homebrew to install the GNU Readline Library:
-       		% brew install readline
+	2. Use homebrew to install the GNU Readline Library:
+		% brew install readline
 
 	Because the GNU Readline library conflicts with the the
 	similarly-named-but-different library installed in the base
