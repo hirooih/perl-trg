@@ -173,4 +173,18 @@
 	You'll need to rebuild Term::ReadLine::GNU so that it links
 	against whichever newer version you have installed.
 
+2.2.4. MSYS2
+	1. Install MSYS2
+	See. https://www.msys2.org/
+
+	2. Install Additional Packages
+		% pacman -S msys2-devel msys2-runtime-devel msys/libreadline-devel libcrypt-devel
+
+	3. Build
+	On MSYS environment
+		% perl Makefile.PL
+		% make
+		% make test
+		% make install
+
 EOF
