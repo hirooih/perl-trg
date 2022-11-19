@@ -84,7 +84,7 @@ if ($verbose) {
 } else {
     $t = new Term::ReadLine 'ReadLineTest', $in, \*STDOUT;
 }
-print "\n";	# rl_initialize() outputs some escape characters in Term-ReadLine-Gnu less than 6.3, 
+print "\n";	# rl_initialize() outputs some escape characters in Term-ReadLine-Gnu less than 6.3,
 isa_ok($t, 'Term::ReadLine');
 
 $expected = $] >= 5.010 ? ['unix', 'perlio', 'stdio'] : ['stdio'];

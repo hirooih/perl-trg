@@ -17,7 +17,7 @@ B<pftp> [B<-u>] [B<-g>] [B<-M>] [B<-h>] [B<-d>] [I<host>]
 
 This is an ftp client which has the GNU Readline support.  It can
 complete not only local file name but also remote file name and host
-name to which login. 
+name to which login.
 
 This is a sample program of Perl Term::ReadLine::Gnu module.
 
@@ -234,7 +234,7 @@ sub rdir {		# get remote dir info and save it in %rdir
     my $d = $ftp->ls('-F', $dir);
     if ($d) {
 	foreach (@{$d}) {
-	    s|.*/(.)|$1|; # remove directory name  
+	    s|.*/(.)|$1|; # remove directory name
 	    s/[*@]$//;
 	}
 	return $rdir{$dir} = $d;
@@ -337,7 +337,7 @@ sub cmd_dir {
 	print STDERR "dir failed\n";
     }
 }
-    
+
 sub cmd_get {
     $ftp->get(@_);
     print STDERR $ftp->message;

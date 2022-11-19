@@ -161,7 +161,7 @@ note "2.4 Readline Convenience Functions";
 
 sub reverse_line {		# reverse a whole line
     my($count, $key) = @_;	# ignored in this sample function
-    
+
     $t->modifying(0, $a->{end}); # save undo information
     $a->{line_buffer} = reverse $a->{line_buffer};
 }
@@ -276,7 +276,7 @@ note "2.4.3 Binding Keys";
 
 # test rl_bind_key[_in_map], rl_bind_key_if_unbound[_in_map]!!!,
 # rl_unbind_key[_in_map] (below), rl_unbind_function_in_map (below), rl_unbind_command_in_map (below),
-# rl_bind_keyseq[_in_map]!!!, rl_set_key, rl_bind_keyseq_if_unbound[_in_map]!!!, 
+# rl_bind_keyseq[_in_map]!!!, rl_set_key, rl_bind_keyseq_if_unbound[_in_map]!!!,
 # rl_generic_bind, rl_parse_and_bind
 
 # define subroutine to use again later
@@ -293,7 +293,7 @@ sub bind_my_function {
 	$t->bind_key(ord "o", 'change-ornaments', 'emacs-meta');
     }
     $t->bind_key(ord "^", 'history-expand-line', 'emacs-meta');
-    
+
     # make an original map
     $helpmap = $t->make_bare_keymap();
     $t->bind_key(ord "f", 'dump-functions', $helpmap);
@@ -301,7 +301,7 @@ sub bind_my_function {
     $t->bind_key(ord "v", 'dump-variables', $helpmap);
     # 'dump-macros' is documented but not defined by GNU Readline 2.1
     $t->generic_bind(ISFUNC, "\e?m", 'dump-macros') if $version > 0x0201;
-    
+
     # bind a macro
     $mymacro = "\ca[insert text from the beginning of line]";
     $t->generic_bind(ISMACR, "\e?i", $mymacro);
@@ -394,7 +394,7 @@ bind_my_function;		# do bind
 # rl_invoking_keyseqs[_in_map]
 # rl_function_dumper!!!, rl_list_funmap_names!!!, rl_funmap_names!!!
 # rl_add_funmap_entry (above)
-    
+
 # test rl_invoking_keyseqs
 @keyseqs = $t->invoking_keyseqs('abort', 'emacs-ctlx');
 ok("\\C-g" eq "@keyseqs", 'invoking_keyseqs');
@@ -600,8 +600,8 @@ ok($line eq 'abcdefgh', "self insert\t[$line]");
 $INSTR = "\cAe\cFf\cBg\cEh\cH ij kl\eb\ebm\cDn\cM";
 $line = $t->readline("cursor move> ", 'abcd'); # default string
 SKIP: {
-    # skip on CPAN Testers test. 
-    skip "This 'cursor move' test fails on an active tester's environment, but we could not solve the issue.", 1 
+    # skip on CPAN Testers test.
+    skip "This 'cursor move' test fails on an active tester's environment, but we could not solve the issue.", 1
 	if $ENV{AUTOMATED_TESTING} || defined $ENV{PERL_CPAN_REPORTER_CONFIG};
     ok($line eq 'eagfbcd mnj kl', "cursor move\t[$line]");
 }
@@ -700,7 +700,7 @@ if ($line eq "${user} ") {
 } elsif ($line eq ${user}) {
     ok(1, 'username completion');
     diag "It seems that there is no user whose name is '${user}' or there is a user whose name starts with '${user}'";
-} else { 
+} else {
     ok(0, "username completion\t[$line]"); # something wrong...
 }
 

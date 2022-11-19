@@ -207,7 +207,7 @@ show_indices;
 ok($t->next_history eq 'two', 'next_history');
 show_indices;
 ok($t->next_history eq 'three');
-show_indices; 
+show_indices;
 ok($t->next_history eq 'four');
 show_indices;
 ok(! defined $t->next_history);

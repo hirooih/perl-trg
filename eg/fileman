@@ -47,14 +47,14 @@ $term->MinLine(0);		## disable implict call of add_history()
 # Loop reading and executing lines until the user quits.
 while ($done == 0) {
     my $line = $term->readline ("FileMan: ");
-    
+
     last unless defined $line;
-    
+
     # Remove leading and trailing whitespace from the line.  Then, if
     # there is anything left, add it to the history list and execute
     # it.
     my $s = stripwhite($line);
-    
+
     if ($s) {
 	$term->AddHistory($s);	## normally this is done implictly
 	execute_line($s);

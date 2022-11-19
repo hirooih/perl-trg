@@ -55,9 +55,9 @@ sub doline {
     my $line = shift;
 
     if (defined $line) {
-        if ($line =~ /^p\s(.*)$/) {              
+        if ($line =~ /^p\s(.*)$/) {
             $line = "print $1, \"!\\n\";";
-        }              
+        }
 
         eval "{package main; $line }";
         print $outstream "$@\n" if $@;
