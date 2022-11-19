@@ -1,14 +1,14 @@
 # -*- perl -*-
-#	utf8_73984.t --- Term::ReadLine:GNU UTF-8 Test Script
+#       utf8_73984.t --- Term::ReadLine:GNU UTF-8 Test Script
 #
-#	Bug #73894 for Term-ReadLine-Gnu: using Term::ReadLine::Gnu
-#	mocks binmoded (utf-8) IO
-#	https://rt.cpan.org/Public/Bug/Display.html?id=73894
+#       Bug #73894 for Term-ReadLine-Gnu: using Term::ReadLine::Gnu
+#       mocks binmoded (utf-8) IO
+#       https://rt.cpan.org/Public/Bug/Display.html?id=73894
 #
-#	Copyright (c) 2016 Hiroo Hayashi.  All rights reserved.
+#       Copyright (c) 2016 Hiroo Hayashi.  All rights reserved.
 #
-#	This program is free software; you can redistribute it and/or
-#	modify it under the same terms as Perl itself.
+#       This program is free software; you can redistribute it and/or
+#       modify it under the same terms as Perl itself.
 
 use strict;
 use warnings;
@@ -29,7 +29,7 @@ sub note {
 use warnings 'redefine';
 
 BEGIN {
-    $ENV{PERL_RL} = 'Gnu';	# force to use Term::ReadLine::Gnu
+    $ENV{PERL_RL} = 'Gnu';      # force to use Term::ReadLine::Gnu
 }
 
 use Term::ReadLine;

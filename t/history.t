@@ -1,10 +1,10 @@
 # -*- perl -*-
-#	history.t --- Term::ReadLine:GNU History Library Test Script
+#       history.t --- Term::ReadLine:GNU History Library Test Script
 #
-#	Copyright (c) 1998-2016 Hiroo Hayashi.  All rights reserved.
+#       Copyright (c) 1998-2016 Hiroo Hayashi.  All rights reserved.
 #
-#	This program is free software; you can redistribute it and/or
-#	modify it under the same terms as Perl itself.
+#       This program is free software; you can redistribute it and/or
+#       modify it under the same terms as Perl itself.
 
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl t/history.t'
@@ -23,10 +23,10 @@ sub note {
 use warnings 'redefine';
 
 BEGIN {
-    $ENV{PERL_RL} = 'Gnu';	# force to use Term::ReadLine::Gnu
+    $ENV{PERL_RL} = 'Gnu';      # force to use Term::ReadLine::Gnu
     $ENV{LC_ALL} = 'C';
 }
-sub show_indices;		# for debugging
+sub show_indices;               # for debugging
 
 use Term::ReadLine;
 ok(1, 'load done');
@@ -163,8 +163,8 @@ $t->SetHistory(@list_set);
 show_indices;
 
 # history_list()
-#	history_list() routine emulates history_list() function in
-#	GNU Readline Library.
+#       history_list() routine emulates history_list() function in
+#       GNU Readline Library.
 splice(@list_set, 0, 1);
 is_deeply(\@list_set, [$t->history_list], 'history_list');
 show_indices;
@@ -191,7 +191,7 @@ ok($t->where_history == 2, 'history_set_pos');
 ok($t->current_history eq 'three');
 show_indices;
 
-$t->history_set_pos(10000);	# should be ingored
+$t->history_set_pos(10000);     # should be ingored
 ok($t->where_history == 2);
 
 # previous_history()
@@ -259,7 +259,7 @@ my $hfile = '.history_test';
 my @list_write = $t->GetHistory();
 $t->WriteHistory($hfile) || warn "error at write_history: $!\n";
 
-$t->SetHistory();		# clear history list
+$t->SetHistory();               # clear history list
 ok(! $t->GetHistory, 'SetHistory');
 
 $t->ReadHistory($hfile) || warn "error at read_history: $!\n";
@@ -269,7 +269,7 @@ is_deeply(\@list_write, [$t->GetHistory], 'ReadHistory');
 $t->SetHistory(@list_write);
 # write_history()
 ! $t->write_history($hfile) || warn "error at write_history: $!\n";
-$t->SetHistory();		# clear history list
+$t->SetHistory();               # clear history list
 # read_history()
 ! $t->read_history($hfile) || warn "error at read_history: $!\n";
 is_deeply(\@list_write, [$t->GetHistory], 'read_history');
@@ -284,14 +284,14 @@ is_deeply([0,1,2,3,4,1,2,2,3,4], [$t->GetHistory]);
 
 # append_history()
 ! $t->append_history(5, $hfile) || warn "error at append_history: $!\n";
-$t->SetHistory();		# clear history list
+$t->SetHistory();               # clear history list
 ! $t->read_history($hfile) || warn "error at read_history: $!\n";
 is_deeply([0,1,2,3,4,1,2,2,3,4], [$t->GetHistory], 'append_history');
 #print "@{[$t->GetHistory]}\n";
 
 # history_truncate_file()
 $t->history_truncate_file($hfile, 6); # always returns 0
-$t->SetHistory();		# clear history list
+$t->SetHistory();               # clear history list
 ! $t->read_history($hfile) || warn "error at read_history: $!\n";
 is_deeply([4,1,2,2,3,4], [$t->GetHistory], 'history_truncate_file');
 #print "@{[$t->GetHistory]}\n";
@@ -316,8 +316,8 @@ ok($ret == 1 && $string eq 'red yellow');
 
 # get_history_event()
 my ($text, $cindex);
-#		     1	       2
-#	   012345678901234567890123
+#                    1         2
+#          012345678901234567890123
 $string = '!-2 !?red? "!blu" white';
 
 # !-2: 2 line before
@@ -396,11 +396,11 @@ exit 0;
 # debugging support
 sub show_indices {
     return;
-    printf("where_history: %d ",	$t->where_history);
-#    printf("current_history(): %s ",	$t->current_history);
-    printf("history_base: %d, ",	$attribs->{history_base});
-    printf("history_length: %d, ",	$attribs->{history_length});
-#    printf("max_input_history: %d ",	$attribs->{max_input_history});
-#    printf("history_total_bytes: %d ",	$t->history_total_bytes);
+    printf("where_history: %d ",        $t->where_history);
+#    printf("current_history(): %s ",   $t->current_history);
+    printf("history_base: %d, ",        $attribs->{history_base});
+    printf("history_length: %d, ",      $attribs->{history_length});
+#    printf("max_input_history: %d ",   $attribs->{max_input_history});
+#    printf("history_total_bytes: %d ", $t->history_total_bytes);
     print "\n";
 }
