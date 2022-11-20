@@ -1772,7 +1772,7 @@ static SV *callback_handler_callback = NULL;
 
 static void
 callback_handler_wrapper(line)
-     char *line;
+     CONST char *line;
 {
   dSP;
 
@@ -2003,7 +2003,7 @@ _rl_unbind_command(command, map = rl_get_keymap())
 
 int
 _rl_bind_keyseq(keyseq, function, map = rl_get_keymap())
-        const char *keyseq
+        CONST char *keyseq
         rl_command_func_t *     function
         Keymap map
     PROTOTYPE: $$;$
@@ -2031,7 +2031,7 @@ _rl_set_key(keyseq, function, map = rl_get_keymap())
 
 int
 _rl_bind_keyseq_if_unbound(keyseq, function, map = rl_get_keymap())
-        const char *keyseq
+        CONST char *keyseq
         rl_command_func_t *     function
         Keymap map
     PROTOTYPE: $$;$
@@ -2075,7 +2075,7 @@ _rl_generic_bind_macro(keyseq, macro, map = rl_get_keymap())
 
 void
 rl_parse_and_bind(line)
-        char *  line
+        CONST char *  line
     PROTOTYPE: $
     CODE:
         {
@@ -2332,7 +2332,7 @@ rl_show_char(i)
 
 int
 _rl_message(text)
-        const char *    text
+        CONST char *    text
     PROTOTYPE: $
     CODE:
         RETVAL = rl_message(text);
@@ -2357,12 +2357,12 @@ rl_restore_prompt()
 
 int
 rl_expand_prompt(prompt)
-        # should be defined as 'const char *'
+        # do not defined as 'CONST char *'
         char *          prompt
 
 int
 rl_set_prompt(prompt)
-        const char *    prompt
+        CONST char *    prompt
 
  #
  #      2.4.7 Modifying Text
@@ -2536,7 +2536,7 @@ MODULE = Term::ReadLine::Gnu    PACKAGE = Term::ReadLine::Gnu::XS
 
 void
 rl_replace_line(text, clear_undo = 0)
-        const char *text
+        CONST char *text
         int clear_undo
     PROTOTYPE: $;$
 
@@ -2721,7 +2721,7 @@ rl_get_termcap(cap)
 
 void
 rl_callback_handler_install(prompt, lhandler)
-        const char *    prompt
+        CONST char *    prompt
         SV *            lhandler
     PROTOTYPE: $$
     CODE:
@@ -2893,13 +2893,13 @@ rl_completion_matches(text, fn = NULL)
 
 t_utf8_free
 rl_filename_completion_function(text, state)
-        const char *    text
+        CONST char *    text
         int state
     PROTOTYPE: $$
 
 t_utf8_free
 rl_username_completion_function(text, state)
-        const char *    text
+        CONST char *    text
         int state
     PROTOTYPE: $$
 
@@ -3231,7 +3231,7 @@ MODULE = Term::ReadLine::Gnu            PACKAGE = Term::ReadLine::Gnu::Var
 
 void
 _rl_store_str(pstr, id)
-        const char *    pstr
+        CONST char *    pstr
         int id
     PROTOTYPE: $$
     CODE:
@@ -3276,7 +3276,7 @@ _rl_store_str(pstr, id)
 
 void
 _rl_store_rl_line_buffer(pstr)
-        const char *    pstr
+        CONST char *    pstr
     PROTOTYPE: $
     CODE:
         {
