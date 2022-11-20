@@ -36,6 +36,23 @@ extern "C" {
 #define CONST const
 #endif /* (RL_READLINE_VERSION >= 0x0402) */
 
+/* from GNU Readline:xmalloc.h */
+#ifndef PTR_T
+#ifdef __STDC__
+#  define PTR_T void *
+#else
+#  define PTR_T char *
+#endif
+#endif /* !PTR_T */
+
+/* from GNU Readline:xmalloc.h */
+extern PTR_T xmalloc (size_t);
+extern PTR_T xrealloc (PTR_T, size_t);
+extern void xfree (PTR_T);
+
+extern char *tgetstr (const char *, char **);
+extern int tputs (const char *, int, int (*)(int));
+
 typedef char *  t_utf8;                 /* string which must not be xfreed */
 typedef char *  t_utf8_free;            /* string which must be xfreed */
 
@@ -302,7 +319,6 @@ static void rl_echo_signal_char(int sig){}
 static rl_dequote_func_t *rl_filename_rewrite_hook;
 
 /* Convenience function that discards, then frees, MAP. */
-static void xfree(void *);
 static void
 rl_free_keymap (map)
      Keymap map;
@@ -381,20 +397,8 @@ static rl_hook_func_t *rl_timeout_event_hook = NULL;
 /*
  * utility/dummy functions
  */
-/* from GNU Readline:xmalloc.h */
-#ifndef PTR_T
-#ifdef __STDC__
-#  define PTR_T void *
-#else
-#  define PTR_T char *
-#endif
-#endif /* !PTR_T */
-
-/* from GNU Readline:xmalloc.c */
-extern PTR_T xmalloc (int);
-extern char *tgetstr (const char *, char **);
-extern int tputs (const char *, int, int (*)(int));
-
+#if 0
+/* Added in 2000.  Removed in 2022. */
 /*
  * Using xfree() in GNU Readline Library causes problem with Solaris
  * 2.5.  It seems that the DLL mechanism of Solaris 2.5 links another
@@ -409,7 +413,7 @@ xfree (string)
   if (string)
     free (string);
 }
-
+#endif
 static char *
 dupstr(s)                       /* duplicate string */
      CONST char * s;
