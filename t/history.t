@@ -11,7 +11,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 88;
+use Test::More tests => 98;
 
 # redefine Test::Mode::note due to it requires Perl 5.10.1.
 no warnings 'redefine';
@@ -98,25 +98,25 @@ show_indices;
 
 # test SetHistory(), GetHistory()
 $t->SetHistory(@list_set);
-is_deeply(\@list_set, [$t->GetHistory], 'SetHistory, GetHistory');
+is_deeply([$t->GetHistory], \@list_set, 'SetHistory, GetHistory');
 show_indices;
 
 # test add_history(), add_history_time!!!
 $t->add_history('four');
 push(@list_set, 'four');
-is_deeply(\@list_set, [$t->GetHistory], 'add_history');
+is_deeply([$t->GetHistory], \@list_set, 'add_history');
 show_indices;
 
 # test remove_history()
 $t->remove_history(2);
 splice(@list_set, 2, 1);
-is_deeply(\@list_set, [$t->GetHistory], 'remove_history');
+is_deeply([$t->GetHistory], \@list_set, 'remove_history');
 show_indices;
 
 # test replace_history_entry()
 $t->replace_history_entry(3, 'daarn');
 splice(@list_set, 3, 1, 'daarn');
-is_deeply(\@list_set, [$t->GetHistory], 'replace_history_entry');
+is_deeply([$t->GetHistory], \@list_set, 'replace_history_entry');
 show_indices;
 
 # clear_history() is tested below.
@@ -166,7 +166,7 @@ show_indices;
 #       history_list() routine emulates history_list() function in
 #       GNU Readline Library.
 splice(@list_set, 0, 1);
-is_deeply(\@list_set, [$t->history_list], 'history_list');
+is_deeply([$t->history_list], \@list_set, 'history_list');
 show_indices;
 
 # at first where_history() returns 0
@@ -260,43 +260,43 @@ note "2.3.6 Managing the History File";
 $t->stifle_history(undef);
 my $hfile = '.history_test';
 my @list_write = $t->GetHistory();
-$t->WriteHistory($hfile) || warn "error at write_history: $!\n";
+ok($t->WriteHistory($hfile), "WriteHistory") or diag("$!");
 
 $t->SetHistory();               # clear history list
 ok(! $t->GetHistory, 'SetHistory');
 
-$t->ReadHistory($hfile) || warn "error at read_history: $!\n";
-is_deeply(\@list_write, [$t->GetHistory], 'ReadHistory');
+ok($t->ReadHistory($hfile), "read_history") or diag("$!");
+is_deeply([$t->GetHistory], \@list_write, 'ReadHistory');
 
 @list_write = qw(0 1 2 3 4);
 $t->SetHistory(@list_write);
 # write_history()
-! $t->write_history($hfile) || warn "error at write_history: $!\n";
+ok(! $t->write_history($hfile), "write_history") or diag("$!");
 $t->SetHistory();               # clear history list
 # read_history()
-! $t->read_history($hfile) || warn "error at read_history: $!\n";
-is_deeply(\@list_write, [$t->GetHistory], 'read_history');
+ok(! $t->read_history($hfile), "read_history") or diag("$!");
+is_deeply([$t->GetHistory], \@list_write, 'read_history');
 
 # read_history() with range
-! $t->read_history($hfile, 1, 3) || warn "error at read_history: $!\n";
-is_deeply([0,1,2,3,4,1,2], [$t->GetHistory], 'read_history with range');
+ok(! $t->read_history($hfile, 1, 3), "read_history with range") or diag("$!");
+is_deeply([$t->GetHistory], [0,1,2,3,4,1,2], 'read_history with range');
 #print "@{[$t->GetHistory]}\n";
-! $t->read_history($hfile, 2, -1) || warn "error at read_history: $!\n";
-is_deeply([0,1,2,3,4,1,2,2,3,4], [$t->GetHistory]);
+ok(! $t->read_history($hfile, 2, -1), "read_history") or diag("$!");
+is_deeply([$t->GetHistory], [0,1,2,3,4,1,2,2,3,4], 'read_history');
 #print "@{[$t->GetHistory]}\n";
 
 # append_history()
-! $t->append_history(5, $hfile) || warn "error at append_history: $!\n";
+ok(! $t->append_history(5, $hfile), "append_history") or diag("$!");
 $t->SetHistory();               # clear history list
-! $t->read_history($hfile) || warn "error at read_history: $!\n";
-is_deeply([0,1,2,3,4,1,2,2,3,4], [$t->GetHistory], 'append_history');
+ok(! $t->read_history($hfile), "read_history") or diag("$!");
+is_deeply([$t->GetHistory], [0,1,2,3,4,1,2,2,3,4], 'append_history');
 #print "@{[$t->GetHistory]}\n";
 
 # history_truncate_file()
-$t->history_truncate_file($hfile, 6); # always returns 0
+ok(! $t->history_truncate_file($hfile, 6), "history_truncate_file") or diag("$!");
 $t->SetHistory();               # clear history list
-! $t->read_history($hfile) || warn "error at read_history: $!\n";
-is_deeply([4,1,2,2,3,4], [$t->GetHistory], 'history_truncate_file');
+ok(! $t->read_history($hfile), "read_history") or diag("$!");
+is_deeply([$t->GetHistory], [4,1,2,2,3,4], 'history_truncate_file');
 #print "@{[$t->GetHistory]}\n";
 
 ########################################################################
