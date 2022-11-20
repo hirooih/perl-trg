@@ -463,7 +463,11 @@ note "2.4.12 Alternate Interface";
 ########################################################################
 note "2.5 Readline Signal Handling";
 ok($a->{catch_signals} == 1, 'catch_signals');
-ok($a->{catch_sigwinch} == 1, 'catch_sigwinch');
+if ($^O eq 'MSWin32') {
+    ok($a->{catch_sigwinch} == 0, 'catch_sigwinch');
+} else {
+    ok($a->{catch_sigwinch} == 1, 'catch_sigwinch');
+}
 ok($a->{persistent_signal_handlers} == 0, 'persistent_signal_handlers');
 ok($a->{change_environment} == 1, 'change_environment');
 

@@ -221,3 +221,36 @@ against whichever newer version you have installed.
 % make test
 % make install
 ```
+
+#### MSWin32 (Strawberry Perl)
+
+1. Download and run installer from https://strawberryperl.com/
+
+    - prebuild GNU Readline Library (DLL) is included
+
+2. Open `Perl (command line)` app
+
+3. Build
+
+```sh
+% perl Makefile.PL
+% gmake
+% gmake test
+% gmake install
+```
+
+Some tests of the history-file handling functions in `t/history.t` fail with the
+GNU Readline Library 7.0 and 8.0 on MSYS2 and MSWin32.  Use an older or newer
+versions.
+
+See https://lists.gnu.org/archive/html/bug-readline/2019-04/msg00000.html for
+more information.
+
+Strawberry Perl from 5.30.0.1 (2019-05-23) to 5.32.1.1 (2021-01-24) contains
+version 8.0.  Versions prior to 5.30.0.1 do not contain the GNU Readline
+Library. Until the next version which includes the GNU Readline Library 8.2, you
+have to build it by yourself. See
+[spbuild](https://github.com/StrawberryPerl/spbuild) for more information.
+
+Or if you don't need the history-file, ignore the fails on `gmake test` and run
+`gmake install`.

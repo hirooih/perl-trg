@@ -254,6 +254,9 @@ ok($t->history_search_pos('red',     1, 2) == -1);
 ########################################################################
 note "2.3.6 Managing the History File";
 
+# The tests on this section fail with GRL 7.0 and 8.0 on msys and MSWin32.
+# Use GRL 8.1 or later.
+# https://lists.gnu.org/archive/html/bug-readline/2019-04/msg00000.html
 $t->stifle_history(undef);
 my $hfile = '.history_test';
 my @list_write = $t->GetHistory();
