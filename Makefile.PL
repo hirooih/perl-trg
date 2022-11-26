@@ -71,15 +71,23 @@ push(@defs, '-O') if ($Config{ccflags} =~ /-D_FORTIFY_SOURCE=/);
 # if user hasn't provided RLLIB or RLINC....
 # OS X uses libedit, but they've named it libreadline...
 # see if user has installed gnu readline via homebrew
-if ($Config{osname} eq 'darwin' && !(@RLLIB || @RLINC)) {
-    foreach ('readline', 'ncurses') {
-        my $homebrew_prefix = `brew --prefix $_`;
-        chomp $homebrew_prefix;
-        if ($homebrew_prefix
-            && ((substr($Config{osvers}, 0, index($Config{osvers}, '.')) > 19) || -d $homebrew_prefix)) {
-            push(@RLLIB, "-L$homebrew_prefix/lib");
-            push(@LIBPTH,  "$homebrew_prefix/lib");
-            push(@RLINC, "-I$homebrew_prefix/include");
+if ($Config{osname} eq 'darwin' && !(@RLLIB || @RLINC)
+    && system('brew -v >/dev/null 2>&1') == 0) {
+    chomp(my $homebrew_prefix = `brew --prefix --installed readline`);
+    if ($homebrew_prefix
+        && (substr($Config{osvers}, 0, index($Config{osvers}, '.')) > 19)) {
+        push(@RLLIB, "-L$homebrew_prefix/lib");
+        push(@LIBPTH,  "$homebrew_prefix/lib");
+        push(@RLINC, "-I$homebrew_prefix/include");
+
+        chomp(my @deps = split(' ', `brew deps readline`));
+        if (@deps) {
+            foreach (@deps) {
+                chomp(my $homebrew_prefix = `brew --prefix --installed $_`);
+                push(@RLLIB, "-L$homebrew_prefix/lib");
+                push(@LIBPTH,  "$homebrew_prefix/lib");
+                push(@RLINC, "-I$homebrew_prefix/include");
+            }
         }
     }
 }
