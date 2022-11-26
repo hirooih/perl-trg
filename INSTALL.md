@@ -112,14 +112,6 @@ see `INSTALL` file which is included in `Term-ReadLine-Gnu-1.11`.
 
 #### Install on macOS
 
-On macOS Big Sur or later 'perl Makefile.PL' may be warned as
-
-> Could not find neither libtermcap, libtinfo, libncurses, or libcurses.
-
-You should be able to ignore this warning if you have Xcode installed. See
-https://github.com/Perl-Toolchain-Gang/ExtUtils-MakeMaker/issues/381
-for details. To suppress this message, use `ExtUtils::MakeMaker` 7.58 or later.
-
 `/usr/bin/perl` on macOS 10.5 (Leopard) and later supports
 32bit/64bit universal binary.  Make `Makefile` as follows:
 

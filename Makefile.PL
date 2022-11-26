@@ -108,10 +108,9 @@ if ($Config{osname} eq 'os2') {
     if (compile_rlver($frlver, "@RLINC", "@RLLIB", "@defs", "@lddflags", "@libs", 1)) {
         # If failed, compile rlver.c with terminal library.
         # See https://github.com/hirooih/perl-trg/issues/6 for details
-        if (my $termlib = search_termlib()) {
-            push(@libs, $termlib);
-            if (compile_rlver($frlver, "@RLINC", "@RLLIB", "@defs", "@lddflags", "@libs", 0)) {
-                warn <<EOM;
+        push(@libs, search_termlib());
+        if (compile_rlver($frlver, "@RLINC", "@RLLIB", "@defs", "@lddflags", "@libs", 0)) {
+            warn <<EOM;
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Could not compile $frlver.c.
 
@@ -132,24 +131,7 @@ here.  Update it to version 2.1 and/or later.
 Read INSTALL for more details.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 EOM
-                exit $err;
-            }
-            # Succeeded
-        } else {
-            warn "Could not find neither libtermcap, libtinfo, libncurses, or libcurses.\n";
-            if ($Config{osname} eq 'darwin'
-                && substr($Config{osvers}, 0, index($Config{osvers}, '.')) > 19
-                && $ExtUtils::MakeMaker::VERSION < 7.58) {
-                # may not reach here
-                warn <<EOM;
-Install XCode or use Homebrew package.
-macOS Big Sur or later requires ExtUtils::MakeMaker 7.58 or later.
-See https://github.com/Perl-Toolchain-Gang/ExtUtils-MakeMaker/issues/381 for details.
-EOM
-                # don't exit for now
-            } else {
-                exit $err;
-            }
+            exit $err;
         }
     }
 }
@@ -229,12 +211,16 @@ sub search_termlib {
     # libtermcap.a on HPUX cannot be used for dynamically linked binary.
     # Old Cygwin may require setting false (0).
     # tinfo is for Debian. [Debian Bug Report #644423]
+    #
+    # Return `-lcurses` as a last resort. This is also a work-around for
+    # https://github.com/Perl-Toolchain-Gang/ExtUtils-MakeMaker/issues/381.
+    # macOS Big Sur or later requires ExtUtils::MakeMaker 7.58 or later.
     if ($Config{osname} eq 'aix' || $Config{osname} eq 'hpux' || $Config{osname} eq 'cygwin') {
         return (search_lib('-lncurses') || search_lib('-ltermcap')
-                || search_lib('-ltinfo') || search_lib('-lcurses'));
+                || search_lib('-ltinfo') || '-lcurses');
     } else {
         return (search_lib('-ltermcap') || search_lib('-ltinfo')
-                || search_lib('-lncurses') || search_lib('-lcurses'));
+                || search_lib('-lncurses') || '-lcurses');
     }
 }
 
