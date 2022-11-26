@@ -1376,7 +1376,7 @@ attempted_completion_function_wrapper(text, start, end)
   XPUSHs(sv_2mortal(newSViv(end)));
   PUTBACK;
 
-  count = call_sv(fn_tbl[ATMPT_COMP].callback, G_ARRAY);
+  count = call_sv(fn_tbl[ATMPT_COMP].callback, G_LIST);
 
   SPAGAIN;
 
@@ -1532,7 +1532,7 @@ ignore_some_completions_function_wrapper(matches)
   }
   PUTBACK;
 
-  count = call_sv(fn_tbl[IGNORE_COMP].callback, G_ARRAY);
+  count = call_sv(fn_tbl[IGNORE_COMP].callback, G_LIST);
 
   SPAGAIN;
 
@@ -2447,8 +2447,8 @@ rl_timeout_remaining()
     PPCODE:
         {
           int ret;
-          U8 gimme = GIMME_V; // https://perldoc.perl.org/perlcall#Using-GIMME_V
-          if (gimme == G_ARRAY) {
+          U8 gimme = GIMME_V; /* https://perldoc.perl.org/perlcall#Using-GIMME_V */
+          if (gimme == G_LIST) {
             unsigned int secs, usecs;
             ret = rl_timeout_remaining(&secs, &usecs);
             EXTEND(sp, 3);
@@ -2459,7 +2459,7 @@ rl_timeout_remaining()
             ret = rl_timeout_remaining(NULL, NULL);
             EXTEND(sp, 1);
             PUSHs(sv_2mortal(newSViv(ret)));
-          } else {  // G_VOID
+          } else {  /* G_VOID */
             XSRETURN(0);
           }
         }
