@@ -287,7 +287,7 @@ sub compile_rlver {
     my ($base, $RLINC, $RLLIB, $defs, $lddflags, $libs, $quiet) = @_;
 
     my $comp_cmd = "$Config{cc} $RLINC $Config{ccflags} $defs $base.c -o $base $RLLIB $lddflags $Config{ldflags} $libs";
-    $comp_cmd .= " >/dev/null 2>&1" if $quiet;
+    $comp_cmd .= " >/dev/null 2>&1" if $quiet && !$verbose;
     print $comp_cmd, "\n" if $verbose;
     system($comp_cmd);
     return $?;
