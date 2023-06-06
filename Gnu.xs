@@ -23,6 +23,9 @@ extern "C" {
 #ifdef __CYGWIN__
 #include <sys/termios.h>
 #endif /* __CYGWIN__ */
+#if (RL_READLINE_VERSION < 0x0803)
+#define HAVE_STDARG_H 1 /* to declare rl_message() correctly */
+#endif
 #include <readline/readline.h>
 #include <readline/history.h>
 
@@ -1695,7 +1698,7 @@ function_wrapper(int count, int key, int id)
 static SV *callback_handler_callback = NULL;
 
 static void
-callback_handler_wrapper(CONST char *line)
+callback_handler_wrapper(char *line)
 {
   dSP;
 
@@ -2193,7 +2196,8 @@ int
 _rl_message(CONST char *text)
     PROTOTYPE: $
     CODE:
-        RETVAL = rl_message(text);
+        /* We need "%s" to suppress warnings, "format string is not a string literal" */
+        RETVAL = rl_message("%s", text);
     OUTPUT:
         RETVAL
 
