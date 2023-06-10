@@ -46,7 +46,8 @@ rl_add_defun('change-ornaments',         \&change_ornaments);
 # Prompt-start, prompt-end, command-line-start, command-line-end
 #     -- zero-width beautifies to emit around prompt and the command line.
 # string encoded:
-my $rl_term_set = ',,,';
+our @rl_term_set;
+*rl_term_set = \@Term::ReadLine::TermCap::rl_term_set;
 
 # These variables are used by completion functions.  Don't use for
 # other purpose.
@@ -361,12 +362,12 @@ our %term_no_ue = ( kterm => 1 );
 
 sub ornaments {
     return $rl_term_set unless @_;
-    $rl_term_set = shift;
+    my $rl_term_set = shift;
     $rl_term_set ||= ',,,';
-    $rl_term_set = $term_no_ue{$ENV{TERM}} ? 'us,me,,' : 'us,ue,,'
+    $rl_term_set = $term_no_ue{$ENV{TERM}} ? 'us,me,md,me' : 'us,ue,md,me'
         if $rl_term_set eq '1';
     my @ts = split /,/, $rl_term_set, 4;
-    my @rl_term_set
+    @rl_term_set
         = map {
             # non-printing characters must be informed to readline
             my $t;
