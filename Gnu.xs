@@ -1,7 +1,7 @@
 /*
  *      Gnu.xs --- GNU Readline wrapper module
  *
- *      Copyright (c) 1996-2020 Hiroo Hayashi.  All rights reserved.
+ *      Copyright (c) 1996-2023 Hiroo Hayashi.  All rights reserved.
  *
  *      This program is free software; you can redistribute it and/or
  *      modify it under the same terms as Perl itself.
