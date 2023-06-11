@@ -256,6 +256,7 @@ should be globs.
 =cut
 
 # The origin of this function is Term::ReadLine::Perl.pm by Ilya Zakharevich.
+our $has_been_initialized = 0;
 sub new {
     my $this = shift;           # Package
     my $class = ref($this) || $this;
@@ -266,6 +267,11 @@ sub new {
 
     my $self = \%Attribs;
     bless $self, $class;
+
+    if ($has_been_initialized) {
+        croak "Only one Term::ReadLine::Gnu instance is allowed."
+    }
+    $has_been_initialized = 1;
 
     # set rl_readline_name before .inputrc is read in rl_initialize()
     $Attribs{readline_name} = $name;
