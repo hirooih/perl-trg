@@ -1,7 +1,7 @@
 #
 #       Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#       Copyright (c) 1996-2022 Hiroo Hayashi.  All rights reserved.
+#       Copyright (c) 1996-2023 Hiroo Hayashi.  All rights reserved.
 #
 #       This program is free software; you can redistribute it and/or
 #       modify it under the same terms as Perl itself.
@@ -96,7 +96,7 @@ BEGIN {
     use Exporter ();
     use DynaLoader;
 
-    our $VERSION = '1.45';              # update Gnu::XS::VERSION also.
+    our $VERSION = '1.46';              # update Gnu::XS::VERSION also.
 
     # Term::ReadLine::Gnu::AU makes a function in
     # `Term::ReadLine::Gnu::XS' as a method.
