@@ -2290,7 +2290,8 @@ GTK+ support in addition to Tk.
 =item Submit a bug report to
 L<the bug tracker on GitHub|https://github.com/hirooih/perl-trg/issues>.
 
-=item C<add_defun()> can define up to 16 functions.
+=item C<add_defun()> can define up to 16 functions including predefined functions.
+See L<#23|https://github.com/hirooih/perl-trg/issues/23> for details.
 
 =item Some functions and variables do not have test code yet.  Your
 contribution is welcome.  See F<t/readline.t> for details.
@@ -2303,7 +2304,7 @@ L<https://rt.perl.org/Public/Bug/Display.html?id=121456> for details.
 
 =head1 LICENSE
 
-Copyright (c) 1996-2020 Hiroo Hayashi.  All rights reserved.
+Copyright (c) 1996-2023 Hiroo Hayashi.  All rights reserved.
 
 This program is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
