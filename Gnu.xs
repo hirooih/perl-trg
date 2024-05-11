@@ -1905,12 +1905,18 @@ _rl_discard_keymap(Keymap map)
  # comment out until GNU Readline 6.2 will be released.
 
 void
-rl_free_keymap(Keymap map)
+_rl_free_keymap(Keymap map)
     PROTOTYPE: $
+    CODE:
+        rl_free_keymap(map);
 
 int
-rl_empty_keymap(Keymap map)
+_rl_empty_keymap(Keymap map)
     PROTOTYPE: $
+    CODE:
+        RETVAL = rl_empty_keymap(map);
+    OUTPUT:
+        RETVAL
 
 Keymap
 rl_get_keymap()
@@ -1935,8 +1941,12 @@ rl_get_keymap_name(Keymap map)
     PROTOTYPE: $
 
 int
-rl_set_keymap_name(CONST char *name, Keymap map)
+_rl_set_keymap_name(CONST char *name, Keymap map)
     PROTOTYPE: $$
+    CODE:
+        RETVAL = rl_set_keymap_name(name, map);
+    OUTPUT:
+        RETVAL
 
  #
  #      2.4.3 Binding Keys
@@ -2073,7 +2083,7 @@ rl_get_function_name(rl_command_func_t *function)
     PROTOTYPE: $
 
 void
-rl_function_of_keyseq(SV *keyseq, Keymap map = rl_get_keymap())
+_rl_function_of_keyseq(SV *keyseq, Keymap map = rl_get_keymap())
     PROTOTYPE: $;$
     PPCODE:
         {
@@ -2113,7 +2123,7 @@ rl_function_of_keyseq(SV *keyseq, Keymap map = rl_get_keymap())
         }
 
 int
-rl_trim_arg_from_keyseq(SV *keyseq, Keymap map = rl_get_keymap())
+_rl_trim_arg_from_keyseq(SV *keyseq, Keymap map = rl_get_keymap())
     PROTOTYPE: $;$
     CODE:
         {
