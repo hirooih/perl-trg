@@ -1331,6 +1331,18 @@ Manual|https://tiswww.cwru.edu/php/chet/readline/readline.html>.
 
 =over 4
 
+=item C<SETSTATE(READLINE_STATE)>
+
+        int  RL_SETSTATE(int)                                   # GRL 6.0
+
+=item C<UNSETSTATE(READLINE_STATE)>
+
+        int  RL_UNSETSTATE(int)                                 # GRL 6.0
+
+=item C<ISSTATE(READLINE_STATE)>
+
+        int  RL_ISSTATE(int)                                    # GRL 6.0
+
 =item C<save_state(READLINE_STATE)>
 
         READLINE_STATE  rl_save_state()                         # GRL 6.0
