@@ -1902,8 +1902,6 @@ _rl_discard_keymap(Keymap map)
     OUTPUT:
         RETVAL
 
- # comment out until GNU Readline 6.2 will be released.
-
 void
 _rl_free_keymap(Keymap map)
     PROTOTYPE: $

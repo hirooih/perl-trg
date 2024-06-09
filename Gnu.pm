@@ -236,8 +236,8 @@ sub RL_STATE_REDISPLAYING       {              # updating terminal display [6.1]
 }
 sub RL_STATE_DONE {                            # done; accepted line
     $readline_version < 0x0501 ? 0x8_0000 :
-        ($readline_version < 0x0601 ? 0x80_0000 :
-         ($readline_version < 0x0700 ? 0x100_0000 : 0x200_0000));
+    $readline_version < 0x0601 ? 0x80_0000 :
+    $readline_version < 0x0700 ? 0x100_0000 : 0x200_0000;
 }
 sub RL_STATE_TIMEOUT            { 0x400_0000; } # [8.2]
 sub RL_STATE_EOF                { 0x800_0000; } # [8.2]
@@ -1269,6 +1269,10 @@ Manual|https://tiswww.cwru.edu/php/chet/readline/readline.html>.
 
         int     rl_kill_text(int start = 0, int end = rl_end)
 
+=item C<replace_line(TEXT [,CLEAR_UNDO])>
+
+        int     rl_replace_line(str text, int clear_undo = 0)   # GRL 4.3
+
 =item C<push_macro_input(MACRO)>
 
         int     rl_push_macro_input(str macro)
@@ -1377,10 +1381,6 @@ Manual|https://tiswww.cwru.edu/php/chet/readline/readline.html>.
         Not implemented since not required for Perl.
         int     rl_free(void *mem)                              # GRL 6.0
 
-=item C<replace_line(TEXT [,CLEAR_UNDO])>
-
-        int     rl_replace_line(str text, int clear_undo = 0)   # GRL 4.3
-
 =item C<extend_line_buffer(LEN)>
 
         Not implemented since not required for Perl.
@@ -1443,7 +1443,7 @@ When C<MAX> is omitted, the max length of an item in C<@matches> is used.
 
 =item C<reparse_colors>
 
-        void    rl_reparse_colors()                              # GRL 8.3
+        void    rl_reparse_colors()                             # GRL 8.3
 
 =item C<clear_history>
 
@@ -1479,9 +1479,9 @@ When C<MAX> is omitted, the max length of an item in C<@matches> is used.
 
         void    rl_callback_read_char()
 
-=item C<callback_sigcleanup>                                    # GRL 7.0
+=item C<callback_sigcleanup>
 
-        void    rl_callback_sigcleanup()
+        void    rl_callback_sigcleanup()                        # GRL 7.0
 
 =item C<callback_handler_remove>
 
@@ -1873,7 +1873,6 @@ Examples:
         pfunc rl_filename_rewrite_hook (GRL 6.1)
         pfunc rl_completion_rewrite_hook (GRL 8.3)
         pfunc rl_completion_display_matches_hook (GRL 4.0)
-        int rl_full_quoting_desired (GRL 8.3)
         str rl_basic_word_break_characters
         str rl_basic_quote_characters
         str rl_completer_word_break_characters
@@ -1884,13 +1883,14 @@ Examples:
         int rl_completion_query_items
         int rl_completion_append_character
         int rl_completion_suppress_append (GRL 4.3)
-        int rl_completion_quote_character (GRL 5.0, read only)
         int rl_completion_suppress_quote (GRL 5.0)
         int rl_completion_found_quote (GRL 5.0, read only)
+        int rl_completion_quote_character (GRL 5.0, read only)
         int rl_completion_mark_symlink_dirs (GRL 4.3)
         int rl_ignore_completion_duplicates
         int rl_filename_completion_desired
         int rl_filename_quoting_desired
+        int rl_full_quoting_desired (GRL 8.3)
         int rl_attempted_completion_over
         int rl_sort_completion_matches (GRL 6.0)
         int rl_completion_type (read only)
@@ -2245,17 +2245,29 @@ C<Term::ReadLine::Stub> is used instead of <Term::ReadLine:Gnu>.
 
 =over 4
 
-=item L<Term::ReadLine::Gnu Project Home Page|https://github.com/hirooih/perl-trg>
+=item *
 
-=item L<GNU Readline Library Manual|https://tiswww.cwru.edu/php/chet/readline/readline.html>
+L<Term::ReadLine::Gnu Project Home Page|https://github.com/hirooih/perl-trg>
 
-=item L<GNU History Library Manual|https://tiswww.cwru.edu/php/chet/readline/history.html>
+=item *
 
-=item Sample and test programs (F<eg/*> and F<t/*>) in L<the C<Term::ReadLine::Gnu> distribution|http://search.cpan.org/dist/Term-ReadLine-Gnu/>
+L<GNU Readline Library Manual|https://tiswww.cwru.edu/php/chet/readline/readline.html>
 
-=item L<Term::ReadLine|http://search.cpan.org/dist/Term-ReadLine/>
+=item *
 
-=item Works which use Term::ReadLine::Gnu
+L<GNU History Library Manual|https://tiswww.cwru.edu/php/chet/readline/history.html>
+
+=item *
+
+Sample and test programs (F<eg/*> and F<t/*>) in L<the C<Term::ReadLine::Gnu> distribution|http://search.cpan.org/dist/Term-ReadLine-Gnu/>
+
+=item *
+
+L<Term::ReadLine|http://search.cpan.org/dist/Term-ReadLine/>
+
+=item *
+
+Works which use Term::ReadLine::Gnu
 
 =over 4
 
@@ -2331,16 +2343,24 @@ GTK+ support in addition to Tk.
 
 =over 4
 
-=item Submit a bug report to
+=item *
+
+Submit a bug report to
 L<the bug tracker on GitHub|https://github.com/hirooih/perl-trg/issues>.
 
-=item C<add_defun()> can define up to 16 functions including predefined functions.
+=item *
+
+C<add_defun()> can define up to 16 functions including predefined functions.
 See L<#23|https://github.com/hirooih/perl-trg/issues/23> for details.
 
-=item Some functions and variables do not have test code yet.  Your
+=item *
+
+Some functions and variables do not have test code yet.  Your
 contribution is welcome.  See F<t/readline.t> for details.
 
-=item If the pager command (| or ||) in Perl debugger causes segmentation
+=item *
+
+If the pager command (| or ||) in Perl debugger causes segmentation
 fault, you need to fix F<perl5db.pl>.  See
 L<https://rt.perl.org/Public/Bug/Display.html?id=121456> for details.
 
@@ -2348,7 +2368,7 @@ L<https://rt.perl.org/Public/Bug/Display.html?id=121456> for details.
 
 =head1 LICENSE
 
-Copyright (c) 1996-2023 Hiroo Hayashi.  All rights reserved.
+Copyright (c) 1996-2024 Hiroo Hayashi.  All rights reserved.
 
 This program is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
