@@ -304,6 +304,24 @@ sub rl_completion_mode {
 }
 
 #
+#       the GNU Readline Macros
+#
+sub SETSTATE {
+    my ($x) = @_;
+    return ($Attribs{readline_state} |= $x);
+}
+
+sub UNSETSTATE {
+    my ($x) = @_;
+    return ($Attribs{readline_state} &= ~$x);
+}
+
+sub ISSTATE {
+    my ($x) = @_;
+    return ($Attribs{readline_state} & $x);
+}
+
+#
 #       for compatibility with Term::ReadLine::Perl
 #
 sub rl_filename_list {

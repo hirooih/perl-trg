@@ -107,6 +107,7 @@ BEGIN {
                   Exporter DynaLoader);
 
     our %EXPORT_TAGS = (
+        readerr =>      [qw(READERR)],
         prompt =>       [qw(RL_PROMPT_START_IGNORE RL_PROMPT_END_IGNORE)],
         match_type =>   [qw(NO_MATCH SINGLE_MATCH MULT_MATCH)],
         keymap_type =>  [qw(ISFUNC ISKMAP ISMACR)],
@@ -128,6 +129,7 @@ BEGIN {
                             RL_STATE_EOF
                             )],
         );
+    Exporter::export_ok_tags('readerr');
     Exporter::export_ok_tags('prompt');
     Exporter::export_ok_tags('match_type');
     Exporter::export_ok_tags('keymap_type');
@@ -173,6 +175,10 @@ our %Features = (
 # readline.h, etc.  But it needs some calling convention change and
 # will cause compatiblity problem. I hope the definition of these
 # constant value will not be changed.
+
+# Input error; can be returned by (*rl_getc_function) if readline is reading
+# a top-level command (RL_ISSTATE (RL_STATE_READCMD)).
+sub READERR      { -2; }
 
 # for non-printing characters in prompt string
 sub RL_PROMPT_START_IGNORE      { "\001"; }
@@ -1331,6 +1337,18 @@ Manual|https://tiswww.cwru.edu/php/chet/readline/readline.html>.
 
 =over 4
 
+=item C<SETSTATE(READLINE_STATE)>
+
+        int  RL_SETSTATE(int)                                   # GRL 6.0
+
+=item C<UNSETSTATE(READLINE_STATE)>
+
+        int  RL_UNSETSTATE(int)                                 # GRL 6.0
+
+=item C<ISSTATE(READLINE_STATE)>
+
+        int  RL_ISSTATE(int)                                    # GRL 6.0
+
 =item C<save_state(READLINE_STATE)>
 
         READLINE_STATE  rl_save_state()                         # GRL 6.0
@@ -2142,6 +2160,10 @@ No symbols are exported by default.
 The following tags are defined and their symbols can be exported.
 
 =over 4
+
+=item readerr
+
+READERR
 
 =item prompt
 
