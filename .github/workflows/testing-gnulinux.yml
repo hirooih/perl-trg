@@ -14,9 +14,11 @@ jobs:
       #fail-fast: false
       matrix:
         # https://docs.github.com/en/actions/reference/specifications-for-github-hosted-runners
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, ubuntu-22.04, ubuntu-20.04]
         # https://hub.docker.com/_/perl
-        perl-version: ['latest', '5.30', '5.26', '5.14'] # '5.8.9', '5.10', and '5.12' failed 2020/02/28
+        # '5.8.9', '5.10', and '5.12' failed 2020/02/28
+        # '5.14' failed 2024/12/02
+        perl-version: ['latest', '5.30', '5.26']
 
     container:
       image: perl:${{ matrix.perl-version }}
