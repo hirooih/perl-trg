@@ -19,8 +19,8 @@ my $sigint_received   = 0;
 my $running           = 0;
 my $prompt            = 'rltest$ ';
 
-# Handle SIGWINCH and window size changes when readline is not active and
-# reading a character.
+# Handle window size changes when readline is not active and reading
+# characters.
 sub sigwinch_handler {
     my $sig = shift;
     $sigwinch_received = 1;

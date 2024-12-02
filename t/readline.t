@@ -169,10 +169,11 @@ sub reverse_line {              # reverse a whole line
 # From the GNU Readline Library Manual
 # Invert the case of the COUNT following characters.
 sub invert_case_line {
-    my($count, $key) = @_;
+    my ($count, $key) = @_;
 
     my $start = $a->{point};
-    return 0 if ($start >= $a->{end});
+
+    return 0 if $start >= $a->{end};
 
     # Find the end of the range to modify.
     my $end = $start + $count;
@@ -186,10 +187,15 @@ sub invert_case_line {
 
     return 0 if $start == $end;
 
+    # For positive arguments, put point after the last changed character. For
+    # negative arguments, put point before the last changed character.
+    $a->{point} = $end;
+
+    # Swap start and end if we are moving backwards.
     if ($start > $end) {
         my $temp = $start;
         $start = $end;
-        $end = $temp;
+        $end   = $temp;
     }
 
     # Tell readline that we are modifying the line, so it will save
@@ -197,10 +203,8 @@ sub invert_case_line {
     $t->modifying($start, $end);
 
     # I'm happy with Perl :-)
-    substr($a->{line_buffer}, $start, $end-$start) =~ tr/a-zA-Z/A-Za-z/;
+    substr($a->{line_buffer}, $start, $end - $start) =~ tr/A-Za-z/a-zA-Z/;
 
-    # Move point to on top of the last character changed.
-    $a->{point} = $count < 0 ? $start : $end - 1;
     return 0;
 }
 

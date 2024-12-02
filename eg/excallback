@@ -106,7 +106,9 @@ sub change_prompt {
     $prompt = !$prompt;
     $t->set_prompt(get_prompt());
 }
-sub change_promptx {
+
+# The original implementation of change_prompt before rl_set_prompt was introduced.
+sub change_prompt_original {
     # toggle the prompt variable
     $prompt = !$prompt;
 
