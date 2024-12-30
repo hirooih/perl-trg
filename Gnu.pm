@@ -84,10 +84,15 @@ BEGIN {
     $ENV{TERM} = 'dumb' unless defined($ENV{TERM});
 
     # Use Term::ReadLine::Stub in Emacs
-    # as bash does not do line-editing in the case. (cf. bash-5.2/shell.c)
+    # as bash does not do line-editing in the case.
     # https://rt.cpan.org/Ticket/Display.html?id=123398
     # https://github.com/hirooih/perl-trg/issues/11
-    if ($ENV{TERM} eq "emacs" || defined($ENV{EMACS}) || defined($ENV{INSIDE_EMACS})) {
+    # https://github.com/hirooih/perl-trg/issues/28
+    # https://git.savannah.gnu.org/cgit/bash.git/tree/shell.c#n595
+    my $in_emacs = defined($ENV{INSIDE_EMACS})
+            || (defined($ENV{EMACS})
+                && ($ENV{EMACS} =~ / \(term:/ || $ENV{EMACS} eq "t"));
+    if ($ENV{TERM} eq "emacs" || $in_emacs && $ENV{TERM} eq "dumb") {
         croak "Use Term::ReadLine::Stub.";
     }
 }
