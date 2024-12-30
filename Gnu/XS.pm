@@ -248,6 +248,16 @@ sub rl_invoking_keyseqs ($;$) {
     }
 }
 
+sub rl_print_keybinding ($;$$) {
+    if (defined $_[2]) {
+        return _rl_print_keybinding($_[0], _str2map($_[1]), $_[2]);
+    } elsif (defined $_[1]) {
+        return _rl_print_keybinding($_[0], _str2map($_[1]));
+    } else {
+        return _rl_print_keybinding($_[0]);
+    }
+}
+
 sub rl_add_funmap_entry ($$) {
     my ($version) = $Attribs{library_version}
         =~ /(\d+\.\d+)/;

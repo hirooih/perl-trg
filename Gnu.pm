@@ -1,7 +1,7 @@
 #
 #       Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#       Copyright (c) 1996-2023 Hiroo Hayashi.  All rights reserved.
+#       Copyright (c) 1996-2024 Hiroo Hayashi.  All rights reserved.
 #
 #       This program is free software; you can redistribute it and/or
 #       modify it under the same terms as Perl itself.
@@ -131,7 +131,7 @@ BEGIN {
                             RL_STATE_MULTIKEY RL_STATE_VICMDONCE
                             RL_STATE_CHARSEARCH RL_STATE_REDISPLAYING
                             RL_STATE_DONE RL_STATE_TIMEOUT
-                            RL_STATE_EOF
+                            RL_STATE_EOF RL_STATE_READSTR
                             )],
         );
     Exporter::export_ok_tags('readerr');
@@ -241,6 +241,7 @@ sub RL_STATE_DONE {                            # done; accepted line
 }
 sub RL_STATE_TIMEOUT            { 0x400_0000; } # [8.2]
 sub RL_STATE_EOF                { 0x800_0000; } # [8.2]
+sub RL_STATE_READSTR            { 0x1000_0000; } # [8.3] reading a string for M-x
 
 #
 #       Methods Definition
@@ -716,6 +717,7 @@ our %_rl_vars;
        history_quoting_state                    => ['I', 45], # GRL 8.0
        utf8_mode                                => ['I', 46], # internal
        rl_eof_found                             => ['I', 47], # GRL 8.2
+       rl_full_quoting_desired                  => ['I', 48], # GRL 8.3
 
        rl_startup_hook                          => ['F', 0],
        rl_event_hook                            => ['F', 1],
@@ -740,6 +742,8 @@ our %_rl_vars;
        rl_input_available_hook                  => ['F', 20], # GRL 6.3
        rl_filename_stat_hook                    => ['F', 21], # GRL 6.3
        rl_timeout_event_hook                    => ['F', 22], # GRL 8.2
+       rl_macro_display_hook                    => ['F', 23], # GRL 8.3
+       rl_completion_rewrite_hook               => ['F', 24], # GRL 8.3
 
        rl_instream                              => ['IO', 0],
        rl_outstream                             => ['IO', 1],
@@ -1129,6 +1133,12 @@ Manual|https://tiswww.cwru.edu/php/chet/readline/readline.html>.
         (@str)  rl_invoking_keyseqs(FunctionPtr|str function,
                                     Keymap|str map = rl_get_keymap())
 
+=item C<print_keybinding(NAME [MAP [,READABLE]])>
+
+        void    rl_print_keybinding(str name,
+                                    Keymap|str map = rl_get_keymap(),
+                                    int readable = 0)             # GRL 8.3
+
 =item C<function_dumper([READABLE])>
 
         void    rl_function_dumper(int readable = 0)
@@ -1430,6 +1440,10 @@ When C<MAX> is omitted, the max length of an item in C<@matches> is used.
 =item C<get_termcap(cap)>
 
         str     rl_get_termcap(cap)
+
+=item C<reparse_colors>
+
+        void    rl_reparse_colors()                              # GRL 8.3
 
 =item C<clear_history>
 
@@ -1826,6 +1840,7 @@ Examples:
         pfunc rl_redisplay_function
         pfunc rl_prep_term_function (GRL 2.1)
         pfunc rl_deprep_term_function (GRL 2.1)
+        pfunc rl_macro_display_hook (GRL 8.3)
         Keymap rl_executing_keymap (read only)
         Keymap rl_binding_keymap (read only)
         str rl_executing_macro (GRL 4.2, read only)
@@ -1856,7 +1871,9 @@ Examples:
         pfunc rl_directory_rewrite_hook (GRL 4.2)
         pfunc rl_filename_stat_hook (GRL 6.3)
         pfunc rl_filename_rewrite_hook (GRL 6.1)
+        pfunc rl_completion_rewrite_hook (GRL 8.3)
         pfunc rl_completion_display_matches_hook (GRL 4.0)
+        int rl_full_quoting_desired (GRL 8.3)
         str rl_basic_word_break_characters
         str rl_basic_quote_characters
         str rl_completer_word_break_characters
