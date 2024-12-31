@@ -1,10 +1,10 @@
 #!/usr/bin/env perl
 #
-# rl-callbacktest: 2.4.14 Alternate Interface Example
+# rl-callbacktest3: rl-callbacktest + sigint_handler() + rl_getc_function
 #
 #   Copyright (C) 2024 Hiroo Hayashi
 #
-# Derived from: examples/rl-callbacktest.c in the GNU Readline Library
+# Derived from: examples/rl-callbacktest3.c in the GNU Readline Library
 
 use strict;
 use warnings;
@@ -14,6 +14,7 @@ my $t = new Term::ReadLine 'rl-callbacktest';
 my $a = $t->Attribs;
 
 my $sigwinch_received = 0;
+my $sigint_received   = 0;
 my $running           = 0;
 my $prompt            = 'rltest$ ';
 
@@ -22,6 +23,12 @@ my $prompt            = 'rltest$ ';
 sub sigwinch_handler {
     my $sig = shift;
     $sigwinch_received = 1;
+}
+
+# Handle SIGINT when readline is not active and reading a character.
+sub sigint_handler {
+    my $sig = shift;
+    $sigint_received = 1;
 }
 
 # Callback function called for each line when accept-line executed, EOF
@@ -47,8 +54,22 @@ sub cb_linehandler {
     }
 }
 
+# replace with something more complex if desired
+sub my_getc {
+    # my $stream = shift;
+    # my $ch     = $t->getc($stream);
+    my $ch     = $t->getc($a->{instream});
+    return $ch;
+}
+
 # Handle SIGWINCH
 $SIG{WINCH} = \&sigwinch_handler;
+
+# Handle SIGINT
+$SIG{INT} = \&sigint_handler;
+
+# Install the getc function.
+$a->{getc_function} = \&my_getc;
 
 # Install the line handler.
 $t->callback_handler_install($prompt, \&cb_linehandler);
@@ -72,6 +93,15 @@ while ($running) {
         warn "$0: SIGWINCH received\n";
         $t->resize_terminal();
         $sigwinch_received = 0;
+    }
+    if ($sigint_received) {
+        print "Quit\n";
+
+        $t->callback_handler_remove();
+        $t->callback_handler_install($prompt, \&cb_linehandler);
+
+        $sigint_received = 0;
+        next;
     }
     next if $r < 0; # select returns EINTR (interrupted system call)
 
