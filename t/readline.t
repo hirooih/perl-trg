@@ -11,7 +11,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 148;
+use Test::More tests => 152;
 use Data::Dumper;
 
 # redefine Test::Mode::note due to it requires Perl 5.10.1.
@@ -98,6 +98,7 @@ ok($a->{point} == 0, 'point');
 ok($a->{end} == 0, 'end');
 ok($a->{mark} == 0, 'mark');
 ok($a->{done} == 0, 'done');
+ok($a->{eof_found} == 0, 'eof_found');                              # GRL 8.2!!!
 
 ok($a->{num_chars_to_read} == 0, 'num_chars_to_read');
 ok($a->{pending_input} == 0, 'pending_input');
@@ -127,10 +128,12 @@ ok(! defined($a->{pre_input_hook}), 'pre_input_hook');
 ok(! defined($a->{event_hook}), 'event_hook');
 ok(! defined($a->{getc_function}), 'getc_function');
 ok(! defined($a->{signal_event_hook}), 'signal_event_hook'); # not tested!!!
+ok(! defined($a->{timeout_event_hook}), 'timeout_event_hook');      # GRL 8.2!!!
 ok(! defined($a->{input_available_hook}), 'input_available_hook');
 ok(! defined($a->{redisplay_function}), 'redisplay_function');
 ok(! defined($a->{prep_term_function}), 'prep_term_function');   # not tested!!!
 ok(! defined($a->{deprep_term_function}), 'deprep_term_function'); # not tested!!!
+ok(! defined($a->{macro_display_hook}), 'macro_display_hook');      # GRL 8.3!!!
 
 # not defined here yet
 ok(! defined($a->{executing_keymap}), 'executing_keymap');
@@ -512,6 +515,7 @@ ok(! defined $a->{directory_completions_hook}, 'directory_completions_hook');
 ok(! defined $a->{directory_rewrite_hook}, 'directory_rewrite_hook');
 ok(! defined $a->{filename_stat_hook}, 'filename_stat_hook');
 ok(! defined $a->{filename_rewrite_hook}, 'filename_rewrite_hook');
+ok(! defined $a->{completion_rewrite_hook}, 'completion_rewrite_hook');         # GRL 8.3
 ok(! defined $a->{completions_display_matches_hook}, 'completions_display_matches_hook');
 
 ok($a->{basic_word_break_characters} eq " \t\n\"\\'`\@\$><=;|&{(", 'basic_word_break_characters');
