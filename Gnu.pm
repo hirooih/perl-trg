@@ -1,7 +1,7 @@
 #
 #       Gnu.pm --- The GNU Readline/History Library wrapper module
 #
-#       Copyright (c) 1996-2024 Hiroo Hayashi.  All rights reserved.
+#       Copyright (c) 1996-2025 Hiroo Hayashi.  All rights reserved.
 #
 #       This program is free software; you can redistribute it and/or
 #       modify it under the same terms as Perl itself.
@@ -54,7 +54,7 @@ Features">
 
 The sample programs under F<eg/> directory and test programs under
 F<t/> directory in L<the C<Term::ReadLine::Gnu> distribution|http://search.cpan.org/dist/Term-ReadLine-Gnu/> include
-many examples of this module.
+many examples of this module.  See F<eg/README.md> for details on F<eg/> directory.
 
 =head2 Standard Methods
 
