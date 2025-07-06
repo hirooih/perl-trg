@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# rl-callbacktest2
+# rl-callbacktest2: Provides readline()-like interface using the alternate interface
 #
 #   Copyright (C) 2024 Hiroo Hayashi
 #

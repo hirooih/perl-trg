@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #
-# rltest
+# rltest: readline() + add_history() + history_list()
 #
 #   Copyright (C) 2024 Hiroo Hayashi
 #

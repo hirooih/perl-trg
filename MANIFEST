@@ -1,7 +1,7 @@
 # This file lists the files included in Term::ReadLine::Gnu module distribution
 
 Changes                 A change history
-INSTALL.md              Installtion instructions
+INSTALL.md              Installation instructions
 MANIFEST                This list of files
 Makefile.PL             The GNU Readline extension makefile writer
 README.md               The Instructions
@@ -31,9 +31,9 @@ t/utf8_text.t           A test script for UTF-8 text string
 t/utf8.txt              A file for t/utf8_*.t
 
 # Sample Scripts
-eg/perlsh               A powerful calculator
+eg/perlsh               A Perl REPL supporting line-editing and completion.  Can be used as a powerful calculator
 eg/pftp                 An ftp client with the GNU Readline support
-eg/ptksh+               Simple perl/Tk shell which demonstrates the callback functions
+eg/ptksh+               A simple perl/Tk shell which demonstrates the callback functions
 
 # The following are ported from the examples in the GNU Readline Library distribution.
 eg/rlversion            Print out readline's version number
@@ -43,7 +43,7 @@ eg/rltest               readline() loop + add_history() + history_list()
 eg/rl                   readline() loop + ri_startup_hook, rl_insert_text(), rl_instream, rl_num_chars_to_read
 eg/rlevent              rl + rl_event_hook
 eg/rlkeymaps            Tests for keymap functions
-eg/histexamp            history library example program
+eg/histexamp            The GNU History Library example program
 eg/rl-callbacktest      2.4.14 Alternate Interface Example
 eg/rl-callbacktest2     Provides readline()-like interface using the alternate interface
 eg/rl-callbacktest3     rl-callbacktest + sigint_handler() + rl_getc_function
